@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<parent>
 		<groupId>org.n52.wps</groupId>
 		<artifactId>52n-wps-parent</artifactId>
@@ -53,7 +54,7 @@
 		</developer>
 	</developers>
 
-	<build>
+<!--	<build>
 
 		<plugins>
 			<plugin>
@@ -73,38 +74,24 @@
 					</includes>
 				</configuration>
 			</plugin>
-
+		</plugins>
+	</build>-->
+	<build>
+		<plugins>
 			<plugin>
-				<!-- run "mvn license:check" to check -->
-				<!-- run "mvn license:format" to add to the files -->
-				<groupId>com.mycila.maven-license-plugin</groupId>
-				<artifactId>maven-license-plugin</artifactId>
-				<version>1.9.0</version>
+				<groupId>com.mycila</groupId>
+				<artifactId>license-maven-plugin</artifactId>
 				<configuration>
-					<header>src/main/resources/52N_license.txt</header>
-					<excludes>
-						<exclude>**/log4j*</exclude>
-						<exclude>**/test/resources/**</exclude>
-					</excludes>
-					<includes>
-						<include>**/*.java</include>
-						<include>**/*.properties</include>
-						<include>**/*.jsp</include>
-						<include>**/*.js</include>
-						<include>**/*.xml</include>
-						<include>**/*.xsl</include>
-					</includes>
-					<strictCheck>true</strictCheck>
-					<properties>
-						<year>${project.inceptionYear}</year>
-					</properties>
+					<header>../misc/licenses/license_header.txt</header>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.jasig.maven</groupId>
+				<artifactId>maven-notice-plugin</artifactId>
 				<executions>
 					<execution>
-						<phase>test</phase>
-						<goals>
-							<goal>check</goal>
-						</goals>
+						<id>check-licenses</id>
+						<phase></phase>
 					</execution>
 				</executions>
 			</plugin>
@@ -120,11 +107,8 @@
 		</profile>
 	</profiles>
 
-	<!-- here are the dependencies of the project -->
 	<dependencies>
-		<!-- Dependencies for Scope 'test' -->
 		<dependency>
-			<!-- junit for the unit tests -->
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
@@ -134,8 +118,12 @@
 			<artifactId>xmlunit</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>servlet-api</artifactId>
+			<scope>test</scope>
+		</dependency>
 		
-		<!-- Dependencies for Scope 'compile' -->
 		<dependency>
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>

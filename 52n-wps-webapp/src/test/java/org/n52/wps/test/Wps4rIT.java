@@ -1,3 +1,26 @@
+/**
+ * ﻿Copyright (C) 2007
+ * by 52 North Initiative for Geospatial Open Source Software GmbH
+ *
+ * Contact: Andreas Wytzisk
+ * 52 North Initiative for Geospatial Open Source Software GmbH
+ * Martin-Luther-King-Weg 24
+ * 48155 Muenster, Germany
+ * info@52north.org
+ *
+ * This program is free software; you can redistribute and/or modify it under
+ * the terms of the GNU General Public License version 2 as published by the
+ * Free Software Foundation.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; even without the implied
+ * WARRANTY OF MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program (see gnu-gpl v2.txt). If not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA or
+ * visit the Free Software Foundation web page, http://www.fsf.org.
+ */
 
 package org.n52.wps.test;
 
@@ -24,6 +47,28 @@ import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
 import org.xml.sax.SAXException;
 
+/**
+ * 
+ * To run this integration tests there has to be RServe running on the localhost and the R repository must be enabled in the WPS config.
+ * 
+ * To start RServe:
+ * 
+ * <ul>
+ * <li>start <code>R</code></li>
+ * <li>in the R console, load the library Rserve: <code>library(Rserve)</code></li>
+ * <li>in the R console, start Rserve: <code>Rserve()</code></li>
+ * <li>you should see and output "... Ok, ready to answer queries."</li>
+ * </ul>
+ * 
+ * To enable the R process repository:
+ * 
+ * <ul>
+ * <li>open your WPSConfiguration file, normally located in /config/wps_config.xml</li>
+ * <li>Find the "LocalRAlgorithmRepository"</li>
+ * <li>set the attribute "active" to <code>true</code></li>
+ * <li>(restart your WPS server)</li>
+ * </ul>
+ */
 public class Wps4rIT {
 
     private static String wpsUrl;
@@ -118,7 +163,7 @@ public class Wps4rIT {
             ParserConfigurationException,
             SAXException,
             XmlException {
-        URL resource = Wps4rIT.class.getResource("/R/ExecuteTestResources.xml");
+        URL resource = Wps4rIT.class.getResource("/R/ExecuteTestWarnings.xml");
         XmlObject xmlPayload = XmlObject.Factory.parse(resource);
 
         String payload = xmlPayload.toString();
@@ -128,14 +173,13 @@ public class Wps4rIT {
         assertThat(response, containsString("warnings"));
     }
 
-    // @Test
+    @Test
     public void responseContainsWarningsContent() throws IOException,
             ParserConfigurationException,
             SAXException,
             XmlException {
 
-        // FIXME This test fails
-        URL resource = Wps4rIT.class.getResource("/R/ExecuteTestResources.xml");
+        URL resource = Wps4rIT.class.getResource("/R/ExecuteTestWarnings.xml");
         XmlObject xmlPayload = XmlObject.Factory.parse(resource);
 
         String payload = xmlPayload.toString();
