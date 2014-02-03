@@ -30,6 +30,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import net.opengis.wps.x100.ProcessDescriptionType;
 
@@ -48,7 +51,7 @@ public class RepositoryManager {
 	private static RepositoryManager instance;
     private final ProcessIDRegistry globalProcessIDs = ProcessIDRegistry.getInstance();
 	private List<IAlgorithmRepository> repositories;
-	private UpdateThread updateThread;
+    private ScheduledExecutorService updateThread;
 	
 	private RepositoryManager(){
 		
@@ -70,12 +73,12 @@ public class RepositoryManager {
         
         Double updateHours = WPSConfig.getInstance().getWPSConfig().getServer().getRepoReloadInterval();
         
-        if (updateHours != 0){
+        if (updateHours > 0){
         	LOGGER.info("Setting repository update period to " + updateHours + " hours.");
-        	updateHours = updateHours * 3600 * 1000; // make milliseconds
-            long updateInterval = updateHours.longValue();
-            this.updateThread = new UpdateThread(updateInterval);
-        	updateThread.start();
+        	long millis = (long) (updateHours * 3600 * 1000); // make milliseconds
+            this.updateThread = Executors.newSingleThreadScheduledExecutor();
+            this.updateThread.scheduleAtFixedRate(new UpdateTask(), millis, millis, TimeUnit.MILLISECONDS);
+
         }
         
     	
@@ -238,47 +241,27 @@ public class RepositoryManager {
 		return null;
 	}
 	
-    static class UpdateThread extends Thread {
+    private class UpdateTask implements Runnable {
         
-    	private final long interval;
-    	private boolean firstrun = true;
-    	
-    	public UpdateThread (long interval){
-    		this.interval = interval;
-    	}
-    	
         @Override
         public void run() {
-        	LOGGER.debug("UpdateThread started");
-        	
-        	try {
-        		// never terminate the run method
-        		while (true){
-        			// do not update on first run!
-        			if (!firstrun){
-        				LOGGER.info("Reloading repositories - this might take a while ...");
-            			long timestamp = System.currentTimeMillis();
-            			RepositoryManager.getInstance().reloadRepositories();
-            			LOGGER.info("Repositories reloaded - going to sleep. Took " + (System.currentTimeMillis()-timestamp) / 1000 + " seconds.");
-        			} else {
-        				firstrun = false;
-        			}
-        			
-        			// sleep for a given INTERVAL
-        			sleep(interval);
-        		}
-			} catch (InterruptedException e) {
-				LOGGER.debug("Interrupt received - Terminating the UpdateThread.");
-			}
+            LOGGER.info("UpdateThread started -- Reloading repositories - this might take a while ...");
+            long timestamp = System.currentTimeMillis();
+            reloadRepositories();
+            LOGGER.info("Repositories reloaded - going to sleep. Took " + (System.currentTimeMillis()-timestamp) / 1000 + " seconds.");
         }
-       
+
     }
-    
-    // shut down the update thread
-    public void finalize(){
-    	if (updateThread != null){
-    		updateThread.interrupt();
-    	}
+
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            if (updateThread != null) {
+                updateThread.shutdownNow();
+            }
+        } finally {
+            super.finalize();
+        }
     }
 
 	public void shutdown() {
