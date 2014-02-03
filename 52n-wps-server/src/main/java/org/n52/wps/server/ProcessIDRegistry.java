@@ -21,79 +21,81 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA or
  * visit the Free Software Foundation web page, http://www.fsf.org.
  */
-
 package org.n52.wps.server;
 
-import java.util.ArrayList;
+import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.google.common.collect.Sets;
 
 /**
  * @author Matthias Mueller, TU Dresden
  *
  */
 public class ProcessIDRegistry {
-	
-	private static ProcessIDRegistry instance = new ProcessIDRegistry();
-	private volatile boolean lock = false;
-	private static ArrayList<String> idList = new ArrayList<String>();
-	
-	private ProcessIDRegistry(){
-		//empty private constructor
-	}
-	
-	public static ProcessIDRegistry getInstance(){
-		return instance;
-	}
-	
-	public boolean addID(String id){
-		while (lock){
-			//spin
-		}
-		try{
-			lock = true;
-			boolean retval = idList.add(id);
-			lock = false;
-			return retval;
-		}
-		finally{
-			lock = false;
-		}
-	}
-	
-	public synchronized boolean removeID(String id){
-		while (lock){
-			//spin
-		}
-		try{
-			lock = true;
-			boolean retval = idList.remove(id);
-			lock = false;
-			return retval;
-		}
-		finally{
-			lock = false;
-		}
-	}
-	
-	public boolean containsID(String id){
-		return idList.contains(id);
-	}
-	
-	public String[] getIDs(){
-		return idList.toArray(new String[idList.size()]);
-	}
-	
-	protected void clearRegistry(){
-		while (lock){
-			//spin
-		}
-		try{
-			lock = true;
-			idList.clear();
-			lock = false;
-		}
-		finally{
-			lock = false;
-		}
-	}
+
+    private static ProcessIDRegistry instance = new ProcessIDRegistry();
+    private final Set<String> ids = Sets.newHashSet();
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Lock read = lock.readLock();
+    private final Lock write = lock.writeLock();
+
+    private ProcessIDRegistry() {
+        //empty private constructor
+    }
+
+    public boolean add(String id) {
+        write.lock();
+        try {
+            return ids.contains(id);
+        } finally {
+            write.unlock();
+        }
+
+    }
+
+    public boolean remove(String id) {
+        write.lock();
+        try {
+            return ids.remove(id);
+        } finally {
+            write.unlock();
+        }
+
+    }
+
+    public boolean contains(String id) {
+        read.lock();
+        try {
+            return ids.contains(id);
+        } finally {
+            read.unlock();
+        }
+    }
+
+    public String[] getAll() {
+        read.lock();
+        try {
+            return ids.toArray(new String[ids.size()]);
+        } finally {
+            read.unlock();
+        }
+
+    }
+
+    protected void clear() {
+        write.lock();
+        try {
+            ids.clear();
+        } finally {
+            write.unlock();
+        }
+
+    }
+
+    public static ProcessIDRegistry getInstance() {
+        return instance;
+    }
 }

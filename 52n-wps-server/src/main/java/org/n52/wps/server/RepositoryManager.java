@@ -33,29 +33,27 @@ import java.util.List;
 
 import net.opengis.wps.x100.ProcessDescriptionType;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.RepositoryDocument.Repository;
 import org.n52.wps.commons.WPSConfig;
-import org.n52.wps.server.request.ExecuteRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Bastian Schaeffer, University of Muenster
  *
  */
 public class RepositoryManager {
-	
+    private static final Logger LOGGER = LoggerFactory.getLogger(RepositoryManager.class);
 	private static RepositoryManager instance;
-	private static Logger LOGGER = LoggerFactory.getLogger(RepositoryManager.class);
+    private final ProcessIDRegistry globalProcessIDs = ProcessIDRegistry.getInstance();
 	private List<IAlgorithmRepository> repositories;
-	private ProcessIDRegistry globalProcessIDs = ProcessIDRegistry.getInstance();
 	private UpdateThread updateThread;
 	
 	private RepositoryManager(){
 		
 		// clear registry
-		globalProcessIDs.clearRegistry();
+		globalProcessIDs.clear();
 		
         // initialize all Repositories
         loadAllRepositories();
@@ -85,8 +83,6 @@ public class RepositoryManager {
 
     private void loadAllRepositories(){
         repositories = new ArrayList<IAlgorithmRepository>();
-        System.gc();
-
 		Repository[] repositoryList = WPSConfig.getInstance().getRegisterdAlgorithmRepositories();
 
 		for(Repository repository : repositoryList){
@@ -96,9 +92,9 @@ public class RepositoryManager {
 			String repositoryClassName = repository.getClassName();
 			try {
 				IAlgorithmRepository algorithmRepository = null;
-				Class repositoryClass = RepositoryManager.class.getClassLoader().loadClass(repositoryClassName);
+				Class<?> repositoryClass = RepositoryManager.class.getClassLoader().loadClass(repositoryClassName);
 				Constructor[] constructors = repositoryClass.getConstructors();
-				for(Constructor constructor : constructors){
+				for(Constructor<?> constructor : constructors){
 				
 					if(constructor.getParameterTypes().length==1 && constructor.getParameterTypes()[0].equals(String.class)){
 						Property[] properties = repository.getPropertyArray();
@@ -106,56 +102,31 @@ public class RepositoryManager {
 						String format = formatProperty.getStringValue();
 						algorithmRepository = (IAlgorithmRepository) repositoryClass.getConstructor(String.class).newInstance(format);
 					}else{
-						algorithmRepository = (IAlgorithmRepository) repositoryClass.newInstance();
-					}
-				}
-				
-				
-				repositories.add(algorithmRepository);
-				LOGGER.info("Algorithm Repository "+ repositoryClassName + " initialized");
-			} catch (InstantiationException e) {
-				LOGGER.warn("An error occured while registering AlgorithmRepository: " + repositoryClassName);
-			} catch (IllegalAccessException e) {
-				//in case of an singleton
-//				try {
-//
-//					IAlgorithmRepository algorithmRepository = (IAlgorithmRepository)RepositoryManager.class.getClassLoader().loadClass(repositoryClassName).getMethod("getInstance", new Class[0]).invoke(null, new Object[0]);
-//					repositories.add(algorithmRepository);
-//				} catch (IllegalArgumentException e1) {
-//					LOGGER.warn("An error occured while registering AlgorithmRepository: " + repositoryClassName);
-//				} catch (SecurityException e1) {
-//					LOGGER.warn("An error occured while registering AlgorithmRepository: " + repositoryClassName);
-//				} catch (IllegalAccessException e1) {
-//					LOGGER.warn("An error occured while registering AlgorithmRepository: " + repositoryClassName);
-//				} catch (InvocationTargetException e1) {
-//					LOGGER.warn("An error occured while registering AlgorithmRepository: " + repositoryClassName);
-//				} catch (NoSuchMethodException e1) {
-//					LOGGER.warn("An error occured while registering AlgorithmRepository: " + repositoryClassName);
-//				} catch (ClassNotFoundException e1) {
-//					LOGGER.warn("An error occured while registering AlgorithmRepository: " + repositoryClassName);
-//				}
-				LOGGER.warn("An error occured while registering AlgorithmRepository: " + repositoryClassName);
+		                      algorithmRepository
+                                = (IAlgorithmRepository) repositoryClass
+                                .newInstance();
+                    }
+                }
 
-			} catch (ClassNotFoundException e) {
-				LOGGER.warn("An error occured while registering AlgorithmRepository: " + repositoryClassName + ". Reason " + e.getMessage());
-			} catch (IllegalArgumentException e) {
-				LOGGER.warn("An error occured while registering AlgorithmRepository: " + repositoryClassName +  ". Reason " + e.getMessage());
-			} catch (SecurityException e) {
-				LOGGER.warn("An error occured while registering AlgorithmRepository: " + repositoryClassName + ". Reason " + e.getMessage());
-			} catch (InvocationTargetException e) {
-				LOGGER.warn("An error occured while registering AlgorithmRepository: " + repositoryClassName + ". Reason " + e.getMessage());
-			} catch (NoSuchMethodException e) {
-				LOGGER.warn("An error occured while registering AlgorithmRepository: " + repositoryClassName + ". Reason " + e.getMessage());
-			}
-		}
+                repositories.add(algorithmRepository);
+                LOGGER.info("Algorithm Repository " + repositoryClassName +
+                            " initialized");
+            } catch (InstantiationException | IllegalAccessException    |
+                     ClassNotFoundException | IllegalArgumentException  |
+                     SecurityException      | InvocationTargetException |
+                     NoSuchMethodException e) {
+                LOGGER.warn("An error occured while registering AlgorithmRepository: " +
+                              repositoryClassName, e);
+            }
+        }
     }
-	
-	public static RepositoryManager getInstance(){
-		if(instance==null){
-			instance = new RepositoryManager();
-		}
-		return instance;
-	}
+
+    public static RepositoryManager getInstance() {
+        if (instance == null) {
+            instance = new RepositoryManager();
+        }
+        return instance;
+    }
 	
 	/**
 	 * Allows to reInitialize the RepositoryManager... This should not be called to often.
@@ -180,7 +151,6 @@ public class RepositoryManager {
 	 *
 	 * @param className
 	 * @return IAlgorithm or null
-	 * @throws Exception
 	 */
 	public IAlgorithm getAlgorithm(String className){
 		for(IAlgorithmRepository repository : repositories){
@@ -222,30 +192,22 @@ public class RepositoryManager {
 		return null;
 	}
 	
-	public Class getInputDataTypeForAlgorithm(String algorithmIdentifier, String inputIdentifier){
-		IAlgorithm algorithm = getAlgorithm(algorithmIdentifier);
-		return algorithm.getInputDataType(inputIdentifier);
+	public Class<?> getInputDataTypeForAlgorithm(String algorithmIdentifier, String inputIdentifier){
+		return getAlgorithm(algorithmIdentifier).getInputDataType(inputIdentifier);
 		
 	}
 	
-	public Class getOutputDataTypeForAlgorithm(String algorithmIdentifier, String inputIdentifier){
-		IAlgorithm algorithm = getAlgorithm(algorithmIdentifier);
-		return algorithm.getOutputDataType(inputIdentifier);
+	public Class<?> getOutputDataTypeForAlgorithm(String algorithmIdentifier, String inputIdentifier){
+		return getAlgorithm(algorithmIdentifier).getOutputDataType(inputIdentifier);
 		
 	}
 	
 	public boolean registerAlgorithm(String id, IAlgorithmRepository repository){
-		if (globalProcessIDs.addID(id)){
-			return true;
-		}
-		else return false;
+		return globalProcessIDs.add(id);
 	}
 	
 	public boolean unregisterAlgorithm(String id){
-		if (globalProcessIDs.removeID(id)){
-			return true;
-		}
-		else return false;
+		return globalProcessIDs.remove(id);
 	}
 	
 	public IAlgorithmRepository getAlgorithmRepository(String name){

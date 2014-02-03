@@ -308,7 +308,8 @@ public class CapabilitiesConfiguration {
         StringBuilder url = new StringBuilder();
         //TODO what if this service runs on HTTPS?
         url.append("http").append("://").append(host);
-        url.append(':').append(port).append('/');
+        url.append(':').append(port);
+        url.append('/');
         if (WebProcessingService.WEBAPP_PATH != null &&
             !WebProcessingService.WEBAPP_PATH.isEmpty()) {
             url.append(WebProcessingService.WEBAPP_PATH).append('/');
@@ -355,17 +356,15 @@ public class CapabilitiesConfiguration {
             sourceConnection.setReadTimeout(5000);
 
             InputStream stream = sourceConnection.getInputStream();
-
-            BufferedReader bufferedReader
-                    = new BufferedReader(new InputStreamReader(stream));
-            StringBuilder stringBuilder = new StringBuilder();
-            String line = null;
-
-            while ((line = bufferedReader.readLine()) != null) {
-                stringBuilder.append(line);
+            StringBuilder stringBuilder;
+            try (BufferedReader bufferedReader
+                    = new BufferedReader(new InputStreamReader(stream))) {
+                stringBuilder = new StringBuilder();
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    stringBuilder.append(line);
+                }
             }
-
-            bufferedReader.close();
             LOG
                     .info("Service running in AWS EC2. Hostname overridden with public DNS IP.");
             return stringBuilder.toString();

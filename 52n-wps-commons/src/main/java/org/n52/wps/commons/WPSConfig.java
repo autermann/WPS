@@ -51,9 +51,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class WPSConfig implements Serializable {
-    /**
-     * 
-     */
     private static final long serialVersionUID = 3198223084611936675L;
     private static transient WPSConfig wpsConfig;
     private static transient WPSConfigurationImpl wpsConfigXMLBeans;
@@ -215,9 +212,7 @@ public class WPSConfig implements Serializable {
      * @return WPSConfig object representing the wps_config.xml from the given path
      */
     public static WPSConfig getInstance(String path) {
-        if (LOGGER.isDebugEnabled())
-            LOGGER.debug("Getting WPSConfig instance... from path: " + path);
-
+        LOGGER.debug("Getting WPSConfig instance... from path: {}", path);
         if (wpsConfig == null) {
             try {
                 wpsConfig = new WPSConfig(path);
@@ -235,15 +230,15 @@ public class WPSConfig implements Serializable {
     }
 
     public static WPSConfig getInstance(ServletConfig config) {
-        if (LOGGER.isDebugEnabled())
-            LOGGER.debug("Getting WPSConfig instance... with ServletConfig: " + config.toString());
+        LOGGER.debug("Getting WPSConfig instance... with ServletConfig: {}", config.toString());
 
         String path = getConfigPath(config);
 
-        if (path == null)
+        if (path == null) {
             path = getConfigPath();
-        else
-            LOGGER.debug("Found config file under " + path);
+        } else {
+            LOGGER.debug("Found config file under {}", path);
+        }
 
         return getInstance(path);
     }
@@ -258,48 +253,33 @@ public class WPSConfig implements Serializable {
      * {@link WPSConfig#forceInitialization(String)} and then getInstance().
      * 
      * @return
-     * @throws IOException
      */
     public static String getConfigPath() {
-        String configPath = tryToGetPathFromClassPath();
-        File file = null;
-        if (configPath != null) {
-            file = new File(configPath);
-            if (file.exists()) {
-                return configPath;
-            }
+        String configPath;
+
+        configPath = tryToGetPathFromClassPath();
+        if (configPath != null && new File(configPath).exists()) {
+            return configPath;
         }
 
         configPath = tryToGetPathFromWebAppTarget();
-        if (configPath != null) {
-            file = new File(configPath);
-            if (configPath != null && file.exists()) {
-                return configPath;
-            }
+        if (configPath != null && new File(configPath).exists()) {
+            return configPath;
         }
 
         configPath = tryToGetPathFromWebAppSource();
-        if (configPath != null) {
-            file = new File(configPath);
-            if (configPath != null && file.exists()) {
-                return configPath;
-            }
+        if (configPath != null && new File(configPath).exists()) {
+            return configPath;
         }
 
         configPath = tryToGetPathViaWebAppPath();
-        if (configPath != null) {
-            file = new File(configPath);
-            if (configPath != null && file.exists()) {
-                return configPath;
-            }
+        if (configPath != null && new File(configPath).exists()) {
+            return configPath;
         }
 
         configPath = tryToGetPathLastResort();
-        if (configPath != null) {
-            file = new File(configPath);
-            if (configPath != null && file.exists()) {
-                return configPath;
-            }
+        if (configPath != null && new File(configPath).exists()) {
+            return configPath;
         }
 
         throw new RuntimeException("Could not find and load wps_config.xml");
@@ -449,14 +429,13 @@ public class WPSConfig implements Serializable {
 
     public Parser[] getActiveRegisteredParser() {
         Parser[] parsers = getRegisteredParser();
-        ArrayList<Parser> activeParsers = new ArrayList<Parser>();
-        for (int i = 0; i < parsers.length; i++) {
-            if (parsers[i].getActive()) {
-                activeParsers.add(parsers[i]);
+        ArrayList<Parser> activeParsers = new ArrayList<>(parsers.length);
+        for (Parser parser : parsers) {
+            if (parser.getActive()) {
+                activeParsers.add(parser);
             }
         }
-        Parser[] parArr = {};
-        return activeParsers.toArray(parArr);
+        return activeParsers.toArray(new Parser[activeParsers.size()]);
     }
 
     public Generator[] getRegisteredGenerator() {
@@ -465,14 +444,13 @@ public class WPSConfig implements Serializable {
 
     public Generator[] getActiveRegisteredGenerator() {
         Generator[] generators = getRegisteredGenerator();
-        ArrayList<Generator> activeGenerators = new ArrayList<Generator>();
-        for (int i = 0; i < generators.length; i++) {
-            if (generators[i].getActive()) {
-                activeGenerators.add(generators[i]);
+        ArrayList<Generator> activeGenerators = new ArrayList<>(generators.length);
+        for (Generator generator : generators) {
+            if (generator.getActive()) {
+                activeGenerators.add(generator);
             }
         }
-        Generator[] genArr = {};
-        return activeGenerators.toArray(genArr);
+        return activeGenerators.toArray(new Generator[activeGenerators.size()]);
     }
 
     public Repository[] getRegisterdAlgorithmRepositories() {
@@ -482,56 +460,51 @@ public class WPSConfig implements Serializable {
 
     public Property[] getPropertiesForGeneratorClass(String className) {
         Generator[] generators = wpsConfigXMLBeans.getDatahandlers().getGeneratorList().getGeneratorArray();
-        for (int i = 0; i < generators.length; i++) {
-            Generator generator = generators[i];
+        for (Generator generator : generators) {
             if (generator.getClassName().equals(className)) {
                 return generator.getPropertyArray();
             }
         }
-        return (Property[]) Array.newInstance(Property.class, 0);
+        return new Property[0];
 
     }
 
     public Format[] getFormatsForGeneratorClass(String className) {
         Generator[] generators = wpsConfigXMLBeans.getDatahandlers().getGeneratorList().getGeneratorArray();
-        for (int i = 0; i < generators.length; i++) {
-            Generator generator = generators[i];
+        for (Generator generator : generators) {
             if (generator.getClassName().equals(className)) {
                 return generator.getFormatArray();
             }
         }
-        return (Format[]) Array.newInstance(Format.class, 0);
+        return new Format[0];
 
     }
 
     public Property[] getPropertiesForParserClass(String className) {
         Parser[] parsers = wpsConfigXMLBeans.getDatahandlers().getParserList().getParserArray();
-        for (int i = 0; i < parsers.length; i++) {
-            Parser parser = parsers[i];
+        for (Parser parser : parsers) {
             if (parser.getClassName().equals(className)) {
                 return parser.getPropertyArray();
             }
         }
-        return (Property[]) Array.newInstance(Property.class, 0);
+        return new Property[0];
 
     }
 
     public Format[] getFormatsForParserClass(String className) {
         Parser[] parsers = wpsConfigXMLBeans.getDatahandlers().getParserList().getParserArray();
-        for (int i = 0; i < parsers.length; i++) {
-            Parser parser = parsers[i];
+        for (Parser parser : parsers) {
             if (parser.getClassName().equals(className)) {
                 return parser.getFormatArray();
             }
         }
-        return (Format[]) Array.newInstance(Format.class, 0);
+        return new Format[0];
 
     }
 
     public boolean isParserActive(String className) {
         Parser[] activeParser = getActiveRegisteredParser();
-        for (int i = 0; i < activeParser.length; i++) {
-            Parser parser = activeParser[i];
+        for (Parser parser : activeParser) {
             if (parser.getClassName().equals(className)) {
                 return parser.getActive();
             }
@@ -541,8 +514,7 @@ public class WPSConfig implements Serializable {
 
     public boolean isGeneratorActive(String className) {
         Generator[] generators = getActiveRegisteredGenerator();
-        for (int i = 0; i < generators.length; i++) {
-            Generator generator = generators[i];
+        for (Generator generator : generators) {
             if (generator.getClassName().equals(className)) {
                 return generator.getActive();
             }
@@ -552,8 +524,7 @@ public class WPSConfig implements Serializable {
 
     public boolean isRepositoryActive(String className) {
         Repository[] repositories = getRegisterdAlgorithmRepositories();
-        for (int i = 0; i < repositories.length; i++) {
-            Repository repository = repositories[i];
+        for (Repository repository : repositories) {
             if (repository.getClassName().equals(className)) {
                 return repository.getActive();
             }
@@ -564,8 +535,7 @@ public class WPSConfig implements Serializable {
 
     public Property[] getPropertiesForRepositoryClass(String className) {
         Repository[] repositories = getRegisterdAlgorithmRepositories();
-        for (int i = 0; i < repositories.length; i++) {
-            Repository repository = repositories[i];
+        for (Repository repository : repositories) {
             if (repository.getClassName().equals(className)) {
                 return repository.getPropertyArray();
             }
