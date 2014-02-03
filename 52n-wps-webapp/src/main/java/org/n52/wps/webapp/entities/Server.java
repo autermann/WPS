@@ -16,25 +16,25 @@ import org.n52.wps.webapp.api.types.StringConfigurationEntry;
  * A {@link ConfigurationModule} implementation. This configuration module is used to configure the server.
  */
 public class Server implements ConfigurationModule {
-
-	private ConfigurationEntry<String> hostnameEntry = new StringConfigurationEntry("hostname", "Server Host Name", "",
+    public static final String MODULE_NAME = "Server Configuration";
+	private final ConfigurationEntry<String> hostnameEntry = new StringConfigurationEntry("hostname", "Server Host Name", "",
 			true, "localhost");
-	private ConfigurationEntry<Integer> hostportEntry = new IntegerConfigurationEntry("hostport", "Server Host Port",
+	private final ConfigurationEntry<Integer> hostportEntry = new IntegerConfigurationEntry("hostport", "Server Host Port",
 			"", true, 8080);
-	private ConfigurationEntry<Boolean> includeDataInputsInResponseEntry = new BooleanConfigurationEntry(
+	private final ConfigurationEntry<Boolean> includeDataInputsInResponseEntry = new BooleanConfigurationEntry(
 			"data_inputs_in_response", "Include Data Inputs", "", true, false);
-	private ConfigurationEntry<Integer> computationTimeoutEntry = new IntegerConfigurationEntry("computation_timeout",
+	private final ConfigurationEntry<Integer> computationTimeoutEntry = new IntegerConfigurationEntry("computation_timeout",
 			"Computation Timeout", "In milli seconds", true, 5);
-	private ConfigurationEntry<Boolean> cacheCapabilitesEntry = new BooleanConfigurationEntry("cache_capabilites",
+	private final ConfigurationEntry<Boolean> cacheCapabilitesEntry = new BooleanConfigurationEntry("cache_capabilites",
 			"Cache Capabilities", "", true, false);
-	private ConfigurationEntry<String> weppappPathEntry = new StringConfigurationEntry("weppapp_path", "Webapp Path",
+	private final ConfigurationEntry<String> weppappPathEntry = new StringConfigurationEntry("weppapp_path", "Webapp Path",
 			"", true, "wps");
-	private ConfigurationEntry<Integer> repoReloadIntervalEntry = new IntegerConfigurationEntry("repo_reload_interval",
+	private final ConfigurationEntry<Integer> repoReloadIntervalEntry = new IntegerConfigurationEntry("repo_reload_interval",
 			"Repo Reload Interval", "(In hours. 0 = No Auto Reload)", true, 0);
-	private ConfigurationEntry<Boolean> responseURLFilterEnabledEntry = new BooleanConfigurationEntry(
+	private final ConfigurationEntry<Boolean> responseURLFilterEnabledEntry = new BooleanConfigurationEntry(
 			"response_url_filter_enabled", "Response URL Filter Enabled", "", true, false);
 
-	private List<? extends ConfigurationEntry<?>> configurationEntries = Arrays.asList(hostnameEntry, hostportEntry,
+	private final List<? extends ConfigurationEntry<?>> configurationEntries = Arrays.asList(hostnameEntry, hostportEntry,
 			computationTimeoutEntry, weppappPathEntry, repoReloadIntervalEntry, includeDataInputsInResponseEntry,
 			cacheCapabilitesEntry, responseURLFilterEnabledEntry);
 
@@ -49,8 +49,9 @@ public class Server implements ConfigurationModule {
 
 	@Override
 	public String getModuleName() {
-		return "Server Configuration";
+		return MODULE_NAME;
 	}
+
 
 	@Override
 	public boolean isActive() {
@@ -81,7 +82,7 @@ public class Server implements ConfigurationModule {
 		return hostname;
 	}
 
-	@ConfigurationKey(key = "hostname")
+	@ConfigurationKey("hostname")
 	public void setHostname(String hostname) {
 		this.hostname = hostname;
 	}
@@ -90,7 +91,7 @@ public class Server implements ConfigurationModule {
 		return hostport;
 	}
 
-	@ConfigurationKey(key = "hostport")
+	@ConfigurationKey("hostport")
 	public void setHostport(int hostport) {
 		this.hostport = hostport;
 	}
@@ -99,7 +100,7 @@ public class Server implements ConfigurationModule {
 		return includeDataInputsInResponse;
 	}
 
-	@ConfigurationKey(key = "data_inputs_in_response")
+	@ConfigurationKey("data_inputs_in_response")
 	public void setIncludeDataInputsInResponse(boolean includeDataInputsInResponse) {
 		this.includeDataInputsInResponse = includeDataInputsInResponse;
 	}
@@ -108,7 +109,7 @@ public class Server implements ConfigurationModule {
 		return computationTimeout;
 	}
 
-	@ConfigurationKey(key = "computation_timeout")
+	@ConfigurationKey("computation_timeout")
 	public void setComputationTimeout(int computationTimeout) {
 		this.computationTimeout = computationTimeout;
 	}
@@ -117,7 +118,7 @@ public class Server implements ConfigurationModule {
 		return cacheCapabilites;
 	}
 
-	@ConfigurationKey(key = "cache_capabilites")
+	@ConfigurationKey("cache_capabilites")
 	public void setCacheCapabilites(boolean cacheCapabilites) {
 		this.cacheCapabilites = cacheCapabilites;
 	}
@@ -126,7 +127,7 @@ public class Server implements ConfigurationModule {
 		return webappPath;
 	}
 
-	@ConfigurationKey(key = "weppapp_path")
+	@ConfigurationKey("weppapp_path")
 	public void setWebappPath(String webappPath) {
 		this.webappPath = webappPath;
 	}
@@ -135,7 +136,7 @@ public class Server implements ConfigurationModule {
 		return repoReloadInterval;
 	}
 
-	@ConfigurationKey(key = "repo_reload_interval")
+	@ConfigurationKey("repo_reload_interval")
 	public void setRepoReloadInterval(int repoReloadInterval) {
 		this.repoReloadInterval = repoReloadInterval;
 	}
@@ -144,7 +145,7 @@ public class Server implements ConfigurationModule {
 		return responseURLFilterEnabled;
 	}
 
-	@ConfigurationKey(key = "response_url_filter_enabled")
+	@ConfigurationKey("response_url_filter_enabled")
 	public void setResponseURLFilterEnabled(boolean responseURLFilterEnabled) {
 		this.responseURLFilterEnabled = responseURLFilterEnabled;
 	}

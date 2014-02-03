@@ -49,8 +49,6 @@ import net.opengis.wps.x100.ProcessDescriptionType;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.n52.wps.commons.XMLUtil;
 import org.n52.wps.io.BasicXMLTypeFactory;
 import org.n52.wps.io.IOHandler;
@@ -75,6 +73,8 @@ import org.n52.wps.server.handler.DataInputInterceptors.DataInputInterceptorImpl
 import org.n52.wps.server.handler.DataInputInterceptors.InterceptorInstance;
 import org.n52.wps.server.request.strategy.ReferenceInputStream;
 import org.n52.wps.server.request.strategy.ReferenceStrategyRegister;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 
 /**
@@ -1209,7 +1209,7 @@ public class InputHandler {
 				inputData.put(inputID, list);
 			}
 			else {
-				List<IData> list = new ArrayList<IData>();
+				List<IData> list = new ArrayList<IData>(1);
 				list.add(parsedInputData);
 				inputData.put(inputID, list);
 			}

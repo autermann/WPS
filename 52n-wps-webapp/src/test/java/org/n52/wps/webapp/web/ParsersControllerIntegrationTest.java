@@ -17,26 +17,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
-import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 public class ParsersControllerIntegrationTest extends AbstractIntegrationTest {
 
-	private MockMvc mockMvc;
+	private MockMvc mock;
 
 	@Autowired
 	private TestConfigurationModule3 module;
 
 	@Before
 	public void setup() {
-		mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
+		mock = MockMvcBuilders.webAppContextSetup(this.wac).build();
 	}
 
 	@Test
 	public void displayParsers() throws Exception {
 		RequestBuilder builder = get("/parsers").accept(MediaType.TEXT_HTML);
-		ResultActions result = this.mockMvc.perform(builder);
-		result.andExpect(status().isOk()).andExpect(view().name("parsers"))
+		this.mock.perform(builder)
+                .andExpect(status().isOk())
+                .andExpect(view().name("parsers"))
 				.andExpect(model().attributeExists("configurations"));
 	}
 
@@ -44,8 +44,7 @@ public class ParsersControllerIntegrationTest extends AbstractIntegrationTest {
 	public void processPost_success() throws Exception {
 		RequestBuilder request = post("/parsers").param("key", "test.string.key")
 				.param("value", "new posted value").param("module", module.getClass().getName());
-		ResultActions result = this.mockMvc.perform(request);
-		result.andExpect(status().isOk());
+		this.mock.perform(request).andExpect(status().isOk());
 		assertEquals("new posted value", module.getStringMember());
 		assertEquals("new posted value", module.getConfigurationEntries().get(0).getValue());
 	}
@@ -54,16 +53,14 @@ public class ParsersControllerIntegrationTest extends AbstractIntegrationTest {
 	public void processPost_failure() throws Exception {
 		RequestBuilder request = post("/parsers").param("key", "test.integer.key")
 				.param("value", "invalid integer").param("module", module.getClass().getName());
-		ResultActions result = this.mockMvc.perform(request);
-		result.andExpect(status().isBadRequest());
+		this.mock.perform(request).andExpect(status().isBadRequest());
 	}
 
 	@Test
 	public void toggleModuleStatus() throws Exception {
 		assertTrue(module.isActive());
 		RequestBuilder request = post("/parsers/activate/{moduleClassName}/false", module.getClass().getName());
-		ResultActions result = this.mockMvc.perform(request);
-		result.andExpect(status().isOk());
+		this.mock.perform(request).andExpect(status().isOk());
 		assertFalse(module.isActive());
 	}
 }

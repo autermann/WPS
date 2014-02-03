@@ -24,13 +24,14 @@
 package org.n52.wps.webapp.entities;
 
 import java.util.SortedMap;
-import java.util.TreeMap;
 
 import javax.validation.constraints.Digits;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 import org.hibernate.validator.constraints.NotBlank;
+
+import com.google.common.collect.Maps;
 
 /**
  * Holds parsed log configuration values.
@@ -53,7 +54,7 @@ public class LogConfigurations {
 	@NotBlank(message = "Console encoder pattern cannot be empty.")
 	private String wpsconsoleEncoderPattern;
 
-	private SortedMap<String, String> loggers = new TreeMap<String, String>();
+	private SortedMap<String, String> loggers = Maps.newTreeMap();
 	private String rootLevel;
 	private boolean fileAppenderEnabled;
 	private boolean consoleAppenderEnabled;

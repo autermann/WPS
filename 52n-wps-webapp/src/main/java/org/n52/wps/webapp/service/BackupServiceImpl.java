@@ -43,15 +43,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
+
+import com.google.common.annotations.VisibleForTesting;
 /**
  * The implementation for the {@link BackupService} interface.
  */
 @Service("backupService")
 public class BackupServiceImpl implements BackupService {
-	public final static String RESOURCES_FOLDER = "resources";
-	public final static String DATABASE_FOLDER = "WEB-INF/classes/db/data";
-	public final static String LOG = "WEB-INF/classes/logback.xml";
-	public final static String WPS_CAPABILITIES_SKELETON = "config/wpsCapabilitiesSkeleton.xml";
+	@VisibleForTesting
+    static final String RESOURCES_FOLDER = "resources";
+    @VisibleForTesting
+	static final String DATABASE_FOLDER = "WEB-INF/classes/db/data";
+    @VisibleForTesting
+	static final String LOG = "WEB-INF/classes/logback.xml";
+    @VisibleForTesting
+	static final String WPS_CAPABILITIES_SKELETON = "config/wpsCapabilitiesSkeleton.xml";
 
 	@Autowired
 	private ResourcePathUtil resourcePathUtil;
@@ -69,26 +75,26 @@ public class BackupServiceImpl implements BackupService {
 			// Zip archive will be saved as WPSConfig_{date}.zip (e.g. WPSConfig_2013-09-12.zip)
 			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
 			zipPath = getResourcesFolderPath() + File.separator + "WPSBackup_" + format.format(new Date()) + ".zip";
-			ZipOutputStream zipOutput = new ZipOutputStream(new FileOutputStream(zipPath));
+            try (ZipOutputStream zipOutput
+                    = new ZipOutputStream(new FileOutputStream(zipPath))) {
+                String logAbsolutePath = getLogFilePath();
+                String wpsCapabilitiesSkeletonAbsolutePath = getCapabilitiesPath();
 
-			String logAbsolutePath = getLogFilePath();
-			String wpsCapabilitiesSkeletonAbsolutePath = getCapabilitiesPath();
-
-			for (String s : itemsToBackup) {
-				if (s.equals("database")) {
-					LOGGER.debug("Trying to backup the database.");
-					backupDatabase(zipOutput);
-				}
-				if (s.equals("log")) {
-					LOGGER.debug("Trying to backup '{}'.", logAbsolutePath);
-					writeToZip(new File(logAbsolutePath), zipOutput);
-				}
-				if (s.equals("wpscapabilities")) {
-					LOGGER.debug("Trying to backup '{}'.", wpsCapabilitiesSkeletonAbsolutePath);
-					writeToZip(new File(wpsCapabilitiesSkeletonAbsolutePath), zipOutput);
-				}
-			}
-			zipOutput.close();
+                for (String s : itemsToBackup) {
+                    if (s.equals("database")) {
+                        LOGGER.debug("Trying to backup the database.");
+                        backupDatabase(zipOutput);
+                    }
+                    if (s.equals("log")) {
+                        LOGGER.debug("Trying to backup '{}'.", logAbsolutePath);
+                        writeToZip(new File(logAbsolutePath), zipOutput);
+                    }
+                    if (s.equals("wpscapabilities")) {
+                        LOGGER.debug("Trying to backup '{}'.", wpsCapabilitiesSkeletonAbsolutePath);
+                        writeToZip(new File(wpsCapabilitiesSkeletonAbsolutePath), zipOutput);
+                    }
+                }
+            }
 			LOGGER.debug("Backup file '{}' is created.", zipPath);
 		}
 		return zipPath;
@@ -99,27 +105,27 @@ public class BackupServiceImpl implements BackupService {
 		LOGGER.debug("Starting restore process.");
 		int numberOfItemsRestored = 0;
 		if (zipFile != null) {
-			ZipInputStream zipInput = new ZipInputStream(zipFile);
-			ZipEntry entry = null;
-			while ((entry = zipInput.getNextEntry()) != null) {
-				if (entry.getName().endsWith(".tar.gz")) {
-					LOGGER.debug("Trying to restore the database from '{}'.", entry.getName());
-					extractToFile(new File(getResourcesFolderPath() + "/" + entry.getName()), zipInput);
-					restoreDatabase(entry.getName());
-					numberOfItemsRestored++;
-				}
-				if (entry.getName().endsWith("logback.xml")) {
-					LOGGER.debug("Trying to restore '{}'.", entry.getName());
-					extractToFile(new File(getLogFilePath()), zipInput);
-					numberOfItemsRestored++;
-				}
-				if (entry.getName().endsWith("wpsCapabilitiesSkeleton.xml")) {
-					LOGGER.debug("Trying to restore '{}'.", entry.getName());
-					extractToFile(new File(getCapabilitiesPath()), zipInput);
-					numberOfItemsRestored++;
-				}
-			}
-			zipInput.close();
+            try (ZipInputStream zipInput = new ZipInputStream(zipFile)) {
+                ZipEntry entry;
+                while ((entry = zipInput.getNextEntry()) != null) {
+                    if (entry.getName().endsWith(".tar.gz")) {
+                        LOGGER.debug("Trying to restore the database from '{}'.", entry.getName());
+                        extractToFile(new File(getResourcesFolderPath() + "/" + entry.getName()), zipInput);
+                        restoreDatabase(entry.getName());
+                        numberOfItemsRestored++;
+                    }
+                    if (entry.getName().endsWith("logback.xml")) {
+                        LOGGER.debug("Trying to restore '{}'.", entry.getName());
+                        extractToFile(new File(getLogFilePath()), zipInput);
+                        numberOfItemsRestored++;
+                    }
+                    if (entry.getName().endsWith("wpsCapabilitiesSkeleton.xml")) {
+                        LOGGER.debug("Trying to restore '{}'.", entry.getName());
+                        extractToFile(new File(getCapabilitiesPath()), zipInput);
+                        numberOfItemsRestored++;
+                    }
+                }
+            }
 
 			// if no items were found, the Zip archive is not a valid WPSBackup
 			if (numberOfItemsRestored < 1) {
@@ -169,19 +175,17 @@ public class BackupServiceImpl implements BackupService {
 	}
 
 	private void writeToZip(File file, ZipOutputStream zipOutput) throws IOException {
-		FileInputStream input = null;
 		if (file.exists()) {
-			input = new FileInputStream(file);
-			zipOutput.putNextEntry(new ZipEntry(file.getName()));
+            try (FileInputStream input = new FileInputStream(file)) {
+                zipOutput.putNextEntry(new ZipEntry(file.getName()));
 
-			// write to Zip
-			byte[] buffer = new byte[1024];
-			int bytesRead;
-			while ((bytesRead = input.read(buffer)) > 0) {
-				zipOutput.write(buffer, 0, bytesRead);
-			}
-
-			input.close();
+                // write to Zip
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = input.read(buffer)) > 0) {
+                    zipOutput.write(buffer, 0, bytesRead);
+                }
+            }
 		}
 		zipOutput.closeEntry();
 	}
@@ -190,16 +194,15 @@ public class BackupServiceImpl implements BackupService {
 		if (!file.exists()) {
 			file.createNewFile();
 		}
-		FileOutputStream output = new FileOutputStream(file);
-
-		// write to file
-		LOGGER.debug("Writing '{}'.", file.getName());
-		byte[] buffer = new byte[1024];
-		int bytesRead;
-		while ((bytesRead = zipInput.read(buffer)) > 0) {
-			output.write(buffer, 0, bytesRead);
-		}
-		output.close();
+        try (FileOutputStream output = new FileOutputStream(file)) {
+            // write to file
+            LOGGER.debug("Writing '{}'.", file.getName());
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = zipInput.read(buffer)) > 0) {
+                output.write(buffer, 0, bytesRead);
+            }
+        }
 		zipInput.closeEntry();
 	}
 

@@ -54,6 +54,8 @@ import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.google.common.primitives.Primitives;
+
 /**
  * An implementation for the {@link ConfigurationService} interface. This implementation initialize and sync the
  * configurations, register configuration modules with Spring, and pass configuration entries values to configuration
@@ -66,6 +68,8 @@ import org.springframework.stereotype.Service;
 @Service("configurationService")
 public class ConfigurationServiceImpl implements ConfigurationService {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationServiceImpl.class);
+
 	@Autowired
 	private ListableBeanFactory listableBeanFactory;
 
@@ -74,8 +78,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 	@Autowired
 	private ValueParser valueParser;
-
-	private static Logger LOGGER = LoggerFactory.getLogger(ConfigurationServiceImpl.class);
 
 	private Map<String, ConfigurationModule> allConfigurationModules;
 
@@ -309,48 +311,40 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	 * Loop through a module configuration entries and pass the values to setter methods annotated with the entry's key
 	 */
 	private void passConfigurationModuleValuesToMembers(ConfigurationModule module) {
-		if (module.getConfigurationEntries() != null) {
-			for (ConfigurationEntry<?> entry : module.getConfigurationEntries()) {
-				for (Method method : module.getClass().getMethods()) {
-					if (method.isAnnotationPresent(ConfigurationKey.class)) {
-						ConfigurationKey configurationKey = method.getAnnotation(ConfigurationKey.class);
-						if (configurationKey.key().equals(entry.getKey())) {
-							Class<?>[] clazz = method.getParameterTypes();
-							try {
-								if (method.getParameterTypes().length != 1) {
-									throw new WPSConfigurationException(
-											"The method has the wrong number of parameters, it must be 1.");
-								}
+		if (module.getConfigurationEntries() == null) {
+            return;
+        }
+        for (ConfigurationEntry<?> entry : module.getConfigurationEntries()) {
+            for (Method method : module.getClass().getMethods()) {
+                if (!method.isAnnotationPresent(ConfigurationKey.class)) {
+                    continue;
+                }
+                ConfigurationKey configurationKey = method.getAnnotation(ConfigurationKey.class);
+                if (!configurationKey.value().equals(entry.getKey())) {
+                    continue;
+                }
+             try {
+                
+                    if (method.getParameterTypes().length != 1) {
+                        throw new WPSConfigurationException(
+                                "The method has the wrong number of parameters, it must be 1.");
+                    }
+                    Class<?> valueType = Primitives.wrap(method.getParameterTypes()[0]);
+                    Object value = getConfigurationEntryValue(module, entry, valueType);
 
-								if (clazz[0].isPrimitive()) {
-									if (clazz[0].toString().equals("int")) {
-										clazz[0] = Integer.class;
-									}
-									if (clazz[0].toString().equals("double")) {
-										clazz[0] = Double.class;
-									}
-									if (clazz[0].toString().equals("boolean")) {
-										clazz[0] = Boolean.class;
-									}
-								}
-
-								Object value = getConfigurationEntryValue(module, entry, clazz[0]);
-								if (value != null) {
-									method.invoke(module, value);
-									LOGGER.debug("Value '{}' passed to method '{}' in module '{}'.", value.toString(),
-											method.getName(), module.getClass().getName());
-								}
-
-							} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
-									| WPSConfigurationException e) {
-								LOGGER.error("Cannot pass value to method '{}' in module '{}' for entry '{}': ",
-										method.getName(), module.getClass().getName(), configurationKey.key(), e);
-							}
-						}
-					}
-				}
-			}
-		}
+                    if (value != null) {
+                        method.invoke(module, value);
+                        LOGGER.debug("Value '{}' passed to method '{}' in module '{}'.",
+                                     value.toString(), method.getName(), module.getClass().getName());
+                    }
+                } catch (IllegalAccessException | IllegalArgumentException |
+                        InvocationTargetException | WPSConfigurationException e) {
+                    LOGGER.error("Cannot pass value to method '{}' in module '{}' for entry '{}': ",
+                                 method.getName(), module.getClass().getName(),
+                                 configurationKey.value(), e);
+                }
+            }
+        }
 	}
 
 	/*

@@ -26,6 +26,7 @@ package org.n52.wps.server;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
+
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -36,6 +37,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
+
 import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.ServerDocument.Server;
 import org.n52.wps.commons.WPSConfig;
@@ -153,8 +155,8 @@ public class ResponseURLFilter implements Filter {
 
         private final ServletOutputStream outputStream;
 
-        private ByteBuffer find;
-        private ByteBuffer replace;
+        private final ByteBuffer find;
+        private final ByteBuffer replace;
         private boolean match;
 
         public ServletOutputStreamWrapper(ServletOutputStream outputStream, String find, String replace) {

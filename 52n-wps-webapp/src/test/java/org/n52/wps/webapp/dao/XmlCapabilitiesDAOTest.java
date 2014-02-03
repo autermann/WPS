@@ -56,7 +56,7 @@ public class XmlCapabilitiesDAOTest {
 	private ResourcePathUtil resourcePathUtil;
 
 	@Rule
-	public ExpectedException exception = ExpectedException.none();
+	public final ExpectedException exception = ExpectedException.none();
 
 	@Before
 	public void setup() throws Exception {
@@ -91,16 +91,13 @@ public class XmlCapabilitiesDAOTest {
 		serviceIdentification.setServiceAbstract("New Test Abstract");
 		capabilitiesDAO.saveServiceIdentification(serviceIdentification);
 		Element root = testDoc.getRootElement();
-		Element serviceIdentificationElement = root.getChild("ServiceIdentification",
-				Namespace.getNamespace("ows", XmlCapabilitiesDAO.NAMESPACE));
+		Element serviceIdentificationElement = root.getChild("ServiceIdentification", XmlCapabilitiesDAO.NS_OWS);
 		assertEquals(
 				"New Test Title",
-				serviceIdentificationElement.getChildText("Title",
-						Namespace.getNamespace("ows", XmlCapabilitiesDAO.NAMESPACE)));
+				serviceIdentificationElement.getChildText("Title", XmlCapabilitiesDAO.NS_OWS));
 		assertEquals(
 				"New Test Abstract",
-				serviceIdentificationElement.getChildText("Abstract",
-						Namespace.getNamespace("ows", XmlCapabilitiesDAO.NAMESPACE)));
+				serviceIdentificationElement.getChildText("Abstract",XmlCapabilitiesDAO.NS_OWS));
 		verify(jDomUtil).write(testDoc, "mocked_wpsCapabilitiesSkeleton_xml_absolute_path");
 	}
 	
@@ -137,16 +134,13 @@ public class XmlCapabilitiesDAOTest {
 		serviceProvider.setProviderSite("www.test.com");
 		capabilitiesDAO.saveServiceProvider(serviceProvider);
 		Element root = testDoc.getRootElement();
-		Element serviceProviderElement = root.getChild("ServiceProvider",
-				Namespace.getNamespace("ows", XmlCapabilitiesDAO.NAMESPACE));
-		Element providerSite = serviceProviderElement.getChild("ProviderSite",
-				Namespace.getNamespace("ows", XmlCapabilitiesDAO.NAMESPACE));
+		Element serviceProviderElement = root.getChild("ServiceProvider", XmlCapabilitiesDAO.NS_OWS);
+		Element providerSite = serviceProviderElement.getChild("ProviderSite", XmlCapabilitiesDAO.NS_OWS);
 		assertEquals(
 				"Test Provider Name",
-				serviceProviderElement.getChildText("ProviderName",
-						Namespace.getNamespace("ows", XmlCapabilitiesDAO.NAMESPACE)));
+				serviceProviderElement.getChildText("ProviderName", XmlCapabilitiesDAO.NS_OWS));
 		assertEquals("www.test.com",
-				providerSite.getAttributeValue("href", Namespace.getNamespace("xlink", "http://www.w3.org/1999/xlink")));
+				providerSite.getAttributeValue("href", XmlCapabilitiesDAO.NS_XLINK));
 		verify(jDomUtil).write(testDoc, "mocked_wpsCapabilitiesSkeleton_xml_absolute_path");
 	}
 	
@@ -165,11 +159,10 @@ public class XmlCapabilitiesDAOTest {
 		Document document = new Document().setRootElement(new Element("Capabilities", Namespace.getNamespace("wps",
 				"http://www.opengis.net/wps/1.0.0")));
 		Element root = document.getRootElement();
-		Element serviceIdentification = new Element("ServiceIdentification", Namespace.getNamespace("ows",
-				XmlCapabilitiesDAO.NAMESPACE));
-		Element title = new Element("Title", Namespace.getNamespace("ows", XmlCapabilitiesDAO.NAMESPACE))
+		Element serviceIdentification = new Element("ServiceIdentification", XmlCapabilitiesDAO.NS_OWS);
+		Element title = new Element("Title", XmlCapabilitiesDAO.NS_OWS)
 				.setText("Created Doc Title");
-		Element serviceAbstract = new Element("Abstract", Namespace.getNamespace("ows", XmlCapabilitiesDAO.NAMESPACE))
+		Element serviceAbstract = new Element("Abstract", XmlCapabilitiesDAO.NS_OWS)
 				.setText("Created Doc Abstract");
 		serviceIdentification.addContent(title);
 		serviceIdentification.addContent(serviceAbstract);
@@ -181,13 +174,11 @@ public class XmlCapabilitiesDAOTest {
 		Document document = new Document().setRootElement(new Element("Capabilities", Namespace.getNamespace("wps",
 				"http://www.opengis.net/wps/1.0.0")));
 		Element root = document.getRootElement();
-		Element serviceProvider = new Element("ServiceProvider", Namespace.getNamespace("ows",
-				XmlCapabilitiesDAO.NAMESPACE));
-		Element providerName = new Element("ProviderName", Namespace.getNamespace("ows", XmlCapabilitiesDAO.NAMESPACE))
+		Element serviceProvider = new Element("ServiceProvider", XmlCapabilitiesDAO.NS_OWS);
+		Element providerName = new Element("ProviderName", XmlCapabilitiesDAO.NS_OWS)
 				.setText("Created Doc Provider Name");
-		Element providerSite = new Element("ProviderSite", Namespace.getNamespace("ows", XmlCapabilitiesDAO.NAMESPACE))
-				.setAttribute("href", "www.createdtestlink.com",
-						Namespace.getNamespace("xlink", "http://www.w3.org/1999/xlink"));
+		Element providerSite = new Element("ProviderSite", XmlCapabilitiesDAO.NS_OWS)
+				.setAttribute("href", "www.createdtestlink.com", XmlCapabilitiesDAO.NS_XLINK);
 		serviceProvider.addContent(providerName);
 		serviceProvider.addContent(providerSite);
 		root.addContent(serviceProvider);

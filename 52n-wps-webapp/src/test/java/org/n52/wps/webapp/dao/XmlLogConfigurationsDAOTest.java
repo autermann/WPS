@@ -59,7 +59,7 @@ public class XmlLogConfigurationsDAOTest {
 	private JDomUtil jDomUtil;
 
 	@Rule
-	public ExpectedException exception = ExpectedException.none();
+	public final ExpectedException exception = ExpectedException.none();
 
 	private Document originalTestLogDocument;
 	private String testLogDocumentPath;

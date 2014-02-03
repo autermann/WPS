@@ -87,7 +87,7 @@ public class TestConfigurationModule2 implements ConfigurationModule {
 		return stringMember;
 	}
 
-	@ConfigurationKey(key = "test.string.key")
+	@ConfigurationKey(value = "test.string.key")
 	public void setStringMember(String stringMember) {
 		this.stringMember = stringMember;
 	}
@@ -96,7 +96,7 @@ public class TestConfigurationModule2 implements ConfigurationModule {
 		return intMember;
 	}
 
-	@ConfigurationKey(key = "test.integer.key")
+	@ConfigurationKey(value = "test.integer.key")
 	public void setIntMember(int intMember) {
 		this.intMember = intMember;
 	}
@@ -105,7 +105,7 @@ public class TestConfigurationModule2 implements ConfigurationModule {
 		return doubleMember;
 	}
 
-	@ConfigurationKey(key = "test.double.key")
+	@ConfigurationKey(value = "test.double.key")
 	public void setDoubleMember(double doubleMember) {
 		this.doubleMember = doubleMember;
 	}
@@ -114,7 +114,7 @@ public class TestConfigurationModule2 implements ConfigurationModule {
 		return booleanMember;
 	}
 
-	@ConfigurationKey(key = "test.boolean.key")
+	@ConfigurationKey(value = "test.boolean.key")
 	public void setBooleanMemver(boolean booleanMember) {
 		this.booleanMember = booleanMember;
 	}
@@ -123,7 +123,7 @@ public class TestConfigurationModule2 implements ConfigurationModule {
 		return fileMember;
 	}
 
-	@ConfigurationKey(key = "test.file.key")
+	@ConfigurationKey(value = "test.file.key")
 	public void setFileMember(File fileMember) {
 		this.fileMember = fileMember;
 	}
@@ -132,17 +132,17 @@ public class TestConfigurationModule2 implements ConfigurationModule {
 		return uriMember;
 	}
 
-	@ConfigurationKey(key = "test.uri.key")
+	@ConfigurationKey(value = "test.uri.key")
 	public void setUriMember(URI uriMember) {
 		this.uriMember = uriMember;
 	}
 
-	@ConfigurationKey(key = "test.string.key2")
+	@ConfigurationKey(value = "test.string.key2")
 	public void setIntInvalidMember(int intInvalidMember) {
 		this.intInvalidMember = intInvalidMember;
 	}
 
-	@ConfigurationKey(key = "test.integer.key2")
+	@ConfigurationKey(value = "test.integer.key2")
 	public void setIntInvalidMember(int intInvalidMember, int secondParameter) {
 		this.intInvalidMember = intInvalidMember;
 	}

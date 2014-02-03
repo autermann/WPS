@@ -41,10 +41,10 @@ import org.springframework.web.context.support.ServletContextResource;
 @Component
 public class ResourcePathUtil {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(ResourcePathUtil.class);
+
 	@Autowired
 	private ServletContext servletContext;
-
-	private static Logger LOGGER = LoggerFactory.getLogger(ResourcePathUtil.class);
 
 	/**
 	 * Returns the absolute path for web app resources and directories.

@@ -43,7 +43,7 @@ public interface CapabilitiesDAO {
 	/**
 	 * Write {@code ServiceIdentification} values to wpsCapabilitiesSkeleton.xml
 	 * 
-	 * @param {@code ServiceIdentification}
+	 * @param serviceIdentification the {@code ServiceIdentification}
 	 */
 	void saveServiceIdentification(ServiceIdentification serviceIdentification);
 
@@ -57,7 +57,7 @@ public interface CapabilitiesDAO {
 	/**
 	 * Write {@code ServiceProvider} values to wpsCapabilitiesSkeleton.xml
 	 * 
-	 * @param {@code ServiceProvider}
+	 * @param serviceProvider the {@code ServiceProvider}
 	 */
 	void saveServiceProvider(ServiceProvider serviceProvider);
 }
