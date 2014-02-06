@@ -24,10 +24,13 @@
 package org.n52.wps.server;
 
 import java.util.HashMap;
-import org.n52.test.mock.MockUtil;
-import junit.framework.TestCase;
+
 import net.opengis.wps.x100.ProcessDescriptionType;
+
 import org.apache.xmlbeans.XmlOptions;
+import org.n52.test.mock.MockUtil;
+
+import junit.framework.TestCase;
 
 /**
  *
@@ -86,7 +89,7 @@ public class AbstractSelfDescribingAlgorithmTest extends TestCase {
         XmlOptions options = new XmlOptions();
         options.setSavePrettyPrint();
         options.setSaveOuter();
-        HashMap ns = new HashMap();
+        HashMap<String,String> ns = new HashMap<>(2);
         ns.put("http://www.opengis.net/wps/1.0.0", "wps");
         ns.put("http://www.opengis.net/ows/1.1", "ows");
         options.setSaveNamespacesFirst().

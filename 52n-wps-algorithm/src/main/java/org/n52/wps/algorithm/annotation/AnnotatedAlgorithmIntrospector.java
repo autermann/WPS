@@ -29,106 +29,77 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.n52.wps.algorithm.annotation.AnnotationBinding.InputBinding;
-import org.n52.wps.algorithm.annotation.AnnotationBinding.OutputBinding;
-import org.n52.wps.algorithm.annotation.AnnotationBinding.ExecuteMethodBinding;
-import org.n52.wps.algorithm.annotation.AnnotationParser.ComplexDataInputFieldAnnotationParser;
-import org.n52.wps.algorithm.annotation.AnnotationParser.ComplexDataInputMethodAnnotationParser;
-import org.n52.wps.algorithm.annotation.AnnotationParser.ComplexDataOutputFieldAnnotationParser;
-import org.n52.wps.algorithm.annotation.AnnotationParser.ComplexDataOutputMethodAnnotationParser;
-import org.n52.wps.algorithm.annotation.AnnotationParser.InputAnnotationParser;
-import org.n52.wps.algorithm.annotation.AnnotationParser.LiteralDataInputFieldAnnotationParser;
-import org.n52.wps.algorithm.annotation.AnnotationParser.LiteralDataInputMethodAnnotationParser;
-import org.n52.wps.algorithm.annotation.AnnotationParser.LiteralDataOutputFieldAnnotationParser;
-import org.n52.wps.algorithm.annotation.AnnotationParser.LiteralDataOutputMethodAnnotationParser;
-import org.n52.wps.algorithm.annotation.AnnotationParser.OutputAnnotationParser;
-import org.n52.wps.algorithm.annotation.AnnotationParser.ExecuteAnnotationParser;
+
+import org.n52.wps.algorithm.annotation.binding.ExecuteMethodBinding;
+import org.n52.wps.algorithm.annotation.binding.InputBinding;
+import org.n52.wps.algorithm.annotation.binding.OutputBinding;
+import org.n52.wps.algorithm.annotation.parser.ComplexDataInputAnnotationParser;
+import org.n52.wps.algorithm.annotation.parser.ComplexDataOutputAnnotationParser;
+import org.n52.wps.algorithm.annotation.parser.ExecuteAnnotationParser;
+import org.n52.wps.algorithm.annotation.parser.InputAnnotationParser;
+import org.n52.wps.algorithm.annotation.parser.LiteralDataInputAnnotationParser;
+import org.n52.wps.algorithm.annotation.parser.LiteralDataOutputAnnotationParser;
+import org.n52.wps.algorithm.annotation.parser.OutputAnnotationParser;
 import org.n52.wps.algorithm.descriptor.AlgorithmDescriptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.n52.wps.algorithm.descriptor.AlgorithmDescriptorBuilder;
+
+import com.google.common.collect.ImmutableList;
 
 /**
  *
  * @author tkunicki
  */
 public class AnnotatedAlgorithmIntrospector {
-   
-    private final static Logger LOGGER = LoggerFactory.getLogger(AnnotatedAlgorithmIntrospector.class);
+
+    private final static List<InputAnnotationParser<?, Field, InputBinding<Field>>> INPUT_FIELD_PARSERS
+            = ImmutableList.of(LiteralDataInputAnnotationParser.FIELD,
+                               ComplexDataInputAnnotationParser.FIELD);
+    private final static List<InputAnnotationParser<?, Method, InputBinding<Method>>> INPUT_METHOD_PARSERS
+            = ImmutableList.of(LiteralDataInputAnnotationParser.METHOD,
+                               ComplexDataInputAnnotationParser.METHOD);
+    private final static List<OutputAnnotationParser<?, Field, OutputBinding<Field>>> OUTPUT_FIELD_PARSERS
+            = ImmutableList.of(LiteralDataOutputAnnotationParser.FIELD,
+                               ComplexDataOutputAnnotationParser.FIELD);
+    private final static List<OutputAnnotationParser<?, Method, OutputBinding<Method>>> OUTPUT_METHOD_PARSERS
+            = ImmutableList.of(LiteralDataOutputAnnotationParser.METHOD,
+                               ComplexDataOutputAnnotationParser.METHOD);
+    private final static ExecuteAnnotationParser PROCESS_PARSER = new ExecuteAnnotationParser();
+
+    private final static Map<Class<?>, AnnotatedAlgorithmIntrospector> INTROSPECTOR_MAP = new HashMap<>();
     
-    private final static List<InputAnnotationParser<?,Field,?>> INPUT_FIELD_PARSERS;
-    private final static List<InputAnnotationParser<?,Method,?>> INPUT_METHOD_PARSERS;
-    private final static List<OutputAnnotationParser<?,Field,?>> OUTPUT_FIELD_PARSERS;
-    private final static List<OutputAnnotationParser<?,Method,?>> OUTPUT_METHOD_PARSERS;
-    private final static ExecuteAnnotationParser PROCESS_PARSER;
-    
-    static {
-        List<InputAnnotationParser<?,Field,?>> inputFieldParsers =
-                new ArrayList<InputAnnotationParser<?,Field,?>>();
-        inputFieldParsers.add(new LiteralDataInputFieldAnnotationParser());
-        inputFieldParsers.add(new ComplexDataInputFieldAnnotationParser());
-        INPUT_FIELD_PARSERS = Collections.unmodifiableList(inputFieldParsers);
-        
-        List<InputAnnotationParser<?,Method,?>> inputMethodParsers = 
-                new ArrayList<InputAnnotationParser<?,Method,?>>();
-        inputMethodParsers.add(new LiteralDataInputMethodAnnotationParser());
-        inputMethodParsers.add(new ComplexDataInputMethodAnnotationParser());
-        INPUT_METHOD_PARSERS = Collections.unmodifiableList(inputMethodParsers);
-        
-        List<OutputAnnotationParser<?,Field,?>> outputFieldParsers = 
-                new ArrayList<OutputAnnotationParser<?,Field,?>>();
-        outputFieldParsers.add(new LiteralDataOutputFieldAnnotationParser());
-        outputFieldParsers.add(new ComplexDataOutputFieldAnnotationParser());
-        OUTPUT_FIELD_PARSERS = Collections.unmodifiableList(outputFieldParsers);
-        
-        List<OutputAnnotationParser<?,Method,?>> outputMethodParsers =
-                new ArrayList<OutputAnnotationParser<?,Method,?>>();
-        outputMethodParsers.add(new LiteralDataOutputMethodAnnotationParser());
-        outputMethodParsers.add(new ComplexDataOutputMethodAnnotationParser());
-        OUTPUT_METHOD_PARSERS = Collections.unmodifiableList(outputMethodParsers);
-        
-        PROCESS_PARSER = new ExecuteAnnotationParser();
-    }
-    
-    private final static Map<Class<?>, AnnotatedAlgorithmIntrospector> INTROSPECTOR_MAP =
-            new HashMap<Class<?>, AnnotatedAlgorithmIntrospector>();
     public static synchronized AnnotatedAlgorithmIntrospector getInstrospector(Class<?> algorithmClass) {
         AnnotatedAlgorithmIntrospector introspector = INTROSPECTOR_MAP.get(algorithmClass);
         if (introspector == null) {
             introspector = new AnnotatedAlgorithmIntrospector(algorithmClass);
             INTROSPECTOR_MAP.put(algorithmClass, introspector);
+            try {
+                introspector.parseClass();
+            } catch (AlgorithmAnnotationException ex) {
+                throw new RuntimeException(ex);
+            }
         }
         return introspector;
     }
     
-    private Class<?> algorithmClass;
-    
+    private final Class<?> algorithmClass;
     private AlgorithmDescriptor algorithmDescriptor;
-    
     private ExecuteMethodBinding executeMethodBinding;
-    private Map<String, AnnotationBinding.InputBinding<?, ?>> inputBindingMap;
-    private Map<String, AnnotationBinding.OutputBinding<?, ?>> outputBindingMap;
+    private Map<String, InputBinding<?>> inputBindingMap;
+    private Map<String, OutputBinding<?>> outputBindingMap;
     
 
     public AnnotatedAlgorithmIntrospector(Class<?> algorithmClass) {
-        
         this.algorithmClass = algorithmClass;
-        
-        inputBindingMap = new LinkedHashMap<String, InputBinding<?, ?>>();
-        outputBindingMap = new LinkedHashMap<String, OutputBinding<?, ?>>();
-        
-        parseClass();
-        
-        inputBindingMap = Collections.unmodifiableMap(inputBindingMap);
-        outputBindingMap = Collections.unmodifiableMap(outputBindingMap);
+        inputBindingMap = new LinkedHashMap<>();
+        outputBindingMap = new LinkedHashMap<>();
     }
 
-    private void parseClass() {
+    private void parseClass() throws AlgorithmAnnotationException {
         
         if (!algorithmClass.isAnnotationPresent(Algorithm.class)) {
             throw new RuntimeException("Class isn't annotated with an Algorithm annotation");
@@ -136,7 +107,7 @@ public class AnnotatedAlgorithmIntrospector {
         
         boolean validContructor = false;
         try {
-            Constructor defaultConstructor = algorithmClass.getConstructor(new Class[0]);
+            Constructor<?> defaultConstructor = algorithmClass.getConstructor();
             validContructor = (defaultConstructor.getModifiers() & Modifier.PUBLIC) == Modifier.PUBLIC;
         } catch (NoSuchMethodException ex) {
             // inherit error message on fall through...
@@ -148,10 +119,8 @@ public class AnnotatedAlgorithmIntrospector {
         }
         
         
-        AlgorithmDescriptor.Builder<?> algorithmBuilder = null;
-        
+        AlgorithmDescriptorBuilder<?> algorithmBuilder;
         Algorithm algorithm = algorithmClass.getAnnotation(Algorithm.class);
-        
         algorithmBuilder = AlgorithmDescriptor.builder(
                 algorithm.identifier().length() > 0 ?
                     algorithm.identifier() :
@@ -164,18 +133,14 @@ public class AnnotatedAlgorithmIntrospector {
                 storeSupported(algorithm.storeSupported()).
                 statusSupported(algorithm.statusSupported());
         
-        parseElements(algorithmClass.getDeclaredMethods(),
-                INPUT_METHOD_PARSERS,
-                OUTPUT_METHOD_PARSERS);
-        parseElements(algorithmClass.getDeclaredFields(),
-                INPUT_FIELD_PARSERS,
-                OUTPUT_FIELD_PARSERS);
+        parseElements(algorithmClass.getDeclaredMethods(), INPUT_METHOD_PARSERS, OUTPUT_METHOD_PARSERS);
+        parseElements(algorithmClass.getDeclaredFields(), INPUT_FIELD_PARSERS, OUTPUT_FIELD_PARSERS);
 
         
         for (Method method : algorithmClass.getDeclaredMethods()) {
             if (method.isAnnotationPresent(PROCESS_PARSER.getSupportedAnnotation())) {
-                ExecuteMethodBinding executeMethodBinding = PROCESS_PARSER.parse(method);
-                if (executeMethodBinding != null) {
+                ExecuteMethodBinding binding = PROCESS_PARSER.parse(method);
+                if (binding != null) {
                     if (this.executeMethodBinding != null) {
                         // we need to error out here because ordering of getDeclaredMethods() or
                         // getMethods() is not guarenteed to be consistent, if it were consistent
@@ -183,15 +148,15 @@ public class AnnotatedAlgorithmIntrospector {
                         // differently betweeen runtimes would be bad...
                         throw new RuntimeException("Multiple execute method bindings encountered for class " + getClass().getCanonicalName());
                     }
-                    this.executeMethodBinding = executeMethodBinding;
+                    this.executeMethodBinding = binding;
                 }
             }
         }
         
-        for (InputBinding<?,?> inputBinding : inputBindingMap.values()) {
+        for (InputBinding<?> inputBinding : inputBindingMap.values()) {
             algorithmBuilder.addInputDescriptor(inputBinding.getDescriptor());
         }
-        for (OutputBinding<?,?> outputBinding : outputBindingMap.values()) {
+        for (OutputBinding<?> outputBinding : outputBindingMap.values()) {
             algorithmBuilder.addOutputDescriptor(outputBinding.getDescriptor());
         }
         algorithmDescriptor = algorithmBuilder.build();
@@ -205,30 +170,30 @@ public class AnnotatedAlgorithmIntrospector {
         return executeMethodBinding;
     }
 
-    public Map<String, AnnotationBinding.InputBinding<?, ?>> getInputBindingMap() {
-        return inputBindingMap;
+    public Map<String, InputBinding<?>> getInputBindingMap() {
+        return Collections.unmodifiableMap(inputBindingMap);
     }
 
-    public Map<String, AnnotationBinding.OutputBinding<?, ?>> getOutputBindingMap() {
-        return outputBindingMap;
+    public Map<String, OutputBinding<?>> getOutputBindingMap() {
+        return Collections.unmodifiableMap(outputBindingMap);
     }
-    
-    public <M extends AccessibleObject & Member> void parseElements(
-        M members[],
-        List<InputAnnotationParser<?,M,?>> inputParser,
-        List<OutputAnnotationParser<?,M,?>> outputParser) {
+
+    public <M extends AccessibleObject & Member> void parseElements(M members[],
+            List<InputAnnotationParser<?, M, InputBinding<M>>> inputParser,
+            List<OutputAnnotationParser<?, M, OutputBinding<M>>> outputParser) 
+            throws AlgorithmAnnotationException {
         for (M member : members) {
-            for (OutputAnnotationParser<?,M,?> parser : outputParser) {
+            for (OutputAnnotationParser<?, M, OutputBinding<M>> parser: outputParser) {
                 if (member.isAnnotationPresent(parser.getSupportedAnnotation())) {
-                    OutputBinding<?,?> binding = parser.parse(member);
+                    OutputBinding<M> binding = parser.parse(member);
                     if (binding != null) {
                         outputBindingMap.put(binding.getDescriptor().getIdentifier(), binding);
                     }
                 }
             }
-            for (InputAnnotationParser<?,M,?> parser : inputParser) {
+            for (InputAnnotationParser<?, M, InputBinding<M>> parser: inputParser) {
                 if (member.isAnnotationPresent(parser.getSupportedAnnotation())) {
-                    InputBinding<?,?> binding = parser.parse(member);
+                    InputBinding<M> binding = parser.parse(member);
                     if (binding != null) {
                         inputBindingMap.put(binding.getDescriptor().getIdentifier(), binding);
                     }

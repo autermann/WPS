@@ -23,33 +23,22 @@
  */
 package org.n52.wps.algorithm.descriptor;
 
-import com.google.common.base.Preconditions;
+import org.n52.wps.io.data.IData;
 
 /**
  *
  * @author tkunicki
  */
-public abstract class BoundDescriptor<T extends Class<?>> extends Descriptor {
+public abstract class BoundDescriptor extends Descriptor {
 
-    private final T binding;
+    private final Class<? extends IData> binding;
 
-	BoundDescriptor(Builder<? extends Builder<?,T>, T> builder) {
+    protected BoundDescriptor(BoundDescriptorBuilder<?> builder) {
         super(builder);
-		this.binding = builder.binding;
+        this.binding = builder.getBinding();
     }
 
-    public T getBinding() {
+    public Class<? extends IData> getBinding() {
         return binding;
-    }
-
-    public static abstract class Builder<B extends Builder<B,T>, T extends Class<?>> extends Descriptor.Builder<B> {
-
-        private final T binding;
-
-        protected Builder(String identifier, T binding) {
-            super(identifier);
-            Preconditions.checkArgument(binding != null, "binding may not be null");
-            this.binding = binding;
-        }
     }
 }

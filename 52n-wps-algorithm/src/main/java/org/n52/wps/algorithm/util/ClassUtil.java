@@ -23,12 +23,10 @@
  */
 package org.n52.wps.algorithm.util;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+
+import com.google.common.primitives.Primitives;
 
 /**
  *
@@ -36,26 +34,8 @@ import java.util.Map;
  */
 public class ClassUtil {
 
-    private final static Map<Class<?>, Class<?>> TO_WRAPPER;
-    private final static Map<Class<?>, Class<?>> FROM_WRAPPER;
-
-    static {
-        BiMap<Class<?>, Class<?>> map = HashBiMap.create();
-        map.put(Float.TYPE, Float.class);
-        map.put(Double.TYPE, Double.class);
-        map.put(Byte.TYPE, Byte.class);
-        map.put(Short.TYPE, Short.class);
-        map.put(Integer.TYPE, Integer.class);
-        map.put(Long.TYPE, Long.class);
-        map.put(Character.TYPE, Character.class);
-        map.put(Boolean.TYPE, Boolean.class);
-        TO_WRAPPER = Collections.unmodifiableMap(map);
-        FROM_WRAPPER = Collections.unmodifiableMap(map.inverse());
-    }
-
-
     public static <T extends Enum<T>> List<T> convertStringToEnumList(Class<T> enumType, List<String> stringList) {
-        List<T> enumList = new ArrayList<T>();
+        List<T> enumList = new ArrayList<>();
         for (String string : stringList) {
             enumList.add(Enum.valueOf(enumType, string));
         }
@@ -63,10 +43,10 @@ public class ClassUtil {
     }
 
     public static <T extends Enum<T>> List<String> convertEnumToStringList(Class<T> enumType) {
-        ArrayList stringList = null;
+        ArrayList<String> stringList = null;
         T[] constants = enumType.getEnumConstants();
         if (constants != null && constants.length > 0) {
-            stringList = new ArrayList(constants.length);
+            stringList = new ArrayList<>(constants.length);
             for (T constant : constants) {
                 stringList.add(constant.name());
             }
@@ -76,27 +56,31 @@ public class ClassUtil {
 
     public static <T extends Enum<T>> String[] convertEnumToStringArray(Class<T> enumType) {
         List<String> stringList = convertEnumToStringList(enumType);
-        return stringList == null ? null :
-            stringList.toArray(new String[stringList.size()]);
+        return stringList == null ? null : stringList.toArray(new String[stringList.size()]);
     }
 
+    /**
+     * @deprecated use {@link Primitives#isWrapperType(java.lang.Class)}
+     */
+    @Deprecated
     public static boolean isWrapper(Class<?> clazz) {
-        return FROM_WRAPPER.containsKey(clazz);
+        return Primitives.isWrapperType(clazz);
     }
 
+    /**
+     * @deprecated use {@link Primitives#unwrap(java.lang.Class)}
+     */
+    @Deprecated
     public static Class<?> unwrap(Class<?> clazz) {
-        Class<?> unwrapped = FROM_WRAPPER.get(clazz);
-        if (unwrapped == null)
-            return clazz;
-        return unwrapped;
-
+        return Primitives.unwrap(clazz);
     }
 
+    /**
+     * @deprecated use {@link Primitives#wrap(java.lang.Class)}
+     */
+    @Deprecated
     public static Class<?> wrap(Class<?> clazz) {
-        Class<?> wrapped = TO_WRAPPER.get(clazz);
-        if (wrapped == null)
-            return clazz;
-        return wrapped;
+        return Primitives.wrap(clazz);
     }
 
 }

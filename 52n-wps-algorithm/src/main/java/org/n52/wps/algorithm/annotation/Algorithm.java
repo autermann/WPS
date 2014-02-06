@@ -38,7 +38,7 @@ public @interface Algorithm {
     String identifier() default "";
     String title() default "";
     String abstrakt() default "";  // 'abstract' is java reserved keyword
-    String version();
+    String version() default "1.0.0";
     boolean storeSupported() default true;
     boolean statusSupported() default true;
 }

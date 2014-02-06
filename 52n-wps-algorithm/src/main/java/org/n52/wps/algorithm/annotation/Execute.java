@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
  * @author tkunicki
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD})
+@Target({ ElementType.METHOD })
 public @interface Execute {
 
 }

@@ -28,8 +28,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import junit.framework.TestCase;
+
 import org.n52.test.mock.MockBinding;
+
+import junit.framework.TestCase;
 
 /**
  *
@@ -37,10 +39,9 @@ import org.n52.test.mock.MockBinding;
  */
 public class AlgorithmDescriptorTest extends TestCase {
     
-    private LiteralDataOutputDescriptor.Builder MOCK_OUPUT1_BUILDER;
-    
-    private List<InputDescriptor.Builder<?,?>> MOCK_INPUT_BUILDERS;
-    private List<OutputDescriptor.Builder<?,?>> MOCK_OUTPUT_BUILDERS;
+    private LiteralDataOutputDescriptorBuilder<?> MOCK_OUPUT1_BUILDER;
+    private List<InputDescriptorBuilder<?>> MOCK_INPUT_BUILDERS;
+    private List<OutputDescriptorBuilder<?>> MOCK_OUTPUT_BUILDERS;
     
     public AlgorithmDescriptorTest(String testName) {
         super(testName);
@@ -48,7 +49,7 @@ public class AlgorithmDescriptorTest extends TestCase {
 
     @Override
     protected void setUp() {
-        MOCK_INPUT_BUILDERS = new ArrayList<InputDescriptor.Builder<?,?>>();
+        MOCK_INPUT_BUILDERS = new ArrayList<>();
         MOCK_INPUT_BUILDERS.add(LiteralDataInputDescriptor.booleanBuilder("mock_input1"));
         MOCK_INPUT_BUILDERS.add(LiteralDataInputDescriptor.booleanBuilder("mock_input2"));
         MOCK_INPUT_BUILDERS.add(ComplexDataInputDescriptor.builder("mock_input3", MockBinding.class));
@@ -57,7 +58,7 @@ public class AlgorithmDescriptorTest extends TestCase {
         
         MOCK_OUPUT1_BUILDER = LiteralDataOutputDescriptor.booleanBuilder("mock_output1");
         
-        MOCK_OUTPUT_BUILDERS = new ArrayList<OutputDescriptor.Builder<?,?>>();
+        MOCK_OUTPUT_BUILDERS = new ArrayList<>();
 //        MOCK_OUTPUT_BUILDERS.add(LiteralDataOutputDescriptor.booleanBuilder("mock_output1"));
         MOCK_OUTPUT_BUILDERS.add(LiteralDataOutputDescriptor.booleanBuilder("mock_output2"));
         MOCK_OUTPUT_BUILDERS.add(ComplexDataOutputDescriptor.builder("mock_output3", MockBinding.class));
@@ -171,23 +172,23 @@ public class AlgorithmDescriptorTest extends TestCase {
         
         
         // test addInputDescriptor(InputDescriptor.Builder<?,?>) interface.
-        AlgorithmDescriptor.Builder<?> builder = createMinimumCompliantBuilder();
-        for (InputDescriptor.Builder inputBuilder : MOCK_INPUT_BUILDERS) {
+        AlgorithmDescriptorBuilder<?> builder = createMinimumCompliantBuilder();
+        for (InputDescriptorBuilder<?> inputBuilder : MOCK_INPUT_BUILDERS) {
             builder.addInputDescriptor(inputBuilder);
         }
         validateInputDescriptors(builder.build());
         
         // test addInputDescriptor(InputDescriptor<?>) interface.
         builder = createMinimumCompliantBuilder();
-        for (InputDescriptor.Builder inputBuilder : MOCK_INPUT_BUILDERS) {
+        for (InputDescriptorBuilder<?> inputBuilder : MOCK_INPUT_BUILDERS) {
             builder.addInputDescriptor(inputBuilder.build());
         }
         validateInputDescriptors(builder.build());
         
         // test addInputDescriptor(InputDescriptor<?>) interface.
         builder = createMinimumCompliantBuilder();
-        List<InputDescriptor> inputDescriptorList = new ArrayList<InputDescriptor>(MOCK_INPUT_BUILDERS.size());
-        for (InputDescriptor.Builder inputBuilder : MOCK_INPUT_BUILDERS) {
+        List<InputDescriptor> inputDescriptorList = new ArrayList<>(MOCK_INPUT_BUILDERS.size());
+        for (InputDescriptorBuilder<?> inputBuilder : MOCK_INPUT_BUILDERS) {
             inputDescriptorList.add(inputBuilder.build());
         }
         builder.addInputDescriptors(inputDescriptorList);
@@ -215,30 +216,30 @@ public class AlgorithmDescriptorTest extends TestCase {
         assertEquals(1, descriptor.getOutputIdentifiers().size());
         
         // test addOutputDescriptor(OutputDescriptor.Builder<?,?>) interface.
-        AlgorithmDescriptor.Builder<?> builder = createMinimumCompliantBuilder();
-        for (OutputDescriptor.Builder outputBuilder : MOCK_OUTPUT_BUILDERS) {
+        AlgorithmDescriptorBuilder<?> builder = createMinimumCompliantBuilder();
+        for (OutputDescriptorBuilder<?> outputBuilder : MOCK_OUTPUT_BUILDERS) {
             builder.addOutputDescriptor(outputBuilder);
         }
         validateOutputDescriptors(builder.build());
         
         // test addOutputDescriptor(OutputDescriptor<?>) interface.
         builder = createMinimumCompliantBuilder();
-        for (OutputDescriptor.Builder outputBuilder : MOCK_OUTPUT_BUILDERS) {
+        for (OutputDescriptorBuilder<?> outputBuilder : MOCK_OUTPUT_BUILDERS) {
             builder.addOutputDescriptor(outputBuilder.build());
         }
         validateOutputDescriptors(builder.build());
         
         // test addOutputDescriptor(OutputDescriptor<?>) interface.
         builder = createMinimumCompliantBuilder();
-        List<OutputDescriptor> outputDescriptorList = new ArrayList<OutputDescriptor>(MOCK_OUTPUT_BUILDERS.size());
-        for (OutputDescriptor.Builder outputBuilder : MOCK_OUTPUT_BUILDERS) {
+        ArrayList<OutputDescriptor> outputDescriptorList = new ArrayList<>(MOCK_OUTPUT_BUILDERS.size());
+        for (OutputDescriptorBuilder<?> outputBuilder : MOCK_OUTPUT_BUILDERS) {
             outputDescriptorList.add(outputBuilder.build());
         }
         builder.addOutputDescriptors(outputDescriptorList);
         validateOutputDescriptors(builder.build());
     }
     
-    private AlgorithmDescriptor.Builder<?> createMinimumCompliantBuilder() {
+    private AlgorithmDescriptorBuilder<?> createMinimumCompliantBuilder() {
         return AlgorithmDescriptor.builder("mock_identifier").
                 addOutputDescriptor(MOCK_OUPUT1_BUILDER);
     }

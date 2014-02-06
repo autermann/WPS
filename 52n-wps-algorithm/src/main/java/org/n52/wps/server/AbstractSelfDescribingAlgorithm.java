@@ -26,12 +26,10 @@ package org.n52.wps.server;
 import java.lang.reflect.Constructor;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import net.opengis.ows.x11.DomainMetadataType;
 import net.opengis.wps.x100.CRSsType;
-import net.opengis.wps.x100.ComplexDataCombinationType;
 import net.opengis.wps.x100.ComplexDataCombinationsType;
 import net.opengis.wps.x100.ComplexDataDescriptionType;
 import net.opengis.wps.x100.InputDescriptionType;
@@ -48,9 +46,10 @@ import net.opengis.wps.x100.SupportedCRSsType.Default;
 import net.opengis.wps.x100.SupportedComplexDataInputType;
 import net.opengis.wps.x100.SupportedComplexDataType;
 
-import org.n52.wps.FormatDocument.Format;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.GeneratorFactory;
 import org.n52.wps.io.IGenerator;
+import org.n52.wps.io.IOHandler;
 import org.n52.wps.io.IParser;
 import org.n52.wps.io.ParserFactory;
 import org.n52.wps.io.data.IBBOXData;
@@ -59,17 +58,21 @@ import org.n52.wps.io.data.ILiteralData;
 import org.n52.wps.server.observerpattern.IObserver;
 import org.n52.wps.server.observerpattern.ISubject;
 
+public abstract class AbstractSelfDescribingAlgorithm
+        extends AbstractAlgorithm implements ISubject {
 
-public abstract class AbstractSelfDescribingAlgorithm extends AbstractAlgorithm implements ISubject{
+    public static final String PROCESS_VERSION = "1.0.0";
+    private final List<IObserver> observers = new ArrayList<>();
+    private Object state = null;
 
-	@Override
+    @Override
 	protected ProcessDescriptionType initializeDescription() {
 		ProcessDescriptionsDocument document = ProcessDescriptionsDocument.Factory.newInstance();
 		ProcessDescriptions processDescriptions = document.addNewProcessDescriptions();
 		ProcessDescriptionType processDescription = processDescriptions.addNewProcessDescription();
 		processDescription.setStatusSupported(true);
 		processDescription.setStoreSupported(true);
-		processDescription.setProcessVersion("1.0.0");
+		processDescription.setProcessVersion(PROCESS_VERSION);
 		
 		//1. Identifier
 		processDescription.addNewIdentifier().setStringValue(this.getClass().getName());
@@ -142,15 +145,11 @@ public abstract class AbstractSelfDescribingAlgorithm extends AbstractAlgorithm 
 				}else if(implementedInterface.equals(IComplexData.class)){
 					SupportedComplexDataInputType complexData = dataInput.addNewComplexData();					
 					List<IParser> parsers = ParserFactory.getInstance().getAllParsers();
-					List<IParser> foundParsers = new ArrayList<IParser>();
+					List<IParser> foundParsers = new ArrayList<>();
 					for(IParser parser : parsers) {
-						Class<?>[] supportedClasses = parser.getSupportedDataBindings();
-						for(Class<?> clazz : supportedClasses){
-							if(clazz.equals(inputDataTypeClass)){
-								foundParsers.add(parser);
-							}
-							
-						}
+                        if (parser.isSupportedDataBinding(inputDataTypeClass)) {
+                            foundParsers.add(parser);
+                        }
 					}
 					
 					addInputFormats(complexData, foundParsers);					
@@ -219,18 +218,14 @@ public abstract class AbstractSelfDescribingAlgorithm extends AbstractAlgorithm 
 					
 				}else if(implementedInterface.equals(IComplexData.class)){
 					
-						SupportedComplexDataType complexData = dataOutput.addNewComplexOutput();
-						
-						List<IGenerator> generators = GeneratorFactory.getInstance().getAllGenerators();
-						List<IGenerator> foundGenerators = new ArrayList<IGenerator>();
-						for(IGenerator generator : generators) {
-							Class<?>[] supportedClasses = generator.getSupportedDataBindings();
-							for(Class<?> clazz : supportedClasses){
-								if(clazz.equals(outputDataTypeClass)){
-									foundGenerators.add(generator);
-								}
-								
-							}
+                    SupportedComplexDataType complexData = dataOutput.addNewComplexOutput();
+
+                    List<IGenerator> generators = GeneratorFactory.getInstance().getAllGenerators();
+                    List<IGenerator> foundGenerators = new ArrayList<>();
+                    for(IGenerator generator : generators) {
+                        if (generator.isSupportedDataBinding(outputDataTypeClass)) {
+                            foundGenerators.add(generator);
+                        }
 					}
 					
 					addOutputFormats(complexData, foundGenerators);
@@ -261,21 +256,15 @@ public abstract class AbstractSelfDescribingAlgorithm extends AbstractAlgorithm 
 	}
 	
 	public BigInteger getMinOccurs(String identifier){
-		return new BigInteger("1");
+		return BigInteger.ONE;
 	}
 	public BigInteger getMaxOccurs(String identifier){
-		return new BigInteger("1");
+		return BigInteger.ONE;
 	}
 	
 	public abstract List<String> getInputIdentifiers();
 	public abstract List<String> getOutputIdentifiers();
 	
-
-	
-	private List<IObserver> observers = new ArrayList<IObserver>();
-
-	private Object state = null;
-
 	public Object getState() {
 	  return state;
 	}
@@ -294,134 +283,46 @@ public abstract class AbstractSelfDescribingAlgorithm extends AbstractAlgorithm 
 	 }
 
 	 public void notifyObservers() {
-	   Iterator<IObserver> i = observers.iterator();
-	   while (i.hasNext()) {
-	     IObserver o = (IObserver) i.next();
-	     o.update(this);
-	   }
-	 }
-	 
-	 @Override
-		public List<String> getErrors() {
-			List<String> errors = new ArrayList<String>();
-			return errors;
-		}
-	 
-	 
-	private void addInputFormats(SupportedComplexDataInputType complexData,
-			List<IParser> foundParsers) {
-		ComplexDataCombinationsType supportedInputFormat = complexData
-				.addNewSupported();
+         for (IObserver o : this.observers) {
+            o.update(this);
+        }
+    }
 
-		for (int i = 0; i < foundParsers.size(); i++) {
-			IParser parser = foundParsers.get(i);
+    @Override
+    public List<String> getErrors() {
+        List<String> errors = new ArrayList<>();
+        return errors;
+    }
 
-			Format[] supportedFullFormats = parser.getSupportedFullFormats();
-
-			if (complexData.getDefault() == null) {
-				ComplexDataCombinationType defaultInputFormat = complexData
-						.addNewDefault();
-				/*
-				 * default format will be the first config format
-				 */
-				Format format = supportedFullFormats[0];
-				ComplexDataDescriptionType defaultFormat = defaultInputFormat
-						.addNewFormat();
-				defaultFormat.setMimeType(format.getMimetype());
-
-				String encoding = format.getEncoding();
-
-				if (encoding != null && !encoding.equals("")) {
-					defaultFormat.setEncoding(encoding);
-				}
-
-				String schema = format.getSchema();
-
-				if (schema != null && !schema.equals("")) {
-					defaultFormat.setSchema(schema);
-				}
-
-			}
-
-			for (int j = 0; j < supportedFullFormats.length; j++) {
-				/*
-				 * create supportedFormat for each mimetype, encoding, schema
-				 * composition mimetypes can have several encodings and schemas
-				 */
-				Format format1 = supportedFullFormats[j];
-
-				/*
-				 * add one format for this mimetype
-				 */
-				ComplexDataDescriptionType supportedFormat = supportedInputFormat
-						.addNewFormat();
-				supportedFormat.setMimeType(format1.getMimetype());
-				if (format1.getEncoding() != null) {
-					supportedFormat.setEncoding(format1.getEncoding());
-				}
-				if (format1.getSchema() != null) {
-					supportedFormat.setSchema(format1.getSchema());
-				}
-			}
-		}
-	}
-	
-	private void addOutputFormats(SupportedComplexDataType complexData,
-			List<IGenerator> foundGenerators) {
-		ComplexDataCombinationsType supportedOutputFormat = complexData
-				.addNewSupported();
-
-		for (int i = 0; i < foundGenerators.size(); i++) {
-			IGenerator generator = foundGenerators.get(i);
-
-			Format[] supportedFullFormats = generator.getSupportedFullFormats();
-
-			if (complexData.getDefault() == null) {
-				ComplexDataCombinationType defaultInputFormat = complexData
-						.addNewDefault();
-				/*
-				 * default format will be the first config format
-				 */
-				Format format = supportedFullFormats[0];
-				ComplexDataDescriptionType defaultFormat = defaultInputFormat
-						.addNewFormat();
-				defaultFormat.setMimeType(format.getMimetype());
-
-				String encoding = format.getEncoding();
-
-				if (encoding != null && !encoding.equals("")) {
-					defaultFormat.setEncoding(encoding);
-				}
-
-				String schema = format.getSchema();
-
-				if (schema != null && !schema.equals("")) {
-					defaultFormat.setSchema(schema);
-				}
-
-			}
-
-			for (int j = 0; j < supportedFullFormats.length; j++) {
-				/*
-				 * create supportedFormat for each mimetype, encoding, schema
-				 * composition mimetypes can have several encodings and schemas
-				 */
-				Format format1 = supportedFullFormats[j];
-
-				/*
-				 * add one format for this mimetype
-				 */
-				ComplexDataDescriptionType supportedFormat = supportedOutputFormat
-						.addNewFormat();
-				supportedFormat.setMimeType(format1.getMimetype());
-				if (format1.getEncoding() != null) {
-					supportedFormat.setEncoding(format1.getEncoding());
-				}
-				if (format1.getSchema() != null) {
-					supportedFormat.setSchema(format1.getSchema());
-				}
-			}
-		}
+	private void addInputFormats(SupportedComplexDataInputType complexData, List<IParser> foundParsers) {
+        encodeFormats(complexData, foundParsers);
 	}
 
+	private void addOutputFormats(SupportedComplexDataType complexData, List<IGenerator> foundGenerators) {
+        encodeFormats(complexData, foundGenerators);
+    }
+
+    private void encodeFormats(SupportedComplexDataType complexData,
+                               List<? extends IOHandler> foundGenerators) {
+        ComplexDataCombinationsType xbSupported = complexData.addNewSupported();
+        for (IOHandler parser : foundGenerators) {
+            for (Format format : parser.getSupportedFormats()) {
+                ComplexDataDescriptionType xbFormat;
+                if (complexData.getDefault() == null) {
+                    xbFormat = complexData.addNewDefault().addNewFormat();
+                } else {
+                    xbFormat = xbSupported.addNewFormat();
+                }
+                if (format.getEncoding().isPresent()) {
+                    xbFormat.setEncoding(format.getEncoding().get());
+                }
+                if (format.getSchema().isPresent()) {
+                    xbFormat.setSchema(format.getSchema().get());
+                }
+                if (format.getMimeType().isPresent()) {
+                    xbFormat.setMimeType(format.getMimeType().get());
+                }
+            }
+        }
+    }
 }

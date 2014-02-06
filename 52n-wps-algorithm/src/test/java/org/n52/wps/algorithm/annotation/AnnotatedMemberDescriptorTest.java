@@ -31,14 +31,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import junit.framework.TestCase;
+
 import org.n52.test.mock.MockEnum;
-import org.n52.wps.algorithm.annotation.AnnotationBinding.InputBinding;
-import org.n52.wps.algorithm.annotation.AnnotationBinding.InputFieldBinding;
-import org.n52.wps.algorithm.annotation.AnnotationBinding.InputMethodBinding;
-import org.n52.wps.algorithm.annotation.AnnotationBinding.OutputBinding;
-import org.n52.wps.algorithm.annotation.AnnotationBinding.OutputFieldBinding;
-import org.n52.wps.algorithm.annotation.AnnotationBinding.OutputMethodBinding;
+import org.n52.wps.algorithm.annotation.binding.InputBinding;
+import org.n52.wps.algorithm.annotation.binding.InputFieldBinding;
+import org.n52.wps.algorithm.annotation.binding.InputMethodBinding;
+import org.n52.wps.algorithm.annotation.binding.OutputBinding;
+import org.n52.wps.algorithm.annotation.binding.OutputFieldBinding;
+import org.n52.wps.algorithm.annotation.binding.OutputMethodBinding;
+
+import junit.framework.TestCase;
 
 /**
  *
@@ -49,11 +51,11 @@ public class AnnotatedMemberDescriptorTest extends TestCase {
     // START - TEST DATA AS CLASS FIELDS AND METHODS
     
     // represent almost all cases: literal or complex data, input or output. with expections noted below
-    public String stringField;
-    public List<String> stringListField;
-    public List<? extends String> stringExtendListField;
-    public List<? super String> stringSuperListField;
-    public List unboundListField;  // effectively List<? extends Object>
+    private String stringField;
+    private List<String> stringListField;
+    private List<? extends String> stringExtendListField;
+    private List<? super String> stringSuperListField;
+    private List<?> unboundListField;  // effectively List<? extends Object>
     
     // no polymorphism in test methods, will break use of methodMap
     public void setString(String stringParameter) {
@@ -80,10 +82,10 @@ public class AnnotatedMemberDescriptorTest extends TestCase {
     public List<? super String> getStringSuperList() {
         return this.stringSuperListField;
     }
-    public void setUnboundList(List unboundListParameter) {
+    public void setUnboundList(List<?> unboundListParameter) {
         this.unboundListField = unboundListParameter;
     }
-    public List getUnboundList() {
+    public List<?> getUnboundList() {
         return this.unboundListField;
     }
     
@@ -125,11 +127,11 @@ public class AnnotatedMemberDescriptorTest extends TestCase {
     
     // END - TEST DATA AS CLASS FIELDS AND METHODS
     
-    Map<String, Method> methodMap;
+    private Map<String, Method> methodMap;
     
     public AnnotatedMemberDescriptorTest(String testName) {
         super(testName);
-        methodMap = new HashMap<String, Method>();
+        methodMap = new HashMap<>();
         for (Method method : AnnotationMemberDescriptorSample.class.getDeclaredMethods()) {
             methodMap.put(method.getName(), method);
         }
@@ -198,7 +200,7 @@ public class AnnotatedMemberDescriptorTest extends TestCase {
         validateOutputMember(memberDescriptor);
     }
     
-    private void validateInputMember(InputBinding memberDescriptor) {
+    private void validateInputMember(InputBinding<?> memberDescriptor) {
         // data type matches member for inputs type *unless* member type is List
         assertEquals(memberDescriptor.getMemberType(), memberDescriptor.getType());
         // payload type matches data type, special handling reserved for enumerations
@@ -207,7 +209,7 @@ public class AnnotatedMemberDescriptorTest extends TestCase {
         assertEquals(false, memberDescriptor.isTypeEnum());
     }
     
-    private void validateOutputMember(OutputBinding memberDescriptor) {
+    private void validateOutputMember(OutputBinding<?> memberDescriptor) {
         // data type matches member type for outputs
         assertEquals(memberDescriptor.getMemberType(), memberDescriptor.getType());
         // data type matches payload type, special handling reserved for enumerations
@@ -255,7 +257,7 @@ public class AnnotatedMemberDescriptorTest extends TestCase {
         validateOutputListMember(memberDescriptor);
     }
     
-    private void validateInputListMember(InputBinding memberDescriptor) {
+    private void validateInputListMember(InputBinding<?> memberDescriptor) {
         // we extract the parameterized type of the list for inputs.  since member
         //  type is List<String> we expect String
         assertEquals(String.class, memberDescriptor.getType());
@@ -265,7 +267,7 @@ public class AnnotatedMemberDescriptorTest extends TestCase {
         assertEquals(false, memberDescriptor.isTypeEnum());
     }
     
-    private void validateOutputListMember(OutputBinding memberDescriptor) {
+    private void validateOutputListMember(OutputBinding<?> memberDescriptor) {
         // no special handling for outputs of member type List, member type matches data type
         assertEquals(memberDescriptor.getMemberType(), memberDescriptor.getType());
         // no special handling for outputs of member type List, member type matches data type
@@ -313,7 +315,7 @@ public class AnnotatedMemberDescriptorTest extends TestCase {
         validateExtendListOutputMember(memberDescriptor);
     }
     
-    private void validateExtendListInputMember(InputBinding memberDescriptor) {
+    private void validateExtendListInputMember(InputBinding<?> memberDescriptor) {
         // we extract the parameterized type of the list for inputs.  since member 
         //  type is List<? extends String> we expect a WildcardType of <? extends String>
         //  we need this information later to make sure we can safely assign an
@@ -330,7 +332,7 @@ public class AnnotatedMemberDescriptorTest extends TestCase {
         assertEquals(false, memberDescriptor.isTypeEnum());
     }
     
-    private void validateExtendListOutputMember(OutputBinding memberDescriptor) {
+    private void validateExtendListOutputMember(OutputBinding<?> memberDescriptor) {
         // no special handling for outputs of member type List, member type matches data type
         assertEquals(memberDescriptor.getMemberType(), memberDescriptor.getType());
         // no special handling for outputs of member type List, member type matches data type
@@ -378,7 +380,7 @@ public class AnnotatedMemberDescriptorTest extends TestCase {
         validateSuperListOutputMember(memberDescriptor);
     }
     
-    private void validateSuperListInputMember(InputBinding memberDescriptor) {
+    private void validateSuperListInputMember(InputBinding<?> memberDescriptor) {
         // we extract the parameterized type of the list for inputs.  since member 
         //  type is List<? super String> we expect a WildcardType of <? super String>
         //  we need this information later to make sure we can safely assign an
@@ -396,7 +398,7 @@ public class AnnotatedMemberDescriptorTest extends TestCase {
         assertEquals(false, memberDescriptor.isTypeEnum());
     }
     
-    private void validateSuperListOutputMember(OutputBinding memberDescriptor) {
+    private void validateSuperListOutputMember(OutputBinding<?> memberDescriptor) {
         // no special handling for outputs of member type List, member type matches data type
         assertEquals(memberDescriptor.getMemberType(), memberDescriptor.getType());
         // no special handling for outputs of member type List, member type matches data type
@@ -444,7 +446,7 @@ public class AnnotatedMemberDescriptorTest extends TestCase {
         validateUnboundListOutputMember(memberDescriptor);
     }
     
-    private void validateUnboundListInputMember(InputBinding memberDescriptor) {
+    private void validateUnboundListInputMember(InputBinding<?> memberDescriptor) {
 //        // we extract the parameterized type of the list for inputs.  since member 
 //        //  type is List<? super String> we expect a WildcardType of <? super String>
 //        //  we need this information later to make sure we can safely assign an
@@ -475,7 +477,7 @@ public class AnnotatedMemberDescriptorTest extends TestCase {
         assertEquals(false, memberDescriptor.isTypeEnum());
     }
     
-    private void validateUnboundListOutputMember(OutputBinding memberDescriptor) {
+    private void validateUnboundListOutputMember(OutputBinding<?> memberDescriptor) {
         // no special handling for outputs of member type List, member type matches data type
         assertEquals(memberDescriptor.getMemberType(), memberDescriptor.getType());
         // no special handling for outputs of member type List, member type matches data type
@@ -523,7 +525,7 @@ public class AnnotatedMemberDescriptorTest extends TestCase {
         validateEnumOutputMember(memberDescriptor);
     }
     
-    private void validateEnumInputMember(InputBinding memberDescriptor) {
+    private void validateEnumInputMember(InputBinding<?> memberDescriptor) {
         assertEquals(MockEnum.class, memberDescriptor.getType());
         // for all instances of Class<? extends Enum> the payload type is Class<String>
         //   as these will be bound with LiteralStringBinding
@@ -532,7 +534,7 @@ public class AnnotatedMemberDescriptorTest extends TestCase {
         assertEquals(true, memberDescriptor.isTypeEnum());
     }
     
-    private void validateEnumOutputMember(OutputBinding memberDescriptor) {
+    private void validateEnumOutputMember(OutputBinding<?> memberDescriptor) {
         assertEquals(MockEnum.class, memberDescriptor.getType());
         // for all instances of Class<? extends Enum> the payload type is Class<String>
         //   as these will be bound with LiteralStringBinding
@@ -581,14 +583,14 @@ public class AnnotatedMemberDescriptorTest extends TestCase {
     }
     
     
-    private void validateEnumListInputMember(InputBinding memberDescriptor) {
+    private void validateEnumListInputMember(InputBinding<?> memberDescriptor) {
         assertEquals(MockEnum.class, memberDescriptor.getType());
         assertEquals(String.class, memberDescriptor.getPayloadType());
         assertEquals(true, memberDescriptor.isMemberTypeList());
         assertEquals(true, memberDescriptor.isTypeEnum());
     }
     
-    private void validateEnumListOutputMember(OutputBinding memberDescriptor) {
+    private void validateEnumListOutputMember(OutputBinding<?> memberDescriptor) {
         // no special handling for outputs of member type List, member type matches data type
         assertEquals(memberDescriptor.getMemberType(), memberDescriptor.getType());
         // no special handling for outputs of member type List, member type matches data type

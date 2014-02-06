@@ -31,10 +31,10 @@ import java.util.Map;
 
 import net.opengis.wps.x100.ProcessDescriptionType;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.commons.WPSConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A static repository to retrieve the available algorithms.
@@ -45,14 +45,14 @@ import org.n52.wps.commons.WPSConfig;
 public class UploadedAlgorithmRepository implements
 		ITransactionalAlgorithmRepository {
 
-	private static Logger LOGGER = LoggerFactory
+	private static final Logger LOGGER = LoggerFactory
 			.getLogger(LocalAlgorithmRepository.class);
-	private Map<String, String> algorithmMap;
-	private Map<String, ProcessDescriptionType> processDescriptionMap;
+	private final Map<String, String> algorithmMap;
+	private final Map<String, ProcessDescriptionType> processDescriptionMap;
 
 	public UploadedAlgorithmRepository() {
-		algorithmMap = new HashMap<String, String>();
-		processDescriptionMap = new HashMap<String, ProcessDescriptionType>();
+		algorithmMap = new HashMap<>();
+		processDescriptionMap = new HashMap<>();
 
 		if (WPSConfig.getInstance().isRepositoryActive(
 				this.getClass().getCanonicalName())) {

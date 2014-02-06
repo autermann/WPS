@@ -24,9 +24,11 @@
 package org.n52.wps.algorithm.descriptor;
 
 import java.math.BigInteger;
-import junit.framework.TestCase;
+
 import org.n52.test.mock.MockEnum;
 import org.n52.wps.io.data.IData;
+
+import junit.framework.TestCase;
 
 /**
  *
@@ -169,9 +171,10 @@ public class InputDataDescriptorTest extends TestCase {
         assertTrue(thrown);
     }
 
-    public static class InputDescriptorImpl extends InputDescriptor<Class<IData>> {
+    public static class InputDescriptorImpl extends InputDescriptor {
         private InputDescriptorImpl(Builder builder) { super(builder); }
-        public static class Builder extends InputDescriptor.Builder<Builder, Class<IData>> {
+
+        public static class Builder extends InputDescriptorBuilder<Builder> {
             Builder() {
                 super("mock_identifier", IData.class);
             }

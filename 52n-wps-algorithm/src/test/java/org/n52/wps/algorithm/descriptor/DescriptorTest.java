@@ -110,7 +110,7 @@ public class DescriptorTest extends TestCase {
     // so we need to provide an concrete implementation to test.
     public static class DescriptorImpl extends Descriptor {
         private DescriptorImpl(Builder builder) {  super(builder);  }
-        public static class Builder extends Descriptor.Builder<Builder> {
+        public static class Builder extends DescriptorBuilder<Builder> {
             Builder(String identifier) { super(identifier); }
             @Override protected Builder self() { return this;  }
              public DescriptorImpl build() { return new DescriptorImpl(this); }

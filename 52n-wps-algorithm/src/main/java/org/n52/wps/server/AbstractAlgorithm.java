@@ -30,10 +30,10 @@ import java.io.InputStream;
 import net.opengis.wps.x100.ProcessDescriptionType;
 import net.opengis.wps.x100.ProcessDescriptionsDocument;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class has to be extended in order to be served through the WPS. 
@@ -49,9 +49,9 @@ import org.apache.xmlbeans.XmlOptions;
  */
 public abstract class AbstractAlgorithm implements IAlgorithm 
 {
+	private static Logger LOGGER = LoggerFactory.getLogger(AbstractAlgorithm.class);
 	private ProcessDescriptionType description; // private, force access through getter method for lazy loading.
 	private final String wkName;
-	private static Logger LOGGER = LoggerFactory.getLogger(AbstractAlgorithm.class);
 	
 	/** 
 	 * default constructor, calls the initializeDescription() Method
@@ -95,10 +95,7 @@ public abstract class AbstractAlgorithm implements IAlgorithm
 			
 			return doc.getProcessDescriptions().getProcessDescriptionArray(0);
 		}
-		catch(IOException e) {
-			LOGGER.warn("Could not initialize algorithm, parsing error: " + this.getClass().getName(), e);
-		}
-		catch(XmlException e) {
+		catch(IOException | XmlException e) {
 			LOGGER.warn("Could not initialize algorithm, parsing error: " + this.getClass().getName(), e);
 		}
 		return null;

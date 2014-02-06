@@ -32,12 +32,12 @@ import java.util.List;
 import net.opengis.wps.x100.ProcessDescriptionType;
 import net.opengis.wps.x100.ProcessDescriptionsDocument;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.n52.wps.server.observerpattern.IObserver;
 import org.n52.wps.server.observerpattern.ISubject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractObservableAlgorithm implements IAlgorithm, ISubject{
 
@@ -115,7 +115,7 @@ public abstract class AbstractObservableAlgorithm implements IAlgorithm, ISubjec
 		return this.wkName;
 	}
 	
-	private List observers = new ArrayList();
+	private List<IObserver> observers = new ArrayList<>();
 
 	private Object state = null;
 
@@ -137,10 +137,9 @@ public abstract class AbstractObservableAlgorithm implements IAlgorithm, ISubjec
 	 }
 
 	 public void notifyObservers() {
-	   Iterator i = observers.iterator();
+	   Iterator<IObserver> i = observers.iterator();
 	   while (i.hasNext()) {
-	     IObserver o = (IObserver) i.next();
-	     o.update(this);
+	     i.next().update(this);
 	   }
 	 }
 }

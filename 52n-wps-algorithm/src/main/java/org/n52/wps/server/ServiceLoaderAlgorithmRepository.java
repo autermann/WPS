@@ -28,22 +28,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 
+import net.opengis.wps.x100.ProcessDescriptionType;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import net.opengis.wps.x100.ProcessDescriptionType;
 
 public class ServiceLoaderAlgorithmRepository implements IAlgorithmRepository {
 
 	private static final Logger logger = LoggerFactory.getLogger(ServiceLoaderAlgorithmRepository.class);
-	private Map<String, Class<? extends IAlgorithm>> currentAlgorithms;
+	private final Map<String, Class<? extends IAlgorithm>> currentAlgorithms;
 
 	public ServiceLoaderAlgorithmRepository() {
 		this.currentAlgorithms = loadAlgorithms();
 	}
 	
 	private Map<String, Class<? extends IAlgorithm>> loadAlgorithms() {
-		Map<String, Class<? extends IAlgorithm>> result = new HashMap<String, Class<? extends IAlgorithm>>();
+		Map<String, Class<? extends IAlgorithm>> result = new HashMap<>();
 		ServiceLoader<IAlgorithm> loader = ServiceLoader.load(IAlgorithm.class);
 		
 		for (IAlgorithm ia : loader) {
@@ -66,9 +66,7 @@ public class ServiceLoaderAlgorithmRepository implements IAlgorithmRepository {
 		if (clazz != null) {
 			try {
 				return clazz.newInstance();
-			} catch (InstantiationException e) {
-				logger.warn(e.getMessage(), e);
-			} catch (IllegalAccessException e) {
+            } catch (InstantiationException | IllegalAccessException e) {
 				logger.warn(e.getMessage(), e);
 			}
 		}

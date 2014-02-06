@@ -41,6 +41,7 @@ public class Constants {
     public final static String LITERAL_BASE64BINARY = "LITERAL_BASE64BINARY";
     public final static String LITERAL_ANYURI = "LITERAL_ANYURI";
     public final static String LITERAL_ENUM = "LITERAL_ENUM";
+    public final static String LITERAL_ENUM_LIST = "LITERAL_ENUM_LIST";
     public final static String COMPLEX = "COMPLEX";
 
 

@@ -30,35 +30,38 @@ import java.util.Map;
 import net.opengis.wps.x100.ProcessDescriptionType;
 
 import org.n52.wps.io.data.IData;
-import org.n52.wps.server.ExceptionReport;
 
 /**
  * @author Bastian Schaeffer, University of Muenster,	Theodor Foerster, ITC
  *
  */
-public interface IAlgorithm  {
-		
-	Map<String, IData> run(Map<String, List<IData>> inputData) throws ExceptionReport;
-	
-	List<String> getErrors();
-	
-	ProcessDescriptionType getDescription();
-	
-	/** Returns some well-known name for the process.
-	 *  
-	 *  @return Returns some well-known name for the process or algorithm
-	 *  if that exists, else returns an empty String, never null.
-	 *  @note The fully-qualified class name is gotten via getName();
-	 */ 
-	String getWellKnownName();
-	
-	/**
-	 * Checks if the processDescription complies to the process itself and fits any schema or other dependencies.
-	 */
-	boolean processDescriptionIsValid();
-	
-	Class< ? > getInputDataType(String id);
-	
-	Class< ? > getOutputDataType(String id);
-	
+public interface IAlgorithm {
+
+    Map<String, IData> run(Map<String, List<IData>> inputData) throws
+            ExceptionReport;
+
+    List<String> getErrors();
+
+    ProcessDescriptionType getDescription();
+
+    /**
+     * Returns some well-known name for the process.
+     *
+     * @return Returns some well-known name for the process or algorithm
+     *         if that exists, else returns an empty String, never null.
+     *
+     * @note The fully-qualified class name is gotten via getName();
+     */
+    String getWellKnownName();
+
+    /**
+     * Checks if the processDescription complies to the process itself and fits
+     * any schema or other dependencies.
+     */
+    boolean processDescriptionIsValid();
+
+    Class<?> getInputDataType(String id);
+
+    Class<?> getOutputDataType(String id);
+
 }

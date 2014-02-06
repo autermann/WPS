@@ -26,15 +26,16 @@ package org.n52.wps.server;
 import java.net.URI;
 import java.util.Date;
 import java.util.List;
+
 import org.n52.test.mock.MockBinding;
-import org.n52.test.mock.MockEnum;
 import org.n52.test.mock.MockComplexObject;
+import org.n52.test.mock.MockEnum;
 import org.n52.wps.algorithm.annotation.Algorithm;
 import org.n52.wps.algorithm.annotation.ComplexDataInput;
 import org.n52.wps.algorithm.annotation.ComplexDataOutput;
+import org.n52.wps.algorithm.annotation.Execute;
 import org.n52.wps.algorithm.annotation.LiteralDataInput;
 import org.n52.wps.algorithm.annotation.LiteralDataOutput;
-import org.n52.wps.algorithm.annotation.Execute;
 import org.n52.wps.io.data.binding.literal.LiteralByteBinding;
 import org.n52.wps.io.data.binding.literal.LiteralShortBinding;
 
@@ -133,12 +134,20 @@ public class ComplexAnnotatedAlgorithm extends AbstractAnnotatedAlgorithm {
         identifier=Constants.LITERAL_ENUM,
 //        defaultValue=MockEnum.VALUE1,         Argh, Can't do this!
 //        defaultValue=MockEnum.VALUE1.name(),  Argh, Can't do this either!, only literals or constants!  So we settle for String constants
-        defaultValue="VALUE1",                 //  must be string but annotation parser will validate this is valid constant for MockEnum
+        defaultValue="VALUE1"                 //  must be string but annotation parser will validate this is valid constant for MockEnum
 //        allowedValues= { ... }                Already set to Enum constants for MockEnum!
-        maxOccurs=LiteralDataInput.ENUM_COUNT // special case, set maxOccurs to number of MockEnum constants
         )
     public void setInputEnumType(MockEnum inputLiteralEnum) {
         this.inputLiteralEnum = inputLiteralEnum;
+    }
+
+    private List<MockEnum> inputLiteralEnumList;
+    @LiteralDataInput(
+        identifier=Constants.LITERAL_ENUM_LIST,
+        maxOccurs=LiteralDataInput.ENUM_COUNT // special case, set maxOccurs to number of MockEnum constants
+        )
+    public void setInputEnumType(List<MockEnum> inputLiteralEnumList) {
+        this.inputLiteralEnumList = inputLiteralEnumList;
     }
 
     // then the rest of the inputs...
@@ -191,10 +200,11 @@ public class ComplexAnnotatedAlgorithm extends AbstractAnnotatedAlgorithm {
     public int getOutputLiteralInt() { return outputLiteralInt; }
 
 
-    @LiteralDataOutput(
-        binding=LiteralShortBinding.class, // REQUIRED, can't infer binding for type Number
-        identifier=Constants.LITERAL_SHORT)
-    public Number outputLiteralShort;
+    //FIXME this does NOT work, as LiteralShortBinding has not Number constructor
+//    @LiteralDataOutput(
+//        binding=LiteralShortBinding.class,
+//        identifier=Constants.LITERAL_SHORT)
+//    public Number outputLiteralShort;
 
     // and the rest...
 
