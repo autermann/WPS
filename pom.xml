@@ -120,6 +120,52 @@
 					<revisionOnScmFailure>0</revisionOnScmFailure>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>com.mycila</groupId>
+				<artifactId>license-maven-plugin</artifactId>
+				<configuration>
+					<header>misc/licenses/license_header.txt</header>
+					<aggregate>true</aggregate>
+					<properties>
+						<inceptionYear>${project.inceptionYear}</inceptionYear>
+						<latestYearOfContribution>${currentYear}</latestYearOfContribution>
+					</properties>
+					<includes>
+						<include>src/**/*.java</include>
+					</includes>
+					<excludes>
+						<exclude>**/LargeBufferStream.java</exclude>
+					</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>initialize</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.jasig.maven</groupId>
+				<artifactId>maven-notice-plugin</artifactId>
+				<configuration>
+					<noticeTemplate>misc/licenses/NOTICE.template</noticeTemplate>
+					<licenseMapping>
+						<param>misc/licenses/license-mappings.xml</param>
+					</licenseMapping>
+					<generateChildNotices>false</generateChildNotices>
+				</configuration>
+				<executions>
+					<execution>
+						<id>check-licenses</id>
+						<phase>initialize</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 	<modules>
@@ -143,7 +189,6 @@
 		<module>52n-wps-python</module>
 		<module>52n-wps-r</module>
 		<module>52n-wps-mc</module>
-		<!-- module>52n-wps-ilwis</module -->
 	</modules>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -152,6 +197,9 @@
 		<geotools.version>8.7</geotools.version>
 		<apache.ode.version>1.3.3</apache.ode.version>
 		<apache.axis2.version>1.5.1</apache.axis2.version>
+		<currentYear>2014</currentYear> <!-- manual setting -->
+        <maven.build.timestamp.format>yyyy</maven.build.timestamp.format>
+        <currentYearDynamic>${maven.build.timestamp}</currentYearDynamic>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
