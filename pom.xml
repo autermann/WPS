@@ -141,7 +141,7 @@
 					<execution>
 						<phase>initialize</phase>
 						<goals>
-							<goal>check</goal>
+							<goal>format</goal>
 						</goals>
 					</execution>
 				</executions>
