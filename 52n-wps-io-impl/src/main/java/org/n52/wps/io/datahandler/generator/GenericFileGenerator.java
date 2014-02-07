@@ -21,14 +21,13 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA or
  * visit the Free Software Foundation web page, http://www.fsf.org.
  */
-
 package org.n52.wps.io.datahandler.generator;
 
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
-import org.n52.wps.io.data.GenericFileData;
 import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
 
 /**
@@ -36,28 +35,14 @@ import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
  *
  */
 public class GenericFileGenerator extends AbstractGenerator {
-	
-	public GenericFileGenerator (){
-		super();
-		supportedIDataTypes.add(GenericFileDataBinding.class);
-	}
-	
-	public InputStream generateStream(IData data, String mimeType, String schema) throws IOException {
-		
-		InputStream theStream = ((GenericFileDataBinding)data).getPayload().getDataStream();
-		return theStream;
-	}
-	
-	/**
-	 * conversion method to support translation of output formats
-	 * TODO: implement logic
-	 * 
-	 * @param inputFile
-	 * @return  
-	 */
-	private GenericFileData convertFile (GenericFileData inputFile){
-		//not implemented
-		return null;
-	}
-	
+
+    public GenericFileGenerator() {
+        super(GenericFileDataBinding.class);
+    }
+
+    @Override
+    public InputStream generateStream(IData data, Format format)
+            throws IOException {
+        return ((GenericFileDataBinding) data).getPayload().getDataStream();
+    }
 }

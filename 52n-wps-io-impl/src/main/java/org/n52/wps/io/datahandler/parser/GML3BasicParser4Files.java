@@ -31,11 +31,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.GenericFileData;
 import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -45,15 +46,14 @@ import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
  */
 public class GML3BasicParser4Files extends AbstractParser {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(GML3BasicParser4Files.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GML3BasicParser4Files.class);
 	
 	public GML3BasicParser4Files() {
-		super();
-		supportedIDataTypes.add(GenericFileDataBinding.class);
+		super(GenericFileDataBinding.class);
 	}
 	
-	public GenericFileDataBinding parse(InputStream stream, String mimeType, String schema) {
-		
+    @Override
+	public GenericFileDataBinding parse(InputStream stream, Format format) {
 		FileOutputStream fos = null;
 		try{
 			File tempFile = File.createTempFile(UUID.randomUUID().toString(), ".gml3");
@@ -66,12 +66,11 @@ public class GML3BasicParser4Files extends AbstractParser {
 			}
 			fos.flush();
 			fos.close();
-			GenericFileDataBinding data = parseXML(tempFile);
-			
-			return data;
-		}
-		catch(IOException e) {
-			if (fos != null) try { fos.close(); } catch (Exception e1) { }
+			return parseXML(tempFile);
+		} catch(IOException e) {
+			if (fos != null) {
+                try { fos.close(); } catch (IOException e1) { }
+            }
 			throw new IllegalArgumentException("Error while creating tempFile", e);
 		}
 	}

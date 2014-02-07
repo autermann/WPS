@@ -42,6 +42,7 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.GenericFileDataConstants;
 import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
@@ -107,7 +108,7 @@ public class GrassIT {
         
         GTBinZippedSHPParser gtBinZippedSHPParser = new GTBinZippedSHPParser();
         
-        GTVectorDataBinding gtVectorDataBinding = gtBinZippedSHPParser.parse(response, GenericFileDataConstants.MIME_TYPE_ZIPPED_SHP, null);
+        GTVectorDataBinding gtVectorDataBinding = gtBinZippedSHPParser.parse(response, new Format(GenericFileDataConstants.MIME_TYPE_ZIPPED_SHP));
         
         assertTrue(gtVectorDataBinding.getPayload() != null);
         assertTrue(gtVectorDataBinding.getPayload().size() != 0);
@@ -152,7 +153,7 @@ public class GrassIT {
     	
     	GeotiffParser geotiffParser = new GeotiffParser();
 
-    	GTRasterDataBinding gtRasterDataBinding = geotiffParser.parse(response, "image/tiff", null);
+    	GTRasterDataBinding gtRasterDataBinding = geotiffParser.parse(response, new Format("image/tiff"));
     	
     	assertTrue(gtRasterDataBinding.getPayload() != null);
     	assertTrue(gtRasterDataBinding.getPayload().getEnvelope() != null);

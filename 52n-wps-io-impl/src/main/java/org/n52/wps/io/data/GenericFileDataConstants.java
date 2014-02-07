@@ -26,18 +26,19 @@
 package org.n52.wps.io.data;
 
 
+import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Properties;
 
+import org.n52.wps.io.IOHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.n52.wps.io.IOHandler;
 
 
 public final class GenericFileDataConstants {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(GenericFileDataConstants.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GenericFileDataConstants.class);
 	
 	public static final String MIME_TYPE_ZIPPED_SHP = IOHandler.MIME_TYPE_ZIPPED_SHP;
 	public static final String MIME_TYPE_SHP = "application/shp";
@@ -78,7 +79,7 @@ public final class GenericFileDataConstants {
 		
 		if (lut == null) {
 
-			lut = new HashMap<String, String>();
+			lut = new HashMap<>();
 
 			Properties ioProperties = new Properties();
 
@@ -93,7 +94,7 @@ public final class GenericFileDataConstants {
 					lut.put(type, ioProperties.getProperty(type));
 				}
 
-			} catch (Exception e) {
+			} catch (IOException e) {
 				LOGGER.error("Exception while setting up Look up table.", e);
 			} 
 		}
@@ -102,7 +103,7 @@ public final class GenericFileDataConstants {
 	}
 	
 	public static final String[] getMimeTypes (){
-		return mimeTypeFileTypeLUT().keySet().toArray(new String[0]);
+		return mimeTypeFileTypeLUT().keySet().toArray(new String[mimeTypeFileTypeLUT().size()]);
 	}
 	
 	public static final String[] getIncludeFilesByMimeType(String mimeType){

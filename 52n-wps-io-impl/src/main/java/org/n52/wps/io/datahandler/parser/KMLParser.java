@@ -33,6 +33,7 @@ import java.io.InputStream;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.kml.KMLConfiguration;
 import org.geotools.xml.Configuration;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 
 
@@ -44,11 +45,10 @@ import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 public class KMLParser extends AbstractParser {
 	
 	public KMLParser() {
-		super();
-		supportedIDataTypes.add(GTVectorDataBinding.class);
+		super(GTVectorDataBinding.class);
 	}
 	
-	public GTVectorDataBinding parse(InputStream stream, String mimeType, String schema) {
+	public GTVectorDataBinding parse(InputStream stream, Format format) {
 		
 		FileOutputStream fos = null;
 		try{
@@ -66,19 +66,17 @@ public class KMLParser extends AbstractParser {
 			return data;
 		}
 		catch(IOException e) {
-			if (fos != null) try { fos.close(); } catch (Exception e1) { }
+			if (fos != null) {
+                try { fos.close(); } catch (IOException e1) { }
+            }
 			throw new IllegalArgumentException("Error while creating tempFile", e);
 		}
 	}
 
 	private GTVectorDataBinding parseXML(File file) {
 		Configuration configuration = new KMLConfiguration();
-		
 		SimpleFeatureCollection fc = new GML3BasicParser().parseFeatureCollection(file, configuration, true);
-		
-		GTVectorDataBinding data = new GTVectorDataBinding(fc);
-		
-		return data;
+		return new GTVectorDataBinding(fc);
 	}
 
 }

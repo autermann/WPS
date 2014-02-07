@@ -36,8 +36,10 @@ import javax.xml.transform.TransformerException;
 
 import org.apache.commons.httpclient.HttpException;
 import org.n52.wps.PropertyDocument.Property;
+import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfig;
 import org.n52.wps.commons.XMLUtil;
+import org.n52.wps.io.IOUtils;
 import org.n52.wps.io.data.GenericFileData;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
@@ -52,7 +54,11 @@ import org.w3c.dom.Element;
 
 public class GeoserverWMSGenerator extends AbstractGenerator {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(GeoserverWMSGenerator.class);	
+	private static final Logger LOGGER = LoggerFactory.getLogger(GeoserverWMSGenerator.class);
+    private static final String GEOSERVER_PORT_PROPERTY = "Geoserver_port";
+    private static final String GEOSERVER_HOST_PROPERTY = "Geoserver_host";
+    private static final String GEOSERVER_PASSWORD_PROPERTY = "Geoserver_password";
+    private static final String GEOSERVER_USERNAME_PROPERTY = "Geoserver_username";
 	private String username;
 	private String password;
 	private String host;
@@ -60,103 +66,90 @@ public class GeoserverWMSGenerator extends AbstractGenerator {
 	
 	public GeoserverWMSGenerator() {
 		
-		super();
-		this.supportedIDataTypes.add(GTRasterDataBinding.class);
-		this.supportedIDataTypes.add(ShapefileBinding.class);
-		this.supportedIDataTypes.add(GeotiffBinding.class);
-		this.supportedIDataTypes.add(GTVectorDataBinding.class);
-		
-		properties = WPSConfig.getInstance().getPropertiesForGeneratorClass(this.getClass().getName());
-		for(Property property : properties){
-			if(property.getName().equalsIgnoreCase("Geoserver_username")){
-				username = property.getStringValue();
-			}
-			if(property.getName().equalsIgnoreCase("Geoserver_password")){
-				password = property.getStringValue();
-			}
-			if(property.getName().equalsIgnoreCase("Geoserver_host")){
-				host = property.getStringValue();
-			}
-			if(property.getName().equalsIgnoreCase("Geoserver_port")){
-				port = property.getStringValue();
-			}
-		}
-		if(port == null){
-			port = WPSConfig.getInstance().getWPSConfig().getServer().getHostport();
-		}
-		for(String supportedFormat : supportedFormats){
-			if(supportedFormat.equals("text/xml")){
-				supportedFormats.remove(supportedFormat);
-			}
-		}	
-	}
+        super(GTRasterDataBinding.class,
+              ShapefileBinding.class,
+              GeotiffBinding.class,
+              GTVectorDataBinding.class);
 
-	@Override
-	public InputStream generateStream(IData data, String mimeType, String schema) throws IOException {
-		
-		InputStream stream = null;	
-		try {
-			Document doc = storeLayer(data);			
-			String xmlString = XMLUtil.nodeToString(doc);			
-			stream = new ByteArrayInputStream(xmlString.getBytes("UTF-8"));			
-	    } catch(TransformerException e){
-	    	LOGGER.error("Error generating WMS output. Reason: ", e);
-	    	throw new RuntimeException("Error generating WMS output. Reason: " + e);
-	    } catch (IOException e) {
-	    	LOGGER.error("Error generating WMS output. Reason: ", e);
-	    	throw new RuntimeException("Error generating WMS output. Reason: " + e);
-		} catch (ParserConfigurationException e) {
-	    	LOGGER.error("Error generating WMS output. Reason: ", e);
-			throw new RuntimeException("Error generating WMS output. Reason: " + e);
-		}	
-		return stream;
-	}
-	
-	private Document storeLayer(IData coll) throws HttpException, IOException, ParserConfigurationException{
-		File file = null;
-		String storeName = "";
-		if(coll instanceof GTVectorDataBinding){
-			GTVectorDataBinding gtData = (GTVectorDataBinding) coll;
-			
-			try {
-				GenericFileData fileData = new GenericFileData(gtData.getPayload());
-				file = fileData.getBaseFile(true);
-			} catch (IOException e1) {
-				e1.printStackTrace();
-				throw new RuntimeException("Error generating shp file for storage in WFS. Reason: " + e1);
-			}
-			
-			//zip shp file
-			String path = file.getAbsolutePath();
-			String baseName = path.substring(0, path.length() - ".shp".length());
-			File shx = new File(baseName + ".shx");
-			File dbf = new File(baseName + ".dbf");
-			File prj = new File(baseName + ".prj");
-			File zipped =org.n52.wps.io.IOUtils.zip(file, shx, dbf, prj);
+        Property[] properties = WPSConfig.getInstance()
+                .getPropertiesForGeneratorClass(this.getClass().getName());
+        for (Property property : properties) {
+            if (property.getName().equalsIgnoreCase(GEOSERVER_USERNAME_PROPERTY)) {
+                username = property.getStringValue();
+            }
+            if (property.getName().equalsIgnoreCase(GEOSERVER_PASSWORD_PROPERTY)) {
+                password = property.getStringValue();
+            }
+            if (property.getName().equalsIgnoreCase(GEOSERVER_HOST_PROPERTY)) {
+                host = property.getStringValue();
+            }
+            if (property.getName().equalsIgnoreCase(GEOSERVER_PORT_PROPERTY)) {
+                port = property.getStringValue();
+            }
+        }
+        if (port == null) {
+            port = WPSConfig.getInstance().getWPSConfig().getServer()
+                    .getHostport();
+        }
+    }
 
-			file = zipped;
-			
-		}
-		if(coll instanceof GTRasterDataBinding){
-			GTRasterDataBinding gtData = (GTRasterDataBinding) coll;
-			GenericFileData fileData = new GenericFileData(gtData.getPayload(), null);
-			file = fileData.getBaseFile(true);
-			
-		}
-		if(coll instanceof ShapefileBinding){
-			ShapefileBinding data = (ShapefileBinding) coll;
-			file = data.getZippedPayload();
-			
-		}
-		if(coll instanceof GeotiffBinding){
-			GeotiffBinding data = (GeotiffBinding) coll;
-			file = (File) data.getPayload();
-		}
-		storeName = file.getName();			
-	
+    @Override
+    public InputStream generateStream(IData data, Format format) throws
+            IOException {
+        InputStream stream = null;
+        try {
+            Document doc = storeLayer(data);
+            String xmlString = XMLUtil.nodeToString(doc);
+            stream = new ByteArrayInputStream(xmlString.getBytes(format
+                    .getEncoding().or(DEFAULT_ENCODING)));
+        } catch (TransformerException | IOException |
+                ParserConfigurationException e) {
+            LOGGER.error("Error generating WMS output. Reason: ", e);
+            throw new RuntimeException("Error generating WMS output. Reason: " +
+                                       e);
+        }
+        return stream;
+    }
+
+    private Document storeLayer(IData coll) throws HttpException, IOException,
+                                                   ParserConfigurationException {
+        File file = null;
+        String storeName;
+        if (coll instanceof GTVectorDataBinding) {
+            GTVectorDataBinding gtData = (GTVectorDataBinding) coll;
+
+            try {
+                GenericFileData fileData = new GenericFileData(gtData.getPayload());
+                file = fileData.getBaseFile(true);
+            } catch (IOException e1) {
+                throw new RuntimeException("Error generating shp file for storage in WFS.", e1);
+            }
+
+            //zip shp file
+            String path = file.getAbsolutePath();
+            String baseName = path.substring(0, path.length() - ".shp".length());
+            File zipped = IOUtils.zip(file,
+                                      new File(baseName + ".shx"),
+                                      new File(baseName + ".dbf"),
+                                      new File(baseName + ".prj"));
+
+            file = zipped;
+
+        } else if (coll instanceof GTRasterDataBinding) {
+            GTRasterDataBinding gtData = (GTRasterDataBinding) coll;
+            GenericFileData fileData = new GenericFileData(gtData.getPayload(), null);
+            file = fileData.getBaseFile(true);
+        } else if (coll instanceof ShapefileBinding) {
+            file = ((ShapefileBinding) coll).getZippedPayload();
+        } else if (coll instanceof GeotiffBinding) {
+            file = ((GeotiffBinding) coll).getPayload();
+        } else {
+            throw new RuntimeException("Unsupported BindingClass: " + coll);
+        }
+        storeName = file.getName();
+
 		storeName = storeName +"_" + UUID.randomUUID();
 		GeoServerUploader geoserverUploader = new GeoServerUploader(username, password, host, port);
-		
 		String result = geoserverUploader.createWorkspace();
 		LOGGER.debug(result);
 		if(coll instanceof GTVectorDataBinding){

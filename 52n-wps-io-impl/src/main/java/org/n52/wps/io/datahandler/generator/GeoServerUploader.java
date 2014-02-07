@@ -39,10 +39,10 @@ import org.apache.commons.httpclient.methods.PutMethod;
 
 public class GeoServerUploader {
 
-	private String username;
-	private String password;
-	private String host;
-	private String port;
+	private final String username;
+	private final String password;
+	private final String host;
+	private final String port;
 
 	public GeoServerUploader(String username, String password, String host,
 			String port) {

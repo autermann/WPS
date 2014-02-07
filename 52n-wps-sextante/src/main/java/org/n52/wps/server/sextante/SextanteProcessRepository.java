@@ -35,14 +35,14 @@ import java.util.Set;
 
 import net.opengis.wps.x100.ProcessDescriptionType;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.xmlbeans.XmlException;
 import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.commons.WPSConfig;
 import org.n52.wps.server.IAlgorithm;
 import org.n52.wps.server.IAlgorithmRepository;
 import org.n52.wps.server.sextante.SextanteProcessDescriptionCreator.UnsupportedGeoAlgorithmException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import es.unex.sextante.core.GeoAlgorithm;
 import es.unex.sextante.core.Sextante;
@@ -59,7 +59,7 @@ import es.unex.sextante.exceptions.NullParameterAdditionalInfoException;
 
 
 public class SextanteProcessRepository implements IAlgorithmRepository{
-	private static Logger LOGGER = LoggerFactory.getLogger(SextanteProcessRepository.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SextanteProcessRepository.class);
 	private Map<String, ProcessDescriptionType> registeredProcesses;
 	 
 	

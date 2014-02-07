@@ -38,9 +38,11 @@ import org.apache.commons.collections.map.CaseInsensitiveMap;
 import org.apache.xmlbeans.XmlCursor;
 import org.n52.wps.server.ExceptionReport;
 import org.n52.wps.server.RepositoryManager;
-import org.n52.wps.server.WebProcessingService;
+import org.n52.wps.server.WPSConstants;
 import org.n52.wps.server.response.DescribeProcessResponse;
 import org.n52.wps.server.response.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -51,7 +53,7 @@ import org.w3c.dom.NodeList;
  * @see Request  
  */
 public class DescribeProcessRequest extends Request {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(DescribeProcessRequest.class);
 	private ProcessDescriptionsDocument document;
 	
 	/**
@@ -76,17 +78,16 @@ public class DescribeProcessRequest extends Request {
 		
 		map = new CaseInsensitiveMap();
 		
-		for (int i = 0; i < nnm.getLength(); i++) {
-			
-			Node n = nnm.item(i);
-			if(n.getLocalName().equalsIgnoreCase("service")){
-			map.put(n.getLocalName(), new String[]{n.getNodeValue()});
-			}else if(n.getLocalName().equalsIgnoreCase("version")){
-				map.put(n.getLocalName(), new String[]{n.getNodeValue()});				
-			}
-		}
-		//get identifier
-		String identifierList = "";		
+        for (int i = 0; i < nnm.getLength(); i++) {
+            Node n = nnm.item(i);
+            if (n.getLocalName().equalsIgnoreCase(WPSConstants.AN_SERVICE)) {
+                map.put(WPSConstants.PARAMETER_SERVICE, new String[] { n.getNodeValue() });
+            } else if (n.getLocalName().equalsIgnoreCase(WPSConstants.AN_VERSION)) {
+                map.put(WPSConstants.PARAMETER_VERSION, new String[] { n.getNodeValue() });
+            }
+        }
+        //get identifier
+        String identifierList = "";
 		
 		NodeList nList = doc.getFirstChild().getChildNodes();
 		
@@ -94,7 +95,7 @@ public class DescribeProcessRequest extends Request {
 		
 		for (int i = 0; i < nList.getLength(); i++) {
 			Node n = nList.item(i);
-			if(n.getLocalName() != null && n.getLocalName().equalsIgnoreCase("identifier")){
+			if(n.getLocalName() != null && n.getLocalName().equalsIgnoreCase(WPSConstants.EN_IDENTIFIER)){
 				identifierParameterExists = true;
 				String s = n.getTextContent();
 				if(s != null && !s.isEmpty()){
@@ -103,7 +104,7 @@ public class DescribeProcessRequest extends Request {
 			}
 		}
 		if(identifierParameterExists){
-			map.put("identifier", new String[]{identifierList});
+			map.put(WPSConstants.PARAMETER_IDENTIFIER, new String[]{identifierList});
 		}
 	}
 	
@@ -114,8 +115,9 @@ public class DescribeProcessRequest extends Request {
 	 * @return True if the input is valid, False otherwise
 	 */
 	public boolean validate() throws ExceptionReport{
-		getMapValue("version", true, new String[]{"1.0.0"}); // required		
-		getMapValue("identifier", true);  // required!
+		getMapValue(WPSConstants.PARAMETER_VERSION, true, 
+                    new String[] { WPSConstants.WPS_SERVICE_VERSION }); // required
+		getMapValue(WPSConstants.PARAMETER_IDENTIFIER, true);  // required!
 		return true;
 	}
 	
@@ -136,14 +138,14 @@ public class DescribeProcessRequest extends Request {
 		XmlCursor c = document.newCursor();
 		c.toFirstChild();
 		c.toLastAttribute();
-		c.setAttributeText(new QName(XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI, "schemaLocation"), "http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsDescribeProcess_response.xsd");
+		c.setAttributeText(new QName(XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI, WPSConstants.AN_SCHEMA_LOCATION), "http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsDescribeProcess_response.xsd");
 				
-		String[] identifiers = getMapValue("identifier", true).split(",");
-		document.getProcessDescriptions().setLang(WebProcessingService.DEFAULT_LANGUAGE);
-		document.getProcessDescriptions().setService("WPS");
-		document.getProcessDescriptions().setVersion(Request.SUPPORTED_VERSION);
+		String[] identifiers = getMapValue(WPSConstants.PARAMETER_IDENTIFIER, true).split(",");
+		document.getProcessDescriptions().setLang(WPSConstants.DEFAULT_LANGUAGE);
+		document.getProcessDescriptions().setService(WPSConstants.WPS_SERVICE_TYPE);
+		document.getProcessDescriptions().setVersion(WPSConstants.WPS_SERVICE_VERSION);
 		
-		if(identifiers.length==1 && identifiers[0].equalsIgnoreCase("all")){
+        if (identifiers.length == 1 && identifiers[0].equalsIgnoreCase("all")) {
 			List<String> identifierList = RepositoryManager.getInstance().getAlgorithms();
 			identifiers = new String[identifierList.size()];
 			for(int i = 0;i<identifierList.size();i++){
@@ -159,22 +161,20 @@ public class DescribeProcessRequest extends Request {
 		if(identifiers.length == 1){
 			if(identifiers[0] == null || identifiers[0].isEmpty()){
 				throw new ExceptionReport("Process description request with empty identifier.", 
-						ExceptionReport.INVALID_PARAMETER_VALUE, 
-						"identifier");
+						ExceptionReport.INVALID_PARAMETER_VALUE, WPSConstants.PARAMETER_IDENTIFIER);
 			}
 		}
 		
 		for(String algorithmName : identifiers) {
 			if(!RepositoryManager.getInstance().containsAlgorithm(algorithmName)) {
 				throw new ExceptionReport("Algorithm does not exist: " + algorithmName, 
-											ExceptionReport.INVALID_PARAMETER_VALUE, 
-											"identifier");
+											ExceptionReport.INVALID_PARAMETER_VALUE, WPSConstants.PARAMETER_IDENTIFIER);
 			}
 			ProcessDescriptionType description = RepositoryManager.getInstance().getProcessDescription(algorithmName);
 			document.getProcessDescriptions().addNewProcessDescription().set(description);
 		}
 		
-		LOGGER.info("Handled Request successfully for: " + getMapValue("identifier", true));
+		LOGGER.info("Handled Request successfully for: {}", getMapValue(WPSConstants.PARAMETER_IDENTIFIER, true));
 		return new DescribeProcessResponse(this);
 	}
 

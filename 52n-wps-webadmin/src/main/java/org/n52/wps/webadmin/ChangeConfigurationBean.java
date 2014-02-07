@@ -34,8 +34,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.n52.wps.AlgorithmRepositoryListDocument.AlgorithmRepositoryList;
 import org.n52.wps.DatahandlersDocument.Datahandlers;
 import org.n52.wps.FormatDocument.Format;
@@ -51,13 +49,15 @@ import org.n52.wps.ServerDocument.Server;
 import org.n52.wps.WPSConfigurationDocument;
 import org.n52.wps.WPSConfigurationDocument.WPSConfiguration;
 import org.n52.wps.commons.WPSConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This Bean changes the WPSConfiguration of the Application by processing formdata
  * @author Florian van Keulen, Raphael Rupprecht
  */
 public class ChangeConfigurationBean {
-    private static transient Logger LOGGER = LoggerFactory.getLogger(ChangeConfigurationBean.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ChangeConfigurationBean.class);
 
     /**
      * Types represents the different types of the Entries to proceed
@@ -121,11 +121,11 @@ public class ChangeConfigurationBean {
         generatorList = datahandlers.addNewGeneratorList();
 
         //temporary maps to store data in order to proceed
-        HashMap<String, String> serverValues = new HashMap<String, String>();
-        HashMap<String, String> repositoryValues = new HashMap<String, String>();
-        HashMap<String, String> remoteRepositoryValues = new HashMap<String, String>();
-        HashMap<String, String> parserValues = new HashMap<String, String>();
-        HashMap<String, String> generatorValues = new HashMap<String, String>();
+        HashMap<String, String> serverValues = new HashMap<>();
+        HashMap<String, String> repositoryValues = new HashMap<>();
+        HashMap<String, String> remoteRepositoryValues = new HashMap<>();
+        HashMap<String, String> parserValues = new HashMap<>();
+        HashMap<String, String> generatorValues = new HashMap<>();
 
         // split the stringified formdata into an array
         String[] dataArr = formData.split("&");
@@ -177,9 +177,8 @@ public class ChangeConfigurationBean {
 		                        processingItemName = formName[0];
 		                        repositoryValues.put(formName[1], entryArr[1]);
 		                    }
-		                    break;
 	                    }
-	
+                    break;
 	                case RemoteRepository:
 	                    // splits the formname to the type with number
 	                    // as identifier
@@ -205,9 +204,8 @@ public class ChangeConfigurationBean {
 		                        processingItemName = formName[0];
 		                        remoteRepositoryValues.put(formName[1], entryArr[1]);
 		                    }
-		                    break;
 	                    }
-	
+                    break;
 	                case Parser:
 	                    // splits the formname to the type with number
 	                    // as identifier
@@ -233,8 +231,8 @@ public class ChangeConfigurationBean {
 		                        processingItemName = formName[0];
 		                        parserValues.put(formName[1], entryArr[1]);
 		                    }
-		                    break;
 	                    }
+                    break;
 	                case Generator:
 	                    // splits the formname to the type with number
 	                    // as identifier

@@ -37,10 +37,8 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.collections.map.CaseInsensitiveMap;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.n52.wps.server.ExceptionReport;
-import org.n52.wps.server.WebProcessingService;
+import org.n52.wps.server.WPSConstants;
 import org.n52.wps.server.request.CapabilitiesRequest;
 import org.n52.wps.server.request.DescribeProcessRequest;
 import org.n52.wps.server.request.ExecuteRequest;
@@ -48,6 +46,8 @@ import org.n52.wps.server.request.Request;
 import org.n52.wps.server.request.RetrieveResultRequest;
 import org.n52.wps.server.response.ExecuteResponse;
 import org.n52.wps.server.response.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -63,23 +63,15 @@ import org.xml.sax.SAXException;
  * @author Timon ter Braak
  */
 public class RequestHandler {
-	
-    public static final String VERSION_ATTRIBUTE_NAME = "version";
 
-	/** Computation timeout in seconds */
+    private static final Logger LOGGER = LoggerFactory.getLogger(RequestHandler.class);
 	protected static RequestExecutor pool = new RequestExecutor();
-
 	protected OutputStream os;
-
-	private static Logger LOGGER = LoggerFactory.getLogger(RequestHandler.class);
-	
 	protected String responseMimeType;
-	
 	protected Request req;
 	
 	// Empty constructor due to classes which extend the RequestHandler
 	protected RequestHandler() {
-		
 	}
 
 	/**
@@ -104,55 +96,49 @@ public class RequestHandler {
 		*/
 		
 		
-		Request req;
 		CaseInsensitiveMap ciMap = new CaseInsensitiveMap(params);
 		
 		/*
 		 * check if service parameter is present and equals "WPS"
 		 * otherwise an ExceptionReport will be thrown
 		 */
-		String serviceType = Request.getMapValue("service", ciMap, true);
+		String serviceType = Request.getMapValue(WPSConstants.PARAMETER_SERVICE, ciMap, true);
 		
-		if(!serviceType.equalsIgnoreCase("WPS")){
+		if(!serviceType.equalsIgnoreCase(WPSConstants.WPS_SERVICE_TYPE)){
 			throw new ExceptionReport("Parameter <service> is not correct, expected: WPS, got: " + serviceType, 
-					ExceptionReport.INVALID_PARAMETER_VALUE, "service");
+					ExceptionReport.INVALID_PARAMETER_VALUE, WPSConstants.PARAMETER_SERVICE);
 		}
 
 		/*
 		 * check language. if not supported, return ExceptionReport
 		 * Fix for https://bugzilla.52north.org/show_bug.cgi?id=905
 		 */
-		String language = Request.getMapValue("language", ciMap, false);
+		String language = Request.getMapValue(WPSConstants.PARAMETER_LANGUAGE, ciMap, false);
 		
 		if(language != null){
 			Request.checkLanguageSupported(language);
 		}
 
 		// get the request type
-		String requestType = Request.getMapValue("request", ciMap, true);
+		String requestType = Request.getMapValue(WPSConstants.PARAMETER_REQUEST, ciMap, true);
 		
-		if (requestType.equalsIgnoreCase("GetCapabilities")) {
-			req = new CapabilitiesRequest(ciMap);
-		} 
-		else if (requestType.equalsIgnoreCase("DescribeProcess")) {
-			req = new DescribeProcessRequest(ciMap);
-		}
-		else if (requestType.equalsIgnoreCase("Execute")) {
-			req = new ExecuteRequest(ciMap);
+		if (requestType.equalsIgnoreCase(WPSConstants.GET_CAPABILITIES_REQUEST)) {
+			this.req = new CapabilitiesRequest(ciMap);
+		}  else if (requestType.equalsIgnoreCase(WPSConstants.DESCRIBE_PROCESS_REQUEST)) {
+			this.req = new DescribeProcessRequest(ciMap);
+		} else if (requestType.equalsIgnoreCase(WPSConstants.EXECUTE_REQUEST)) {
+			this.req = new ExecuteRequest(ciMap);
 			setResponseMimeType((ExecuteRequest)req);
-		} 
-		else if (requestType.equalsIgnoreCase("RetrieveResult")) {
-			req = new RetrieveResultRequest(ciMap);
-		} 
-		else {
+		}  else if (requestType.equalsIgnoreCase(WPSConstants.RETRIEVE_RESULT_REQUEST)) {
+			this.req = new RetrieveResultRequest(ciMap);
+		}  else {
 			throw new ExceptionReport(
 					"The requested Operation is not supported or not applicable to the specification: "
 							+ requestType,
 					ExceptionReport.OPERATION_NOT_SUPPORTED, requestType);
 		}
-
-		this.req = req;
 	}
+   
 
 	/**
 	 * Handles requests of type HTTP_POST (currently executeProcess). A Document
@@ -174,7 +160,8 @@ public class RequestHandler {
 		boolean isCapabilitiesNode = false;
 		
 		try {
-			System.setProperty("javax.xml.parsers.DocumentBuilderFactory", "org.apache.xerces.jaxp.DocumentBuilderFactoryImpl");
+			System.setProperty("javax.xml.parsers.DocumentBuilderFactory",
+                               "org.apache.xerces.jaxp.DocumentBuilderFactoryImpl");
 		
 			DocumentBuilderFactory fac = DocumentBuilderFactory.newInstance();
 			fac.setNamespaceAware(true);
@@ -190,35 +177,35 @@ public class RequestHandler {
 			nodeName = child.getNodeName();
 			localName = child.getLocalName();
 			nodeURI = child.getNamespaceURI();
-			Node versionNode = child.getAttributes().getNamedItem("version");
+			Node versionNode = child.getAttributes().getNamedItem(WPSConstants.AN_VERSION);
 			
 			/*
 			 * check for service parameter. this has to be present for all requests
 			 */
-			Node serviceNode = child.getAttributes().getNamedItem("service");
+			Node serviceNode = child.getAttributes().getNamedItem(WPSConstants.AN_SERVICE);
 			
 			if(serviceNode == null){
-				throw new ExceptionReport("Parameter <service> not specified.", ExceptionReport.MISSING_PARAMETER_VALUE, "service");
+				throw new ExceptionReport("Parameter <service> not specified.", ExceptionReport.MISSING_PARAMETER_VALUE, WPSConstants.PARAMETER_SERVICE);
 			}else{
-				if(!serviceNode.getNodeValue().equalsIgnoreCase("WPS")){
-					throw new ExceptionReport("Parameter <service> not specified.", ExceptionReport.INVALID_PARAMETER_VALUE, "service");
+				if(!serviceNode.getNodeValue().equalsIgnoreCase(WPSConstants.WPS_SERVICE_TYPE)){
+					throw new ExceptionReport("Parameter <service> not specified.", ExceptionReport.INVALID_PARAMETER_VALUE, WPSConstants.PARAMETER_SERVICE);
 				}
 			}
 			
             isCapabilitiesNode = nodeName.toLowerCase().contains("capabilities");
 			if(versionNode == null && !isCapabilitiesNode) {
-				throw new ExceptionReport("Parameter <version> not specified.", ExceptionReport.MISSING_PARAMETER_VALUE, "version");
+				throw new ExceptionReport("Parameter <version> not specified.", ExceptionReport.MISSING_PARAMETER_VALUE, WPSConstants.PARAMETER_VERSION);
 			}
 			//TODO: I think this can be removed, as capabilities requests do not have a version parameter (BenjaminPross)
 			if(!isCapabilitiesNode){
 //				version = child.getFirstChild().getTextContent();//.getNextSibling().getFirstChild().getNextSibling().getFirstChild().getNodeValue();
-				version = child.getAttributes().getNamedItem("version").getNodeValue();
+				version = child.getAttributes().getNamedItem(WPSConstants.PARAMETER_VERSION).getNodeValue();
 			}
 			/*
 			 * check language, if not supported, return ExceptionReport
 			 * Fix for https://bugzilla.52north.org/show_bug.cgi?id=905
 			 */
-			Node languageNode = child.getAttributes().getNamedItem("language");
+			Node languageNode = child.getAttributes().getNamedItem(WPSConstants.PARAMETER_LANGUAGE);
 			if(languageNode != null){
 				String language = languageNode.getNodeValue();
 				Request.checkLanguageSupported(language);
@@ -239,27 +226,27 @@ public class RequestHandler {
 		}
 		//Fix for Bug 904 https://bugzilla.52north.org/show_bug.cgi?id=904
 		if(!isCapabilitiesNode && version == null) {
-			throw new ExceptionReport("Parameter <version> not specified." , ExceptionReport.MISSING_PARAMETER_VALUE, "version");
+			throw new ExceptionReport("Parameter <version> not specified." , ExceptionReport.MISSING_PARAMETER_VALUE, WPSConstants.PARAMETER_VERSION);
 		}
-		if(!isCapabilitiesNode && !version.equals(Request.SUPPORTED_VERSION)) {
-			throw new ExceptionReport("Version not supported." , ExceptionReport.INVALID_PARAMETER_VALUE, "version");
+		if(!isCapabilitiesNode && !version.equals(WPSConstants.WPS_SERVICE_VERSION)) {
+			throw new ExceptionReport("Version not supported." , ExceptionReport.INVALID_PARAMETER_VALUE, WPSConstants.PARAMETER_VERSION);
 		}
 		// get the request type
-		if (nodeURI.equals(WebProcessingService.WPS_NAMESPACE) && localName.equals("Execute")) {
+		if (nodeURI.equals(WPSConstants.NS_WPS) && localName.equals(WPSConstants.EXECUTE_REQUEST)) {
 			req = new ExecuteRequest(doc);
 			setResponseMimeType((ExecuteRequest)req);
-		}else if (nodeURI.equals(WebProcessingService.WPS_NAMESPACE) && localName.equals("GetCapabilities")){
+		}else if (nodeURI.equals(WPSConstants.NS_WPS) && localName.equals(WPSConstants.GET_CAPABILITIES_REQUEST)){
 			req = new CapabilitiesRequest(doc);
-			this.responseMimeType = "text/xml";
-		} else if (nodeURI.equals(WebProcessingService.WPS_NAMESPACE) && localName.equals("DescribeProcess")) {
+			this.responseMimeType = WPSConstants.MIME_TYPE_TEXT_XML;
+		} else if (nodeURI.equals(WPSConstants.NS_WPS) && localName.equals(WPSConstants.DESCRIBE_PROCESS_REQUEST)) {
 			req = new DescribeProcessRequest(doc);
-			this.responseMimeType = "text/xml";
+			this.responseMimeType = WPSConstants.MIME_TYPE_TEXT_XML;
 			
-		}  else if(!localName.equals("Execute")){
+		}  else if(!localName.equals(WPSConstants.EXECUTE_REQUEST)){
 			throw new ExceptionReport("The requested Operation not supported or not applicable to the specification: "
 					+ nodeName, ExceptionReport.OPERATION_NOT_SUPPORTED, localName);
 		}
-		else if(nodeURI.equals(WebProcessingService.WPS_NAMESPACE)) {
+		else if(nodeURI.equals(WPSConstants.NS_WPS)) {
 			throw new ExceptionReport("specified namespace is not supported: "
 					+ nodeURI, ExceptionReport.INVALID_PARAMETER_VALUE);
 		}
@@ -271,7 +258,6 @@ public class RequestHandler {
 	 * be served immediately. If time runs out, the client will be asked to come
 	 * back later with a reference to the result.
 	 * 
-	 * @param req The request of the client.
 	 * @throws ExceptionReport
 	 */
 	public void handle() throws ExceptionReport {
@@ -372,17 +358,15 @@ public class RequestHandler {
 		if(req.isRawData()){
 			responseMimeType = req.getExecuteResponseBuilder().getMimeType();
 		}else{
-			responseMimeType = "text/xml";
+			responseMimeType = WPSConstants.MIME_TYPE_TEXT_XML;
 		}
 		
 		
 	}
-	
-	
 
 	public String getResponseMimeType(){
 		if(responseMimeType == null){
-			return "text/xml";
+			return WPSConstants.MIME_TYPE_TEXT_XML;
 		}
 		return responseMimeType.toLowerCase();
 	}

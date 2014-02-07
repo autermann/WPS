@@ -33,19 +33,19 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Calendar;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.n52.wps.DatabaseDocument.Database;
 import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.commons.WPSConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
-* An anstract-layer to the databases. 
+* An abstract-layer to the databases.
 * 
 * @author Janne Kovanen
 * 
 */
-public abstract class AbstractDatabase implements IDatabase{
+public abstract class AbstractDatabase implements IDatabase {
 	/** Property of the path to the location of the database */
 	public static final String PROPERTY_NAME_DATABASE_PATH = "databasePath";
 	
@@ -96,7 +96,10 @@ public abstract class AbstractDatabase implements IDatabase{
 	protected static final int INSERT_COLUMN_MIME_TYPE = 5;
 	
 	/** get access to the global logger. */
-	private static Logger LOGGER = LoggerFactory.getLogger(AbstractDatabase.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDatabase.class);
+
+    public static final String TEXT_PLAIN = "text/plain";
+    public static final String TEXT_XML = "text/xml";
 	
 	protected static PreparedStatement insertSQL = null;
 	protected static PreparedStatement updateSQL = null;
@@ -121,8 +124,9 @@ public abstract class AbstractDatabase implements IDatabase{
     
     @Override
 	public synchronized void insertRequest(String id, InputStream inputStream, boolean xml) {			
-        insertResultEntity(inputStream, "REQ_" + id, "ExecuteRequest", xml ? "text/xml" : "text/plain");
+        insertResultEntity(inputStream, "REQ_" + id, "ExecuteRequest", xml ? TEXT_XML : TEXT_PLAIN);
 	}
+
     
 	/**
 	 * Insert a new Response into the Database.
@@ -133,7 +137,7 @@ public abstract class AbstractDatabase implements IDatabase{
 	 */
     @Override
 	public synchronized String insertResponse(String id, InputStream inputStream) {			
-        return insertResultEntity(inputStream, id, "ExecuteResponse", "text/xml");
+        return insertResultEntity(inputStream, id, "ExecuteResponse", TEXT_XML);
 	}
 	
 	/**
@@ -293,10 +297,10 @@ public abstract class AbstractDatabase implements IDatabase{
 	 */
     @Override
 	public String getDatabaseName() {
-		
 		String dbName = getDatabaseProperties(PROPERTY_NAME_DATABASE_NAME);
-		return (dbName == null || dbName.equals("")) ? "wps" : dbName;
+		return (dbName == null || dbName.isEmpty()) ? DEFAULT_DATABASE_NAME : dbName;
 	}
+    public static final String DEFAULT_DATABASE_NAME = "wps";
 	
 	static String getDatabaseProperties(String propertyName) {
 		Database database = WPSConfig.getInstance().getWPSConfig().getServer().getDatabase();
@@ -318,20 +322,20 @@ public abstract class AbstractDatabase implements IDatabase{
 		String dbName = getDatabaseProperties(PROPERTY_NAME_DATABASE_NAME);
 		String dbTypeName = getDatabaseProperties(PROPERTY_NAME_DATABASE);
 		
-		if (dbPath == null || dbPath.compareTo("") == 0) {
+        if (dbPath == null || dbPath.isEmpty()) {
             // TODO:  parameterize base path
-			dbPath = System.getProperty("java.io.tmpdir", ".") + File.separator + "Databases";
-			if(dbTypeName!=null && !dbTypeName.equals("")) {
-				dbPath += File.separator + dbTypeName.toUpperCase();
-			} else {
-				dbPath += File.separator + "DERBY";
-			}
-			if(dbName!=null && !dbName.equals("")) {
-				dbPath += File.separator + dbName.toUpperCase();
-			} else {
-				dbPath += File.separator + "wps";
-			}
-		}
+            dbPath = System.getProperty("java.io.tmpdir", ".") + File.separator + "Databases";
+            if (dbTypeName != null && !dbTypeName.isEmpty()) {
+                dbPath += File.separator + dbTypeName.toUpperCase();
+            } else {
+                dbPath += File.separator + "DERBY";
+            }
+            if (dbName != null && !dbName.isEmpty()) {
+                dbPath += File.separator + dbName.toUpperCase();
+            } else {
+                dbPath += File.separator + "wps";
+            }
+        }
 		return dbPath;
 	}
 	
@@ -374,7 +378,7 @@ public abstract class AbstractDatabase implements IDatabase{
 	public long getContentLengthForStoreResponse(String id) {
 		return -1;
 	}
-	
+
     @Override
 	public boolean deleteStoredResponse(String id) {
 		// TODO Auto-generated method stub

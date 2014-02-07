@@ -27,6 +27,7 @@ package org.n52.wps.server.r.metadata;
 import java.math.BigInteger;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import net.opengis.ows.x11.DomainMetadataType;
@@ -42,7 +43,7 @@ import net.opengis.wps.x100.ProcessDescriptionType.DataInputs;
 import net.opengis.wps.x100.ProcessDescriptionType.ProcessOutputs;
 import net.opengis.wps.x100.SupportedComplexDataType;
 
-import org.n52.wps.FormatDocument.Format;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.GeneratorFactory;
 import org.n52.wps.io.IGenerator;
 import org.n52.wps.io.IOHandler;
@@ -62,7 +63,7 @@ import org.slf4j.LoggerFactory;
 
 public class RProcessDescriptionCreator {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(RProcessDescriptionCreator.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RProcessDescriptionCreator.class);
 
     /**
      * Usually called from GenericRProcess (extends AbstractObservableAlgorithm)
@@ -186,10 +187,11 @@ public class RProcessDescriptionCreator {
                 List<?> namedList = (List<?>) obj;
                 for (Object object : namedList) {
                     R_Resource resource = null;
-                    if (object instanceof R_Resource)
+                    if (object instanceof R_Resource) {
                         resource = (R_Resource) object;
-                    else
+                    } else {
                         continue;
+                    }
                     MetadataType mt = pdt.addNewMetadata();
                     mt.setTitle("Resource: " + resource.getResourceValue());
 
@@ -211,15 +213,14 @@ public class RProcessDescriptionCreator {
     private static void addProcessDescription(ProcessDescriptionType pdt,
             RAnnotation annotation) throws RAnnotationException
     {
-        R_Config conf = R_Config.getInstance();
-        String id = conf.WKN_PREFIX + annotation.getStringValue(RAttribute.IDENTIFIER);
+        String id = R_Config.WKN_PREFIX + annotation.getStringValue(RAttribute.IDENTIFIER);
         pdt.addNewIdentifier().setStringValue(id);
 
         String abstr = annotation.getStringValue(RAttribute.ABSTRACT);
-        pdt.addNewAbstract().setStringValue("" + abstr);
+        pdt.addNewAbstract().setStringValue(abstr);
 
         String title = annotation.getStringValue(RAttribute.TITLE);
-        pdt.addNewTitle().setStringValue("" + title);
+        pdt.addNewTitle().setStringValue(title);
 
         pdt.setProcessVersion(annotation.getStringValue(RAttribute.VERSION));
     }
@@ -234,13 +235,15 @@ public class RProcessDescriptionCreator {
 
         // title is optional, therefore it could be null
         String title = annotation.getStringValue(RAttribute.TITLE);
-        if (title != null)
+        if (title != null) {
             input.addNewTitle().setStringValue(title);
+        }
 
         String abstr = annotation.getStringValue(RAttribute.ABSTRACT);
         // abstract is optional, therefore it could be null
-        if (abstr != null)
+        if (abstr != null) {
             input.addNewAbstract().setStringValue(abstr);
+        }
 
         String min = annotation.getStringValue(RAttribute.MIN_OCCURS);
         BigInteger minOccurs = BigInteger.valueOf(Long.parseLong(min));
@@ -289,8 +292,9 @@ public class RProcessDescriptionCreator {
         ComplexDataDescriptionType cpldata = complexInput.addNewDefault().addNewFormat();
         cpldata.setMimeType(annotation.getProcessDescriptionType());
         String encod = annotation.getStringValue(RAttribute.ENCODING);
-        if (encod != null && encod != "base64")
+        if (encod != null && !"base64".equals(encod)) {
             cpldata.setEncoding(encod);
+        }
 
         Class<? extends IData> iClass = annotation.getDataClass();
         if (iClass.equals(GenericFileDataBinding.class)) {
@@ -298,9 +302,10 @@ public class RProcessDescriptionCreator {
             ComplexDataDescriptionType format = supported.addNewFormat();
             format.setMimeType(annotation.getProcessDescriptionType());
             encod = annotation.getStringValue(RAttribute.ENCODING);
-            if (encod != null)
+            if (encod != null) {
                 format.setEncoding(encod);
-            if (encod == "base64") {
+            }
+            if ("base64".equals(encod)) {
                 // set a format entry such that not encoded data is supported as
                 // well
                 ComplexDataDescriptionType format2 = supported.addNewFormat();
@@ -321,13 +326,15 @@ public class RProcessDescriptionCreator {
 
         // title is optional, therefore it could be null
         String title = out.getStringValue(RAttribute.TITLE);
-        if (title != null)
+        if (title != null) {
             output.addNewTitle().setStringValue(title);
+        }
 
         // is optional, therefore it could be null
         String abstr = out.getStringValue(RAttribute.ABSTRACT);
-        if (abstr != null)
+        if (abstr != null) {
             output.addNewAbstract().setStringValue(abstr);
+        }
 
         if (out.isComplex()) {
             addComplexOutput(out, output);
@@ -363,7 +370,7 @@ public class RProcessDescriptionCreator {
         complexData.setMimeType(out.getProcessDescriptionType());
 
         String encod = out.getStringValue(RAttribute.ENCODING);
-        if (encod != null && encod != "base64") {
+        if (encod != null && !"base64".equals(encod)) {
             // base64 shall not be default, but occur in the supported formats
             complexData.setEncoding(encod);
         }
@@ -378,7 +385,7 @@ public class RProcessDescriptionCreator {
 
             if (encod != null) {
                 format.setEncoding(encod);
-                if (encod == "base64") {
+                if ("base64".equals(encod)) {
                     // set a format entry such that not encoded data is
                     // supported as well
                     ComplexDataDescriptionType format2 = supported.addNewFormat();
@@ -404,33 +411,23 @@ public class RProcessDescriptionCreator {
     {
         // retrieve a list of generators which support the supportedClass-input
         List<IGenerator> generators = GeneratorFactory.getInstance().getAllGenerators();
-        List<IGenerator> foundGenerators = new ArrayList<IGenerator>();
+        List<IGenerator> foundGenerators = new ArrayList<>();
         for (IGenerator generator : generators) {
-            Class<?>[] supportedClasses = generator.getSupportedDataBindings();
-            for (Class<?> clazz : supportedClasses) {
-                if (clazz.equals(supportedClass)) {
-                    foundGenerators.add(generator);
-                }
+            if (generator.isSupportedDataBinding(supportedClass)) {
+                foundGenerators.add(generator);
             }
         }
 
         ComplexDataCombinationsType supported = complex.addNewSupported();
-        for (int i = 0; i < foundGenerators.size(); i++) {
-            IGenerator generator = foundGenerators.get(i);
-            Format[] fullFormats = generator.getSupportedFullFormats();
+        for (IGenerator generator : foundGenerators) {
 
-            for (Format format : fullFormats) {
+            for (Format format : generator.getSupportedFormats()) {
                 ComplexDataDescriptionType newSupportedFormat = supported.addNewFormat();
-                String encoding = format.getEncoding();
-                if (encoding != null)
-                    newSupportedFormat.setEncoding(encoding);
-                else
-                    newSupportedFormat.setEncoding(IOHandler.DEFAULT_ENCODING);
-
-                newSupportedFormat.setMimeType(format.getMimetype());
-                String schema = format.getSchema();
-                if (schema != null)
-                    newSupportedFormat.setSchema(schema);
+                newSupportedFormat.setEncoding(format.getEncoding().or(IOHandler.DEFAULT_ENCODING));
+                newSupportedFormat.setMimeType(format.getMimeType().get());
+                if (format.hasSchema()) {
+                    newSupportedFormat.setSchema(format.getSchema().get());
+                }
             }
 
         }
@@ -450,32 +447,23 @@ public class RProcessDescriptionCreator {
     {
         // retrieve a list of parsers which support the supportedClass-input
         List<IParser> parsers = ParserFactory.getInstance().getAllParsers();
-        List<IParser> foundParsers = new ArrayList<IParser>();
+        List<IParser> foundParsers = new LinkedList<>();
         for (IParser parser : parsers) {
-            Class<?>[] supportedClasses = parser.getSupportedDataBindings();
-            for (Class<?> clazz : supportedClasses) {
-                if (clazz.equals(supportedClass)) {
-                    foundParsers.add(parser);
-                }
+            if (parser.isSupportedDataBinding(supportedClass)) {
+               foundParsers.add(parser);
             }
         }
 
         // add properties for each parser which is found
         ComplexDataCombinationsType supported = complex.addNewSupported();
-        for (int i = 0; i < foundParsers.size(); i++) {
-            IParser parser = foundParsers.get(i);
-            Format[] fullFormats = parser.getSupportedFullFormats();
-            for (Format format : fullFormats) {
+        for (IParser parser : foundParsers) {
+            for (Format format : parser.getSupportedFormats()) {
                 ComplexDataDescriptionType newSupportedFormat = supported.addNewFormat();
-                String encoding = format.getEncoding();
-                if (encoding != null)
-                    newSupportedFormat.setEncoding(encoding);
-                else
-                    newSupportedFormat.setEncoding(IOHandler.DEFAULT_ENCODING);
-                newSupportedFormat.setMimeType(format.getMimetype());
-                String schema = format.getSchema();
-                if (schema != null)
-                    newSupportedFormat.setSchema(schema);
+                newSupportedFormat.setEncoding(format.getEncoding().or(IOHandler.DEFAULT_ENCODING));
+                newSupportedFormat.setMimeType(format.getMimeType().get());
+                if (format.hasSchema()) {
+                    newSupportedFormat.setSchema(format.getSchema().get());
+                }
             }
 
         }

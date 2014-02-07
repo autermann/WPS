@@ -56,6 +56,8 @@ import org.n52.wps.util.XMLBeansHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.net.HttpHeaders;
+
 /**
  * This WPS supports HTTP GET for describeProcess and getCapabilities and XML-POST for execute.
  * 
@@ -71,8 +73,6 @@ public class WebProcessingService extends HttpServlet {
     public static String BASE_DIR = null;
     public static String WEBAPP_PATH = null;
     public static String SERVLET_PATH = "WebProcessingService";
-    public static String WPS_NAMESPACE = "http://www.opengis.net/wps/1.0.0";
-    public static String DEFAULT_LANGUAGE = "en-US";
     protected static Logger LOGGER = LoggerFactory.getLogger(WebProcessingService.class);
 
     /**
@@ -91,16 +91,17 @@ public class WebProcessingService extends HttpServlet {
         /*
          * Forbids clients to cache the response May solve problems with proxies and bad implementations
          */
-        hsResponse.setHeader("Expires", "0");
-        if (hsRequest.getProtocol().equals("HTTP/1.1"))
-            hsResponse.setHeader("Cache-Control", "no-cache");
-        else if (hsRequest.getProtocol().equals("HTTP/1.0"))
-            hsResponse.setHeader("Pragma", "no-cache");
+        hsResponse.setHeader(HttpHeaders.EXPIRES, "0");
+        if (hsRequest.getProtocol().equals("HTTP/1.1")) {
+            hsResponse.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
+        } else if (hsRequest.getProtocol().equals("HTTP/1.0")) {
+            hsResponse.setHeader(HttpHeaders.PRAGMA, "no-cache");
+        }
 
         // Enable/disable gzip compression
-        if (hsRequest.getHeader("Accept-Encoding") != null
-                && hsRequest.getHeader("Accept-Encoding").indexOf("gzip") >= 0) {
-            hsResponse.setHeader("Content-Encoding", "gzip");
+        if (hsRequest.getHeader(HttpHeaders.ACCEPT_ENCODING) != null
+                && hsRequest.getHeader(HttpHeaders.ACCEPT_ENCODING).indexOf("gzip") >= 0) {
+            hsResponse.setHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
             LOGGER.info("gzip-Compression for output enabled");
             return new GZIPOutputStream(hsResponse.getOutputStream());
         } // else {
@@ -222,6 +223,7 @@ public class WebProcessingService extends HttpServlet {
         try {
             @SuppressWarnings("resource")
             OutputStream out = res.getOutputStream(); // closed by res.flushBuffer();
+            @SuppressWarnings("unchecked")
             RequestHandler handler = new RequestHandler((Map<String, String[]>) req.getParameterMap(), out);
             String mimeType = handler.getResponseMimeType();
             res.setContentType(mimeType);

@@ -28,25 +28,19 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 
 import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.data.DataStore;
 import org.geotools.data.shapefile.ShapefileDataStore;
-import org.geotools.data.shapefile.ShapefileUtilities;
-import org.geotools.data.shapefile.ShpFiles;
 import org.geotools.feature.FeatureCollection;
 import org.n52.wps.io.IOHandler;
 import org.n52.wps.io.IOUtils;
 import org.n52.wps.io.data.IComplexData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class ShapefileBinding implements IComplexData{
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
-
-	private static Logger LOGGER = LoggerFactory.getLogger(ShapefileBinding.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ShapefileBinding.class);
 	
 	
 	protected File shpFile;
@@ -63,7 +57,7 @@ public class ShapefileBinding implements IComplexData{
 	}
 
 	@Override
-	public Class getSupportedClass() {
+	public Class<?> getSupportedClass() {
 		return File.class;
 	}
 	

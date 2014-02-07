@@ -30,49 +30,74 @@ import org.opengis.geometry.Envelope;
 
 import com.vividsolutions.jts.geom.Coordinate;
 
-public class GTReferenceEnvelope implements IBBOXData{
+public class GTReferenceEnvelope implements IBBOXData {
+    private static final long serialVersionUID = 1L;
+    private final Envelope gtEnvelope;
+    private final String crs;
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private Envelope envelope;
-	
-	public GTReferenceEnvelope(Object llx, Object lly, Object upx, Object upy, String crs) {
-		
-		try {
-			double llx_double = Double.parseDouble(llx.toString());
-			double lly_double = Double.parseDouble(lly.toString());
-			double upx_double = Double.parseDouble(upx.toString());
-			double upy_double = Double.parseDouble(upy.toString());
-			
-			Coordinate ll = new Coordinate(llx_double,lly_double);
-			Coordinate ur = new Coordinate(upx_double,upy_double);
-			com.vividsolutions.jts.geom.Envelope internalEnvelope = new com.vividsolutions.jts.geom.Envelope(ll,ur);
-			
-			if (crs == null) {
-				this.envelope = new ReferencedEnvelope(internalEnvelope, null);
-			}
-			else {
-				this.envelope = new ReferencedEnvelope(internalEnvelope,CRS.decode(crs));
-			}
-		
-		} catch (Exception e) {
-			throw new RuntimeException("Error while creating BoundingBox");
-		}
-	}
+    public GTReferenceEnvelope(Object llx,
+                               Object lly,
+                               Object upx,
+                               Object upy,
+                               String crs) {
 
-	public GTReferenceEnvelope(Envelope envelope) {
-		this.envelope = envelope;
-	}
+        try {
+            double llx_double = Double.parseDouble(llx.toString());
+            double lly_double = Double.parseDouble(lly.toString());
+            double upx_double = Double.parseDouble(upx.toString());
+            double upy_double = Double.parseDouble(upy.toString());
 
+            Coordinate ll = new Coordinate(llx_double, lly_double);
+            Coordinate ur = new Coordinate(upx_double, upy_double);
+            com.vividsolutions.jts.geom.Envelope jtsEnvelope = new com.vividsolutions.jts.geom.Envelope(ll, ur);
+            this.crs = crs;
+            if (crs == null) {
+                this.gtEnvelope = new ReferencedEnvelope(jtsEnvelope, null);
+            } else {
+                this.gtEnvelope = new ReferencedEnvelope(jtsEnvelope, CRS.decode(crs));
+            }
 
-	public Envelope getPayload() {
-		return envelope;
-	}
+        } catch (Exception e) {
+            throw new RuntimeException("Error while creating BoundingBox");
+        }
+    }
 
-	public Class<?> getSupportedClass() {
-		return ReferencedEnvelope.class;
-	}
-	
+    public GTReferenceEnvelope(Envelope envelope) {
+        this.gtEnvelope = envelope;
+        if (envelope.getCoordinateReferenceSystem() != null &&
+            !envelope.getCoordinateReferenceSystem().getIdentifiers().isEmpty()) {
+            this.crs = envelope.getCoordinateReferenceSystem().getIdentifiers().iterator().next().toString();
+        } else {
+            this.crs = null;
+        }
+    }
+
+    public Envelope getPayload() {
+        return gtEnvelope;
+    }
+
+    public Class<?> getSupportedClass() {
+        return ReferencedEnvelope.class;
+    }
+
+    @Override
+    public String getCRS() {
+        return this.crs;
+    }
+
+    @Override
+    public int getDimension() {
+        return this.gtEnvelope.getDimension();
+    }
+
+    @Override
+    public double[] getLowerCorner() {
+        return this.gtEnvelope.getLowerCorner().getCoordinate();
+    }
+
+    @Override
+    public double[] getUpperCorner() {
+        return this.gtEnvelope.getUpperCorner().getCoordinate();
+    }
+
 }

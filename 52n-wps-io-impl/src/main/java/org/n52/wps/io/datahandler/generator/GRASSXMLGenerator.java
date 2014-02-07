@@ -28,10 +28,11 @@ package org.n52.wps.io.datahandler.generator;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Benjamin Pross(bpross-52n)
@@ -39,8 +40,8 @@ import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
  */
 public class GRASSXMLGenerator extends AbstractGenerator {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(GRASSXMLGenerator.class);
-	private static String[] SUPPORTED_SCHEMAS = new String[]{
+	private static final Logger LOGGER = LoggerFactory.getLogger(GRASSXMLGenerator.class);
+	private static final String[] SUPPORTED_SCHEMAS = new String[]{
 //		"http://schemas.opengis.net/gml/2.1.1/feature.xsd",
 		"http://schemas.opengis.net/gml/2.1.2/feature.xsd",
 //		"http://schemas.opengis.net/gml/2.1.2.1/feature.xsd",
@@ -50,15 +51,11 @@ public class GRASSXMLGenerator extends AbstractGenerator {
 		};
 	
 	public GRASSXMLGenerator(){
-		super();
-		supportedIDataTypes.add(GenericFileDataBinding.class);
+		super(GenericFileDataBinding.class);
 	}
 	
-	public InputStream generateStream(IData data, String mimeType, String schema) throws IOException {
-		
-		InputStream theStream = ((GenericFileDataBinding)data).getPayload().getDataStream();
-		
-		return theStream;
+	public InputStream generateStream(IData data, Format format) throws IOException {
+		return ((GenericFileDataBinding)data).getPayload().getDataStream();
 	}
 	
 }

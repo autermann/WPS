@@ -33,12 +33,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import javax.xml.namespace.QName;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.data.collection.ListFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.DefaultFeatureCollections;
@@ -51,6 +51,7 @@ import org.geotools.filter.identity.GmlObjectIdImpl;
 import org.geotools.gml3.ApplicationSchemaConfiguration;
 import org.geotools.gml3.GMLConfiguration;
 import org.geotools.xml.Configuration;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.SchemaRepository;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.opengis.feature.GeometryAttribute;
@@ -60,6 +61,9 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.GeometryDescriptor;
 import org.opengis.feature.type.GeometryType;
 import org.opengis.filter.identity.Identifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import com.vividsolutions.jts.geom.Geometry;
@@ -72,15 +76,14 @@ import com.vividsolutions.jts.geom.Geometry;
  */
 public class GML3BasicParser extends AbstractParser {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(GML3BasicParser.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GML3BasicParser.class);
 	
 	public GML3BasicParser() {
-		super();
-		supportedIDataTypes.add(GTVectorDataBinding.class);
+		super(GTVectorDataBinding.class);
 	}
 	
 	@Override
-	public GTVectorDataBinding parse(InputStream stream, String mimeType, String schema) {
+	public GTVectorDataBinding parse(InputStream stream, Format format) {
 
 		FileOutputStream fos = null;
 		try{
@@ -98,7 +101,9 @@ public class GML3BasicParser extends AbstractParser {
 			return data;
 		}
 		catch(IOException e) {
-			if (fos != null) try { fos.close(); } catch (Exception e1) { }
+			if (fos != null) {
+                try { fos.close(); } catch (IOException e1) { }
+            }
 			throw new IllegalArgumentException("Error while creating tempFile", e);
 		}
 	}
@@ -134,27 +139,25 @@ public class GML3BasicParser extends AbstractParser {
 		Configuration configuration = null;
 		
 		boolean shouldSetParserStrict = true;
-		if(schematypeTuple != null) {
 			
-			String schemaLocation =  schematypeTuple.getLocalPart();
-			
-			if (schemaLocationIsRelative) {
-				schemaLocation = new File(file.getParentFile(), schemaLocation).getAbsolutePath();
-			}
-			
-			if(schemaLocation.equals("http://schemas.opengis.net/gml/3.1.1/base/gml.xsd")){
-				configuration = new GMLConfiguration();
-				shouldSetParserStrict = false;
-			}else{			
-				if(schemaLocation!= null && schematypeTuple.getNamespaceURI()!=null){
-					SchemaRepository.registerSchemaLocation(schematypeTuple.getNamespaceURI(), schemaLocation);
-					configuration =  new ApplicationSchemaConfiguration(schematypeTuple.getNamespaceURI(), schemaLocation);
-				}else{
-					configuration = new GMLConfiguration();
-					shouldSetParserStrict = false;
-				}
-			}
-		}
+        String schemaLocation =  schematypeTuple.getLocalPart();
+
+        if (schemaLocationIsRelative) {
+            schemaLocation = new File(file.getParentFile(), schemaLocation).getAbsolutePath();
+        }
+
+        if(schemaLocation.equals("http://schemas.opengis.net/gml/3.1.1/base/gml.xsd")){
+            configuration = new GMLConfiguration();
+            shouldSetParserStrict = false;
+        }else{
+            if(schematypeTuple.getNamespaceURI()!=null){
+                SchemaRepository.registerSchemaLocation(schematypeTuple.getNamespaceURI(), schemaLocation);
+                configuration =  new ApplicationSchemaConfiguration(schematypeTuple.getNamespaceURI(), schemaLocation);
+            }else{
+                configuration = new GMLConfiguration();
+                shouldSetParserStrict = false;
+            }
+        }
 		
 		org.geotools.xml.Parser parser = new org.geotools.xml.Parser(configuration);
 		
@@ -190,7 +193,7 @@ public class GML3BasicParser extends AbstractParser {
 				List<?> possibleSimpleFeatureList = ((ArrayList<?>)((HashMap<?,?>) parsedData).get("featureMember"));				
 				
 				if(possibleSimpleFeatureList!=null){
-					List<SimpleFeature> simpleFeatureList = new ArrayList<SimpleFeature>();
+					List<SimpleFeature> simpleFeatureList = new ArrayList<>();
 					
 					SimpleFeatureType sft = null;
 					
@@ -217,7 +220,7 @@ public class GML3BasicParser extends AbstractParser {
 					if(value.getType().getBinding().isAssignableFrom(FeatureCollection.class)){
 						if(tempValue instanceof ArrayList){
 							ArrayList<?> list = (ArrayList<?>) tempValue;
-							List<SimpleFeature> simpleFeatureList = new ArrayList<SimpleFeature>();
+							List<SimpleFeature> simpleFeatureList = new ArrayList<>();
 							SimpleFeatureType sft = null;
 							for(Object listValue : list){
 								if(listValue instanceof SimpleFeature){									
@@ -261,7 +264,7 @@ public class GML3BasicParser extends AbstractParser {
 				}
 			}
 		}
-		} catch (Exception e) {
+		} catch (IOException | SAXException | ParserConfigurationException | NoSuchElementException e) {
 			LOGGER.error("Exception while handling parsed GML.", e);
 			throw new RuntimeException(e);
 		}
@@ -281,7 +284,7 @@ public class GML3BasicParser extends AbstractParser {
 			String namespaceURI = handler.getNameSpaceURI();
 			return new QName(namespaceURI,schemaUrl);
 			
-		} catch (Exception e) {
+		} catch (ParserConfigurationException | SAXException | IOException e) {
 			LOGGER.error("Exception while trying to determine schema of FeatureType.", e);
 			throw new IllegalArgumentException(e);
 		}

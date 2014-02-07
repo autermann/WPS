@@ -30,7 +30,6 @@ import java.util.List;
 import net.opengis.ows.x11.AllowedValuesDocument.AllowedValues;
 import net.opengis.ows.x11.DomainMetadataType;
 import net.opengis.ows.x11.RangeType;
-import net.opengis.wps.x100.ComplexDataCombinationType;
 import net.opengis.wps.x100.ComplexDataCombinationsType;
 import net.opengis.wps.x100.ComplexDataDescriptionType;
 import net.opengis.wps.x100.InputDescriptionType;
@@ -42,7 +41,7 @@ import net.opengis.wps.x100.ProcessDescriptionType.ProcessOutputs;
 import net.opengis.wps.x100.SupportedComplexDataInputType;
 import net.opengis.wps.x100.SupportedComplexDataType;
 
-import org.n52.wps.FormatDocument.Format;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.GeneratorFactory;
 import org.n52.wps.io.IGenerator;
 import org.n52.wps.io.IOHandler;
@@ -392,244 +391,69 @@ public class SextanteProcessDescriptionCreator implements SextanteConstants{
 	private void addVectorInputsFormats(SupportedComplexDataInputType complex) {
 
 		List<IParser> parsers = ParserFactory.getInstance().getAllParsers();
-		List<IParser> foundParsers = new ArrayList<IParser>();
+		List<IParser> foundParsers = new ArrayList<>();
 		for(IParser parser : parsers) {
-			Class<?>[] supportedClasses = parser.getSupportedDataBindings();
-			for(Class<?> clazz : supportedClasses){
-				if(clazz.equals(GTVectorDataBinding.class)){
-					foundParsers.add(parser);
-				}
-				
-			}
+            if (parser.isSupportedDataBinding(GTVectorDataBinding.class)) {
+                foundParsers.add(parser);
+            }
 		}
 		
 		ComplexDataCombinationsType supportedInputFormat = complex.addNewSupported();
 		
-		for (int i = 0; i < foundParsers.size(); i++) {
-			IParser parser = foundParsers.get(i);
-
-			Format[] supportedFullFormats = parser.getSupportedFullFormats();
-
-			if (complex.getDefault() == null) {
-				ComplexDataCombinationType defaultInputFormat = complex
-						.addNewDefault();
-				/*
-				 * default format will be the first config format
-				 */
-				Format format = supportedFullFormats[0];
-				ComplexDataDescriptionType defaultFormat = defaultInputFormat
-						.addNewFormat();
-				defaultFormat.setMimeType(format.getMimetype());
-
-				String encoding = format.getEncoding();
-
-				if (encoding != null && !encoding.equals("")) {
-					defaultFormat.setEncoding(encoding);
-				}
-
-				String schema = format.getSchema();
-
-				if (schema != null && !schema.equals("")) {
-					defaultFormat.setSchema(schema);
-				}
-
-			}
-
-			for (int j = 0; j < supportedFullFormats.length; j++) {
-				/*
-				 * create supportedFormat for each mimetype, encoding, schema
-				 * composition mimetypes can have several encodings and schemas
-				 */
-				Format format1 = supportedFullFormats[j];
-
-				/*
-				 * add one format for this mimetype
-				 */
-				ComplexDataDescriptionType supportedFormat = supportedInputFormat
-						.addNewFormat();
-				supportedFormat.setMimeType(format1.getMimetype());
-				if (format1.getEncoding() != null) {
-					supportedFormat.setEncoding(format1.getEncoding());
-				}
-				if (format1.getSchema() != null) {
-					supportedFormat.setSchema(format1.getSchema());
-				}
-			}
-		}
-		
-		
-		
-//		ComplexDataCombinationsType supported = complex.addNewSupported();
-//		for(int i = 0; i<foundParsers.size(); i++){
-//			IParser parser = foundParsers.get(i);
-//			String[] supportedFormats = parser.getSupportedFormats();
-//			String[] supportedSchemas = parser.getSupportedSchemas();
-//			if(supportedSchemas == null){
-//				supportedSchemas = new String[0];
-//			}
-//			String[] supportedEncodings = parser.getSupportedEncodings();
-//		
-//			for(int j=0; j<supportedFormats.length;j++){
-//				for(int k=0; k<supportedEncodings.length;k++){
-//					if(j==0 && k==0 && i == 0){
-//						String supportedFormat = supportedFormats[j];
-//						ComplexDataDescriptionType defaultFormat = complex.addNewDefault().addNewFormat();
-//						
-//						defaultFormat.setMimeType(supportedFormat);
-//						defaultFormat.setEncoding(supportedEncodings[k]);
-//						for(int t = 0; t<supportedSchemas.length;t++){
-//							if(t==0){
-//								defaultFormat.setSchema(supportedSchemas[t]);
-//							}
-//						}
-//					}else{
-//						
-//						String supportedFormat = supportedFormats[j];
-//						ComplexDataDescriptionType supportedCreatedFormat = supported.addNewFormat();
-//						supportedCreatedFormat.setMimeType(supportedFormat);
-//						supportedCreatedFormat.setEncoding(supportedEncodings[k]);
-//						for(int t = 0; t<supportedSchemas.length;t++){
-//							if(t==0){
-//								supportedCreatedFormat.setSchema(supportedSchemas[t]);
-//							}
-//							if(t>0){
-//								ComplexDataDescriptionType supportedCreatedFormatAdditional = supported.addNewFormat();
-//								supportedCreatedFormatAdditional.setEncoding(supportedEncodings[k]);
-//								supportedCreatedFormatAdditional.setMimeType(supportedFormat);
-//								supportedCreatedFormatAdditional.setSchema(supportedSchemas[t]);
-//							}
-//						}
-//					}
-//				}
-//			}
-//		}
-		
+		for (IParser parser : foundParsers) {
+            for (Format format : parser.getSupportedFormats()) {
+                if (complex.getDefault() == null) {
+                    /*
+                     * default format will be the first config format
+                     */
+                    encodeFormat(format, complex.addNewDefault().addNewFormat());
+                }
+                /*
+                * add one format for this mimetype
+                */
+                encodeFormat(format, supportedInputFormat.addNewFormat());
+            }
+		}		
 	}
+
+    private void encodeFormat(Format format, ComplexDataDescriptionType xbFormat) {
+        if (format.hasMimeType()) {
+            xbFormat.setMimeType(format.getMimeType().get());
+        }
+        if (format.hasEncoding()) {
+            xbFormat.setEncoding(format.getEncoding().get());
+        }
+        if (format.hasSchema()) {
+            xbFormat.setSchema(format.getSchema().get());
+        }
+    }
 
 	private void addVectorOutputFormats(SupportedComplexDataType complex){
 		
 					
 		List<IGenerator> generators = GeneratorFactory.getInstance().getAllGenerators();
-		List<IGenerator> foundGenerators = new ArrayList<IGenerator>();
+		List<IGenerator> foundGenerators = new ArrayList<>();
 		for(IGenerator generator : generators) {
-			Class<?>[] supportedClasses = generator.getSupportedDataBindings();
-			for(Class<?> clazz : supportedClasses){
-				if(clazz.equals(GTVectorDataBinding.class)){
-					foundGenerators.add(generator);
-				}
-			}
+            if (generator.isSupportedDataBinding(GTVectorDataBinding.class)) {
+                foundGenerators.add(generator);
+            }
 		}
 		ComplexDataCombinationsType supporteOutputFormat = complex.addNewSupported();
-		
-		for (int i = 0; i < foundGenerators.size(); i++) {
-			IGenerator generator = foundGenerators.get(i);
-
-			Format[] supportedFullFormats = generator.getSupportedFullFormats();
-
-			if (complex.getDefault() == null) {
-				ComplexDataCombinationType defaultInputFormat = complex
-						.addNewDefault();
-				/*
-				 * default format will be the first config format
-				 */
-				Format format = supportedFullFormats[0];
-				ComplexDataDescriptionType defaultFormat = defaultInputFormat
-						.addNewFormat();
-				defaultFormat.setMimeType(format.getMimetype());
-
-				String encoding = format.getEncoding();
-
-				if (encoding != null && !encoding.equals("")) {
-					defaultFormat.setEncoding(encoding);
-				}
-
-				String schema = format.getSchema();
-
-				if (schema != null && !schema.equals("")) {
-					defaultFormat.setSchema(schema);
-				}
-
-			}
-
-			for (int j = 0; j < supportedFullFormats.length; j++) {
-				/*
-				 * create supportedFormat for each mimetype, encoding, schema
-				 * composition mimetypes can have several encodings and schemas
-				 */
-				Format format1 = supportedFullFormats[j];
-
-				/*
-				 * add one format for this mimetype
-				 */
-				ComplexDataDescriptionType supportedFormat = supporteOutputFormat
-						.addNewFormat();
-				supportedFormat.setMimeType(format1.getMimetype());
-				if (format1.getEncoding() != null) {
-					supportedFormat.setEncoding(format1.getEncoding());
-				}
-				if (format1.getSchema() != null) {
-					supportedFormat.setSchema(format1.getSchema());
-				}
-			}
+		for (IGenerator generator : foundGenerators) {
+            for (Format format : generator.getSupportedFormats()) {
+                if (complex.getDefault() == null) {
+                    encodeFormat(format, complex.addNewDefault().addNewFormat());
+                }
+                encodeFormat(format, supporteOutputFormat.addNewFormat());
+            }
 		}
-		
-
-//		ComplexDataCombinationsType supported = complex.addNewSupported();		
-//		for(int i = 0; i<foundGenerators.size(); i++){
-//				IGenerator generator = foundGenerators.get(i);
-//				String[] supportedFormats = generator.getSupportedFormats();
-//				String[] supportedSchemas = generator.getSupportedSchemas();
-//				if(supportedSchemas == null){
-//					supportedSchemas = new String[0];
-//				}
-//				String[] supportedEncodings = generator.getSupportedEncodings();
-//				
-//				for(int j=0; j<supportedFormats.length;j++){
-//					for(int k=0; k<supportedEncodings.length;k++){
-//						if(j==0 && k==0 && i == 0){
-//							String supportedFormat = supportedFormats[j];
-//							ComplexDataDescriptionType defaultFormat = complex.addNewDefault().addNewFormat();
-//							defaultFormat.setMimeType(supportedFormat);
-//							defaultFormat.setEncoding(supportedEncodings[k]);
-//							for(int t = 0; t<supportedSchemas.length;t++){
-//								if(t==0){
-//									defaultFormat.setSchema(supportedSchemas[t]);
-//								}
-//							}
-//						}else{
-//							
-//							String supportedFormat = supportedFormats[j];
-//							ComplexDataDescriptionType supportedCreatedFormat = supported.addNewFormat();
-//							supportedCreatedFormat.setMimeType(supportedFormat);
-//							supportedCreatedFormat.setEncoding(supportedEncodings[k]);
-//							for(int t = 0; t<supportedSchemas.length;t++){
-//								if(t==0){
-//									supportedCreatedFormat.setSchema(supportedSchemas[t]);
-//								}
-//								if(t>0){
-//									ComplexDataDescriptionType supportedCreatedFormatAdditional = supported.addNewFormat();
-//									supportedCreatedFormatAdditional.setMimeType(supportedFormat);
-//									supportedCreatedFormatAdditional.setSchema(supportedSchemas[t]);
-//									supportedCreatedFormatAdditional.setEncoding(supportedEncodings[k]);
-//								}
-//							}
-//						}
-//					}
-//				}
-//			}
-					
-		
 	}
+    
 	//This class is thrown when there is any problem creating the XML
 	//WPS file from a geoalgorithm, due to some yet unsupported feature
 	//or parameter
 	public class UnsupportedGeoAlgorithmException extends Exception{
-
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = 1017100163300095362L;
-
 	}
 
 }

@@ -21,21 +21,21 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA or
  * visit the Free Software Foundation web page, http://www.fsf.org.
  */
-
 package org.n52.wps.io;
 
 import java.io.InputStream;
 
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
 
 /**
  * @author Matthias Mueller, TU Dresden
  *
  */
-public interface IParser extends IOHandler{
-	
-	IData parse(InputStream input, String mimeType, String schema);
-	
-	IData parseBase64(InputStream input, String mimeType, String schema);
-	
+public interface IParser extends IOHandler {
+
+    IData parse(InputStream input, Format format);
+
+    IData parseBase64(InputStream input, Format format);
+
 }

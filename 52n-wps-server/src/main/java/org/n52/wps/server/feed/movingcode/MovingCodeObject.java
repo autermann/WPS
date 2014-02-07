@@ -43,28 +43,26 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlOptions;
-
 import net.opengis.wps.x100.InputDescriptionType;
 import net.opengis.wps.x100.OutputDescriptionType;
 import net.opengis.wps.x100.ProcessDescriptionType;
 import net.opengis.wps.x100.ProcessDescriptionsDocument;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Matthias Mueller, TU Dresden
  *
  */
 public class MovingCodeObject {
+    private static final Logger LOGGER = LoggerFactory.getLogger(MovingCodeObject.class);
 	private final File algorithmWorkspace;
-	
 	private ProcessDescriptionType processDescription;
 	private AlgorithmDescription algorithmDescription;
-	
-	static Logger LOGGER = LoggerFactory.getLogger(MovingCodeObject.class);
 	
 	public MovingCodeObject (ProcessDescriptionType pd, AlgorithmDescription ad, File algorithmWorkspace){
 		
@@ -189,8 +187,7 @@ public class MovingCodeObject {
 			AlgorithmDescription ad = (AlgorithmDescription) unmarshaller.unmarshal(adReader);
 			return ad;
 		} catch (JAXBException e) {
-			LOGGER.error("Unable to create AlgorithmDescription from xmlFile: " + xmlFile.getAbsolutePath());
-			e.printStackTrace();
+			LOGGER.error("Unable to create AlgorithmDescription from xmlFile: " + xmlFile.getAbsolutePath(), e);
 			return null;
 		}
 	    
@@ -209,10 +206,7 @@ public class MovingCodeObject {
 			}
 			return doc.getProcessDescriptions().getProcessDescriptionArray(0);
 		}
-		catch(IOException e) {
-			LOGGER.warn("Could not initialize algorithm, parsing error! ", e);
-		}
-		catch(XmlException e) {
+		catch(IOException | XmlException e) {
 			LOGGER.warn("Could not initialize algorithm, parsing error! ", e);
 		}
 		return null;
@@ -224,8 +218,6 @@ public class MovingCodeObject {
      * AlgorithmDescription.
      * 
      * @param xmlFile - the ProcessDescription in XML
-     * @param xsltFile - the transformation rules in XSLT
-     * @throws Exception - the exceptions
      */
     private static StringReader generateAlgorithmDescription(File xmlFile) {
     	
@@ -242,8 +234,7 @@ public class MovingCodeObject {
 			return sr;
 			
 		} catch (TransformerException e) {
-			LOGGER.error("Error evaluating ProcessDescription XML.");
-			e.printStackTrace();
+			LOGGER.error("Error evaluating ProcessDescription XML.", e);
 		}
 		return null;
     }

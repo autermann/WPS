@@ -27,22 +27,23 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.GenericFileData;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
 import org.opengis.feature.simple.SimpleFeature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.MultiLineString;
-import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.MultiPoint;
+import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.geom.Polygon;
 
@@ -75,12 +76,12 @@ import com.vividsolutions.jts.geom.Polygon;
 
 public class JSONGeometryGenerator extends AbstractGenerator {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(JSONGeometryGenerator.class); 
+	private static final Logger LOGGER = LoggerFactory.getLogger(JSONGeometryGenerator.class);
 	
-	boolean isShapefile = false; // needed for a workaround: if the input is gml without a specified crs,
+	private boolean isShapefile = false; // needed for a workaround: if the input is gml without a specified crs,
 								 // the coordinates usually are swapped, compared to the shapefile
 	
-	boolean multiGeometriesToArray = false; // if you prefer the multipolygons or multilinestrings as an 
+	private boolean multiGeometriesToArray = false; // if you prefer the multipolygons or multilinestrings as an
 										    // array [polygon, polygon, polygon], set this to true. If you prefer
 										    // them as multiple rings/paths in one linestring or polygon, set it to
 										    // false
@@ -88,13 +89,11 @@ public class JSONGeometryGenerator extends AbstractGenerator {
 	
 	
 	public JSONGeometryGenerator(){
-		super();
-		//supportedIDataTypes.add(GTVectorDataBinding.class);
-		supportedIDataTypes.add(GenericFileDataBinding.class);
+		super(GenericFileDataBinding.class);
 	}
 
 	@Override
-	public InputStream generateStream(IData data, String mimeType, String schema)
+	public InputStream generateStream(IData data, Format format)
 			throws IOException {
 		
 		LOGGER.info("Starting to generate json geometry out of the process result");
@@ -118,7 +117,7 @@ public class JSONGeometryGenerator extends AbstractGenerator {
 		}
 		FeatureCollection fc = gvdb.getPayload();
 		
-		if(fc == null || fc.size() == 0) {
+		if(fc == null || fc.isEmpty()) {
 			throw new IOException("No feature was passed to the generator!");
 		}
 		

@@ -23,21 +23,29 @@
  */
 package org.n52.wps.server.request;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
-import net.opengis.wps.x100.ComplexDataDescriptionType;
+
 import net.opengis.wps.x100.ExecuteDocument;
 import net.opengis.wps.x100.InputDescriptionType;
 import net.opengis.wps.x100.InputType;
+
 import org.apache.xmlbeans.XmlException;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
-import static org.hamcrest.Matchers.*;
 import org.n52.wps.server.ExceptionReport;
 import org.n52.wps.server.handler.DataInputInterceptors.InterceptorInstance;
 
@@ -104,39 +112,18 @@ public class InputHandlerTest {
         System.out.println("Testing testInputHandlerResolveInputDescriptionTypes...");
 
         InputHandler instance = new InputHandler.Builder(simpleBufferAlgorithmInputArray, "org.n52.wps.server.algorithm.SimpleBufferAlgorithm").build();
-        InputDescriptionType idt = instance.getInputReferenceDescriptionType("data");
+        InputDescriptionType idt = instance.getInputDescription("data");
         assertThat(idt, is(notNullValue()));
         assertThat(idt.getMaxOccurs().intValue(), equalTo(1));
         assertThat(idt.getMinOccurs().intValue(), equalTo(1));
 
         instance = new InputHandler.Builder(dummyTestClassAlgorithmInputArray, "org.n52.wps.server.algorithm.test.DummyTestClass").build();
-        idt = instance.getInputReferenceDescriptionType("BBOXInputData");
+        idt = instance.getInputDescription("BBOXInputData");
         assertThat(idt, is(notNullValue()));
         assertThat(idt.getMaxOccurs().intValue(), equalTo(1));
         assertThat(idt.getMinOccurs().intValue(), equalTo(0));
     }
 
-    @Test
-    public void testInputHandlerGetNonDefaultFormat() throws ExceptionReport, XmlException, IOException {
-        System.out.println("Testing testInputHandlerGetNonDefaultFormat...");
-
-        InputHandler instance = new InputHandler.Builder(simpleBufferAlgorithmInputArray, "org.n52.wps.server.algorithm.SimpleBufferAlgorithm").build();
-        InputDescriptionType idt = instance.getInputReferenceDescriptionType("data");
-        String dataMimeType = "text/xml; subtype=gml/3.1.0";
-        String dataSchema = "http://schemas.opengis.net/gml/3.1.0/base/feature.xsd";
-        String dataEncoding = null;
-        ComplexDataDescriptionType cddt = instance.getNonDefaultFormat(idt, dataMimeType, dataSchema, dataEncoding);
-        assertThat(cddt, is(notNullValue()));
-        assertThat(cddt.getEncoding(), is(nullValue()));
-        assertThat(cddt.getMimeType(), is(equalTo("text/xml; subtype=gml/3.1.0")));
-        assertThat(cddt.getSchema(), is(equalTo("http://schemas.opengis.net/gml/3.1.0/base/feature.xsd")));
-
-        instance = new InputHandler.Builder(dummyTestClassAlgorithmInputArray, "org.n52.wps.server.algorithm.test.DummyTestClass").build();
-        idt = instance.getInputReferenceDescriptionType("BBOXInputData");
-        cddt = instance.getNonDefaultFormat(idt, dataMimeType, dataSchema, dataEncoding);
-        assertThat(cddt, is(nullValue()));
-    }
-    
     @Test
     public void testInputHandlerGetComplexValueNodeString() throws ExceptionReport, XmlException, IOException {
         System.out.println("Testing testInputHandlerGetComplexValueNodeString...");

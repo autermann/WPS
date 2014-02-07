@@ -21,7 +21,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA or
  * visit the Free Software Foundation web page, http://www.fsf.org.
  */
-
 package org.n52.wps.io.datahandler.parser;
 
 import java.io.BufferedReader;
@@ -31,38 +30,36 @@ import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.binding.complex.PlainStringBinding;
 
 /**
  * @author Bastian Schaeffer; Matthias Mueller, TU Dresden
  *
  */
-public class WCPSQueryParser extends AbstractParser{
-	
-	public WCPSQueryParser(){
-		super();
-		supportedIDataTypes.add(PlainStringBinding.class);
-	}
+public class WCPSQueryParser extends AbstractParser {
 
-	@Override
-	public PlainStringBinding parse(InputStream stream, String mimeType, String schema) {
-		BufferedReader br;
-		StringWriter sw;
-		try {
-			br = new BufferedReader(new InputStreamReader(stream,"UTF-8"));
-		
-		    sw=new StringWriter();
-		    int k;
-		    while((k=br.read())!=-1){
-		    	sw.write(k);
-		    }
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Unsupported Encoding");
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	    PlainStringBinding result = new PlainStringBinding(sw.toString());
-	    return result;
-	}
+    public WCPSQueryParser() {
+        super(PlainStringBinding.class);
+    }
+
+    @Override
+    public PlainStringBinding parse(InputStream stream, Format format) {
+
+        // FIXME format.getEncoding().or("UTF-8")
+        try (BufferedReader br
+                = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+                StringWriter sw = new StringWriter()) {
+            int k;
+            while ((k = br.read()) != -1) {
+                sw.write(k);
+            }
+            return new PlainStringBinding(sw.toString());
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Unsupported Encoding", e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 }

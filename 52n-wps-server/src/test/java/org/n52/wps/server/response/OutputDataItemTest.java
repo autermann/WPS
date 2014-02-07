@@ -25,15 +25,12 @@ package org.n52.wps.server.response;
 
 import static org.junit.Assert.assertTrue;
 
-import java.net.URL;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
-
-import javax.xml.XMLConstants;
-import javax.xml.namespace.QName;
 
 import net.opengis.ows.x11.LanguageStringType;
 import net.opengis.wps.x100.ExecuteResponseDocument;
@@ -64,8 +61,7 @@ import org.n52.wps.io.data.binding.literal.LiteralLongBinding;
 import org.n52.wps.io.data.binding.literal.LiteralShortBinding;
 import org.n52.wps.io.data.binding.literal.LiteralStringBinding;
 import org.n52.wps.server.CapabilitiesConfiguration;
-import org.n52.wps.server.WebProcessingService;
-import org.n52.wps.server.request.Request;
+import org.n52.wps.server.WPSConstants;
 
 /**
  * @author BenjaminPross(bpross-52n)
@@ -78,33 +74,21 @@ public class OutputDataItemTest {
 	private ProcessDescriptionType descriptionsType;
 	private String processID = "org.n52.wps.server.response.OutputDataItemTest";
 	private ExecuteResponseDocument mockupResponseDocument;
-	private LanguageStringType outputTitle = LanguageStringType.Factory
-			.newInstance();
-	private LanguageStringType processTitle = LanguageStringType.Factory
-			.newInstance();
+	private LanguageStringType outputTitle = LanguageStringType.Factory.newInstance();
+	private LanguageStringType processTitle = LanguageStringType.Factory.newInstance();
 	private Random random = new Random();
 	private List<ILiteralData> literalDataList;
 
 	@Before
 	public void setUp() {
 
+        String uuid = UUID.randomUUID().toString();
 		literalDataList = new ArrayList<ILiteralData>();
-
-		String url = "";
-		try {
-			url = "http://52north.org";
-			literalDataList.add(new LiteralAnyURIBinding(new URL(url).toURI()));
-		} catch (Exception e1) {
-			System.out.println(url + " caused " + e1);
-		}
-
-		String uuid = UUID.randomUUID().toString();
-		
+        literalDataList.add(new LiteralAnyURIBinding(URI.create("http://52north.org")));
 		literalDataList.add(new LiteralBase64BinaryBinding(uuid.getBytes()));
 		literalDataList.add(new LiteralBooleanBinding(true));
 		literalDataList.add(new LiteralByteBinding((byte) 127));
-		literalDataList.add(new LiteralDateTimeBinding(Calendar.getInstance()
-				.getTime()));
+		literalDataList.add(new LiteralDateTimeBinding(Calendar.getInstance().getTime()));
 		literalDataList.add(new LiteralDoubleBinding(random.nextDouble()));
 		literalDataList.add(new LiteralFloatBinding(random.nextFloat()));
 		literalDataList.add(new LiteralIntBinding(random.nextInt()));
@@ -134,17 +118,16 @@ public class OutputDataItemTest {
 		c.toFirstChild();
 		c.toLastAttribute();
 		c.setAttributeText(
-				new QName(XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI,
-						"schemaLocation"),
+				WPSConstants.QN_SCHEMA_LOCATION,
 				"http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsExecute_response.xsd");
 		responseElem.setServiceInstance(CapabilitiesConfiguration.ENDPOINT_URL
 				+ "?REQUEST=GetCapabilities&SERVICE=WPS");
-		responseElem.setLang(WebProcessingService.DEFAULT_LANGUAGE);
-		responseElem.setService("WPS");
-		responseElem.setVersion(Request.SUPPORTED_VERSION);
+		responseElem.setLang(WPSConstants.DEFAULT_LANGUAGE);
+		responseElem.setService(WPSConstants.WPS_SERVICE_TYPE);
+		responseElem.setVersion(WPSConstants.WPS_SERVICE_VERSION);
 		ProcessBriefType process = responseElem.addNewProcess();
 		process.addNewIdentifier().setStringValue(processID);
-		process.setProcessVersion("1.0.0");
+		process.setProcessVersion(WPSConstants.WPS_SERVICE_VERSION);
 		process.setTitle(processTitle);
 		responseElem.addNewStatus().setProcessSucceeded("Process successful");
 		responseElem.getStatus().setCreationTime(Calendar.getInstance());
@@ -216,7 +199,7 @@ public class OutputDataItemTest {
 		outputType.addNewDataType().setStringValue(dataTypeAsString);
 
 		OutputDataItem ouDI = new OutputDataItem(literalDataBinding, "output",
-				null, null, null, outputTitle, processID, descriptionsType);
+				null, outputTitle, descriptionsType);
 
 		ouDI.updateResponseForLiteralData(mockupResponseDocument,
 				dataTypeAsString);
@@ -229,7 +212,7 @@ public class OutputDataItemTest {
 
 	private boolean validateResponseDocument(ExecuteResponseDocument doc) {
 		XmlOptions xmlOptions = new XmlOptions();
-		List<XmlValidationError> xmlValidationErrorList = new ArrayList<XmlValidationError>();
+		List<XmlValidationError> xmlValidationErrorList = new ArrayList<>();
 		xmlOptions.setErrorListener(xmlValidationErrorList);
 		boolean valid = doc.validate(xmlOptions);
 		if (!valid) {

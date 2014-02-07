@@ -30,13 +30,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.Set;
 
+import org.n52.wps.commons.Format;
+import org.n52.wps.io.IOHandler;
 import org.n52.wps.io.data.binding.complex.AsciiGrassDataBinding;
 import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
 import org.n52.wps.io.datahandler.generator.AsciiGrassGenerator;
 import org.n52.wps.io.datahandler.parser.AsciiGrassParser;
 import org.n52.wps.io.datahandler.parser.GeotiffParser;
 import org.n52.wps.io.test.datahandler.AbstractTestCase;
+import org.n52.wps.server.ExceptionReport;
 
 public class AsciiGrassGeneratorTest extends AbstractTestCase<AsciiGrassGenerator> {
 
@@ -57,7 +61,7 @@ public class AsciiGrassGeneratorTest extends AbstractTestCase<AsciiGrassGenerato
 		
 		GeotiffParser theParser = new GeotiffParser();
 
-		String[] mimetypes = theParser.getSupportedFormats();
+		Set<Format> formats = theParser.getSupportedFormats();
 
 		InputStream input = null;
 
@@ -66,35 +70,35 @@ public class AsciiGrassGeneratorTest extends AbstractTestCase<AsciiGrassGenerato
 		} catch (FileNotFoundException e) {
 			fail(e.getMessage());
 		}
+        Format format = formats.iterator().next();
 
-		GTRasterDataBinding theBinding = theParser.parse(input, mimetypes[0],
-				null);
+		GTRasterDataBinding theBinding = theParser.parse(input, format);
 
 		assertTrue(theBinding.getPayload() != null);
 		
-		String[] mimetypes2 = dataHandler.getSupportedFormats();
+		Set<Format> formats2 = dataHandler.getSupportedFormats();
 
 		AsciiGrassParser asciiGrassParser = new AsciiGrassParser();
 		
-		for (String string : mimetypes2) {
+		for (Format format2 : formats2) {
 			try {
-				InputStream resultStream = dataHandler.generateStream(theBinding, string, null);
+				InputStream resultStream = dataHandler.generateStream(theBinding, format2);
 				
-				AsciiGrassDataBinding rasterBinding = asciiGrassParser.parse(resultStream, mimetypes[0], null);
+				AsciiGrassDataBinding rasterBinding = asciiGrassParser.parse(resultStream, format);
 				
 				assertTrue(rasterBinding.getPayload() != null);
 				assertTrue(rasterBinding.getPayload().getDimension() != 0);
 				assertTrue(rasterBinding.getPayload().getEnvelope() != null);
 				
-				InputStream resultStreamBase64 = dataHandler.generateBase64Stream(theBinding, string, null);
+				InputStream resultStreamBase64 = dataHandler.generate(theBinding, format2.withEncoding(IOHandler.ENCODING_BASE64));
 				
-				AsciiGrassDataBinding rasterBindingBase64 = (AsciiGrassDataBinding) asciiGrassParser.parseBase64(resultStreamBase64, mimetypes[0], null);
+				AsciiGrassDataBinding rasterBindingBase64 = (AsciiGrassDataBinding) asciiGrassParser.parseBase64(resultStreamBase64, format);
 				
 				assertTrue(rasterBindingBase64.getPayload() != null);
 				assertTrue(rasterBindingBase64.getPayload().getDimension() != 0);
 				assertTrue(rasterBindingBase64.getPayload().getEnvelope() != null);
 				
-			} catch (IOException e) {
+            } catch (IOException | ExceptionReport e) {
 				e.printStackTrace();
 				fail(e.getMessage());
 			}

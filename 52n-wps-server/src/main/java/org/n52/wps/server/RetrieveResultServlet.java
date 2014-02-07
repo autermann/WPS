@@ -28,19 +28,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import javax.servlet.ServletConfig;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.n52.wps.server.database.DatabaseFactory;
-import org.n52.wps.server.database.IDatabase;
 import org.n52.wps.commons.MIMEUtil;
 import org.n52.wps.commons.XMLUtil;
+import org.n52.wps.server.database.DatabaseFactory;
+import org.n52.wps.server.database.IDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Throwables;
+import com.google.common.net.HttpHeaders;
 
 public class RetrieveResultServlet extends HttpServlet {
 
@@ -52,26 +56,13 @@ public class RetrieveResultServlet extends HttpServlet {
     private final boolean indentXML = false;
 
     @Override
-    public void init(ServletConfig config) throws ServletException {
-        super.init(config);
-    }
-
-    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
 		// id of result to retrieve.
-		String id = request.getParameter("id");
-
-		// optional alternate name for filename (rename the file when retrieving
-		// if requested)
-		boolean altName = false;
-		String alternateFilename = request.getParameter("filename");
-		if (!StringUtils.isEmpty(alternateFilename)) {
-			altName = true;
-		}
-
+		String id = request.getParameter(WPSConstants.PARAMETER_ID);
+		// optional alternate name for filename (rename the file when retrieving if requested)
+		String alternateFilename = request.getParameter(WPSConstants.PARAMETER_FILENAME);
         // return result as attachment (instructs browser to offer user "Save" dialog)
-        String attachment = request.getParameter("attachment");
+        String attachment = request.getParameter(WPSConstants.PARAMETER_ATTACHMENT);
 
         if (StringUtils.isEmpty(id)) {
             errorResponse("id parameter missing", response);
@@ -85,56 +76,48 @@ public class RetrieveResultServlet extends HttpServlet {
             OutputStream outputStream = null;
             try {
                 inputStream = db.lookupResponse(id);
-
                 if (inputStream == null) {
                     errorResponse("id " + id + " is unknown to server", response);
                 } else if (mimeType == null) {
                     errorResponse("Unable to determine mime-type for id " + id, response);
                 } else {
                     String suffix = MIMEUtil.getSuffixFromMIMEType(mimeType).toLowerCase();
+                    boolean isXML = "xml".equals(suffix);
 
                     // if attachment parameter unset, default to false for mime-type of 'xml' and true for everything else.
-					boolean useAttachment = (StringUtils.isEmpty(attachment) && !"xml".equals(suffix)) || Boolean.parseBoolean(attachment);
+					boolean useAttachment = (StringUtils.isEmpty(attachment) && !isXML) || Boolean.parseBoolean(attachment);
 					if (useAttachment) {
-						String attachmentName = (new StringBuilder(id)).append('.').append(suffix).toString();
-
-						if (altName) {
-							attachmentName = (new StringBuilder(alternateFilename)).append('.').append(suffix).toString();
-						}
-						response.addHeader("Content-Disposition", "attachment; filename=\"" + attachmentName + "\"");
+                        StringBuilder sb = new StringBuilder();
+                        if (StringUtils.isEmpty(alternateFilename)) {
+                            sb.append(id);
+                        } else {
+                            sb.append(alternateFilename);
+                        }
+						String attachmentName = sb.append('.').append(suffix).toString();
+						response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + attachmentName + "\"");
 					}
 
                     response.setContentType(mimeType);
-
-                    if ("xml".equals(suffix)) {
+                    try {
+                        outputStream = response.getOutputStream();
+                    } catch (IOException e) {
+                        throw new IOException("Error obtaining output stream for response", e);
+                    }
+                    if (isXML) {
+                        // need these to work around aggressive IE 8 caching.
+                        response.addHeader(HttpHeaders.CACHE_CONTROL, "no-cache, no-store");
+                        response.addHeader(HttpHeaders.PRAGMA, "no-cache");
+                        response.addHeader(HttpHeaders.EXPIRES, "-1");
 
                         // NOTE:  We don't set "Content-Length" header, xml may be modified
-
-                        // need these to work around aggressive IE 8 caching.
-                        response.addHeader("Cache-Control", "no-cache, no-store");
-                        response.addHeader("Pragma", "no-cache");
-                        response.addHeader("Expires", "-1");
-
-                        try {
-                            outputStream = response.getOutputStream();
-                        } catch (IOException e) {
-                            throw new IOException("Error obtaining output stream for response", e);
-                        }
                         copyResponseAsXML(inputStream, outputStream, useAttachment || indentXML, id);
                     } else {
-
                         if (contentLength > -1) {
                             // Can't use response.setContentLength(...) as it accepts an int (max of 2^31 - 1) ?!
                             // response.setContentLength(contentLength);
-                            response.setHeader("Content-Length", Long.toString(contentLength));
+                            response.setHeader(HttpHeaders.CONTENT_LENGTH, Long.toString(contentLength));
                         } else {
                             LOGGER.warn("Content-Length unknown for response to id {}", id);
-                        }
-
-                        try {
-                            outputStream = response.getOutputStream();
-                        } catch (IOException e) {
-                            throw new IOException("Error obtaining output stream for response", e);
                         }
                         copyResponseStream(inputStream, outputStream, id, contentLength);
                     }
@@ -152,16 +135,17 @@ public class RetrieveResultServlet extends HttpServlet {
         response.setContentType("text/html");
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         PrintWriter writer = response.getWriter();
-        writer.write("<html><title>Error</title><body>" + error + "</body></html>");
+        writer.write("<html><title>Error</title><body>");
+        writer.write(error);
+        writer.write("</body></html>");
         writer.flush();
         LOGGER.warn("Error processing response: " + error);
     }
 
-    protected void copyResponseStream(
-            InputStream inputStream,
-            OutputStream outputStream,
-            String id,
-            long contentLength) throws IOException {
+    protected void copyResponseStream(InputStream inputStream,
+                                      OutputStream outputStream,
+                                      String id,
+                                      long contentLength) throws IOException {
         long contentWritten = 0;
         try {
             byte[] buffer = new byte[8192];
@@ -171,19 +155,19 @@ public class RetrieveResultServlet extends HttpServlet {
                 contentWritten += bufferRead;
             }
         } catch (IOException e) {
-            String exceptionMessage = contentLength > -1
-                    ? String.format("Error writing response to output stream for id %s, %d of %d bytes written", id, contentWritten, contentLength)
-                    : String.format("Error writing response to output stream for id %s, %d bytes written", id, contentWritten);
-            throw new IOException(exceptionMessage, e);
+            if (contentLength > -1) {
+                throw new IOException(String.format("Error writing response to output stream for id %s, %d of %d bytes written", id, contentWritten, contentLength), e);
+            } else {
+                throw new IOException(String.format("Error writing response to output stream for id %s, %d bytes written", id, contentWritten), e);
+            }
         }
         LOGGER.info("{} bytes written in response to id {}", contentWritten, id);
     }
 
-    protected void copyResponseAsXML(
-            InputStream inputStream,
-            OutputStream outputStream,
-            boolean indent,
-            String id) throws IOException {
+    protected void copyResponseAsXML(InputStream inputStream,
+                                     OutputStream outputStream,
+                                     boolean indent, String id)
+            throws IOException {
         try {
             XMLUtil.copyXML(inputStream, outputStream, indent);
         } catch (IOException e) {
@@ -193,14 +177,11 @@ public class RetrieveResultServlet extends HttpServlet {
 
     private void logException(Exception exception) {
         StringBuilder errorBuilder = new StringBuilder(exception.getMessage());
-        Throwable cause = getRootCause(exception);
+        Throwable cause = Throwables.getRootCause(exception);
         if (cause != exception) {
             errorBuilder.append(", exception message: ").append(cause.getMessage());
         }
         LOGGER.error(errorBuilder.toString());
     }
 
-    public static Throwable getRootCause(Throwable t) {
-        return t.getCause() == null ? t : getRootCause(t.getCause());
-    }
 }

@@ -31,33 +31,29 @@ import java.util.Map;
 
 import javax.media.jai.JAI;
 import javax.media.jai.RenderedOp;
-import javax.media.jai.TiledImage;
 
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
-import org.geotools.feature.FeatureCollection;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
-import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.server.AbstractSelfDescribingAlgorithm;
-import org.opengis.coverage.grid.GridCoverage;
 
 public class AddRasterValues extends AbstractSelfDescribingAlgorithm{
 
 
-	public Class getInputDataType(String id) {
+	public Class<?> getInputDataType(String id) {
 		return GTRasterDataBinding.class;
 		
 	
 	}
 
-	public Class getOutputDataType(String id) {
+	public Class<?> getOutputDataType(String id) {
 		return GTRasterDataBinding.class;
 	}
 
 	@Override
 	public List<String> getInputIdentifiers() {
-		List<String> identifierList =  new ArrayList<String>();
+		List<String> identifierList =  new ArrayList<>();
 		identifierList.add("dataset1");
 		identifierList.add("dataset2");
 		return identifierList;
@@ -65,7 +61,7 @@ public class AddRasterValues extends AbstractSelfDescribingAlgorithm{
 
 	@Override
 	public List<String> getOutputIdentifiers() {
-		List<String> identifierList =  new ArrayList<String>();
+		List<String> identifierList =  new ArrayList<>();
 		identifierList.add("result");
 		return identifierList;
 	}

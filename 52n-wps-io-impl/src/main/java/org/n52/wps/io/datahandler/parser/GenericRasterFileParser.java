@@ -21,36 +21,35 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA or
  * visit the Free Software Foundation web page, http://www.fsf.org.
  */
-
 package org.n52.wps.io.datahandler.parser;
 
 import java.io.InputStream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.GenericFileData;
 import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Matthias Mueller, TU Dresden
  *
  */
-public class GenericRasterFileParser extends AbstractParser{
-	
-	private static Logger LOGGER = LoggerFactory.getLogger(GenericRasterFileParser.class);
-	
-	public GenericRasterFileParser() {
-		super();
-		supportedIDataTypes.add(GenericRasterFileParser.class);
-	}
-	
-	@Override
-	public GenericFileDataBinding parse(InputStream input, String mimeType, String schema) {
-		
-		GenericFileData theData = new GenericFileData(input, mimeType);
-		LOGGER.info("Found File Input " + mimeType);
-		
-		return new GenericFileDataBinding(theData);
-	}
+public class GenericRasterFileParser extends AbstractParser {
+
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(GenericRasterFileParser.class);
+
+    public GenericRasterFileParser() {
+        super(GenericRasterFileParser.class);
+    }
+
+    @Override
+    public GenericFileDataBinding parse(InputStream input, Format format) {
+        GenericFileData theData = new GenericFileData(input, format
+                .getMimeType().orNull());
+        LOGGER.info("Found File Input {}", format);
+        return new GenericFileDataBinding(theData);
+    }
 
 }

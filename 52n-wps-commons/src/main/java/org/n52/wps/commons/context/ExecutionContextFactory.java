@@ -29,9 +29,9 @@ import org.slf4j.LoggerFactory;
 
 public class ExecutionContextFactory {
 
-    private static Logger log = LoggerFactory.getLogger(ExecutionContextFactory.class);
+    private static final Logger log = LoggerFactory.getLogger(ExecutionContextFactory.class);
     
-    private final static ThreadLocal<ExecutionContext> threadContexts = new ThreadLocal<ExecutionContext>();
+    private final static ThreadLocal<ExecutionContext> threadContexts = new ThreadLocal<>();
 
     private static ExecutionContext defaultContext;
 

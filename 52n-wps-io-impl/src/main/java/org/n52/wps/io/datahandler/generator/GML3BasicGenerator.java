@@ -37,8 +37,6 @@ import java.util.UUID;
 
 import javax.xml.namespace.QName;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.data.collection.ListFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.FeatureCollection;
@@ -46,6 +44,7 @@ import org.geotools.feature.FeatureIterator;
 import org.geotools.gml3.ApplicationSchemaConfiguration;
 import org.geotools.gml3.GMLConfiguration;
 import org.geotools.xml.Configuration;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.GTHelper;
 import org.n52.wps.io.SchemaRepository;
 import org.n52.wps.io.data.IData;
@@ -53,16 +52,17 @@ import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.FeatureType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.vividsolutions.jts.geom.Geometry;
 
 public class GML3BasicGenerator extends AbstractGenerator {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(GML3BasicGenerator.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GML3BasicGenerator.class);
 		
 	public GML3BasicGenerator(){
-		super();
-		supportedIDataTypes.add(GTVectorDataBinding.class);
+		super(GTVectorDataBinding.class);
 	}
 	
 	public void writeToStream(IData coll, OutputStream os) {
@@ -112,25 +112,23 @@ public class GML3BasicGenerator extends AbstractGenerator {
 	}
 
 	@Override
-	public InputStream generateStream(final IData data, String mimeType, String schema) throws IOException {
+	   public InputStream generateStream(final IData data, Format format) throws
+            IOException {
 		String uuid = UUID.randomUUID().toString();
 		File file = File.createTempFile("gml3"+uuid, ".xml");
-		FileOutputStream outputStream = new FileOutputStream(file);
-		this.writeToStream(data, outputStream);
-		outputStream.flush();
-		outputStream.close();
+        try (FileOutputStream outputStream = new FileOutputStream(file)) {
+            this.writeToStream(data, outputStream);
+            outputStream.flush();
+        }
 		if(file.length() <= 0) {
 			return null;
 		}
-		FileInputStream inputStream = new FileInputStream(file);
-		
-		return inputStream;
-		
+		return new FileInputStream(file);
 	}
 
 	private SimpleFeatureCollection createCorrectFeatureCollection(FeatureCollection<?,?> fc) {
 		
-		List<SimpleFeature> simpleFeatureList = new ArrayList<SimpleFeature>();
+		List<SimpleFeature> simpleFeatureList = new ArrayList<>();
 		SimpleFeatureType featureType = null;
 		FeatureIterator<?> iterator = fc.features();
 		String uuid = UUID.randomUUID().toString();

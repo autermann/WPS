@@ -35,6 +35,7 @@ import org.n52.wps.io.data.IComplexData;
      * @author Dimitar Misev
      */
     public class ArrayDataBinding implements IComplexData {
+        private static final long serialVersionUID = 1L;
 
         /**
 	 * 

@@ -31,15 +31,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.kml.KML;
 import org.geotools.kml.KMLConfiguration;
 import org.geotools.xml.Configuration;
 import org.geotools.xml.Encoder;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Bastian Schaeffer, IfGI; Matthias Mueller, TU Dresden
@@ -47,25 +48,24 @@ import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
  */
 public class KMLGenerator extends AbstractGenerator {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(KMLGenerator.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(KMLGenerator.class);
 	
 	public KMLGenerator(){
-		super();
-		supportedIDataTypes.add(GTVectorDataBinding.class);
+		super(GTVectorDataBinding.class);
 	}
 	
 	@Override
-	public InputStream generateStream(IData data, String mimeType, String schema) throws IOException {
+	public InputStream generateStream(IData data, Format format) throws IOException {
 		
 		File tempFile = null;
 		InputStream stream = null;
 		try {
 			tempFile = File.createTempFile("kml", "xml");
 			this.finalizeFiles.add(tempFile);
-			FileOutputStream outputStream = new FileOutputStream(tempFile);
-			this.writeToStream(data, outputStream);
-			outputStream.flush();
-			outputStream.close();
+            try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+                this.writeToStream(data, outputStream);
+                outputStream.flush();
+            }
 			
 			stream = new FileInputStream(tempFile);
 		} catch (IOException e){

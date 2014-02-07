@@ -76,6 +76,7 @@ import org.apache.axis2.saaj.util.SAAJUtil;
 import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.commons.WPSConfig;
 import org.n52.wps.server.ITransactionalAlgorithmRepository;
+import org.n52.wps.server.WPSConstants;
 import org.n52.wps.transactional.deploy.AbstractProcessManager;
 import org.n52.wps.transactional.deploymentprofiles.BPELDeploymentProfile;
 import org.n52.wps.transactional.deploymentprofiles.DeploymentProfile;
@@ -83,6 +84,8 @@ import org.n52.wps.transactional.request.DeployProcessRequest;
 import org.n52.wps.transactional.request.UndeployProcessRequest;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+
+import com.google.common.collect.Iterators;
 
 public class ApacheBPELManager extends AbstractProcessManager {
 
@@ -394,27 +397,7 @@ public class ApacheBPELManager extends AbstractProcessManager {
         SOAPFactory fac = OMAbstractFactory.getSOAP11Factory();
         SOAPEnvelope envelope = fac.getDefaultEnvelope();
 
-         NamespaceContext ctx = new NamespaceContext() {
-
-            public String getNamespaceURI(String prefix) {
-                String uri;
-                          if (prefix.equals("wps"))
-                              uri = "http://www.opengis.net/wps/1.0.0";
-                          else if (prefix.equals("ows"))
-                              uri = "http://www.opengis.net/ows/1.1";
-                          else
-                              uri = null;
-                          return uri;
-            }
-
-            public String getPrefix(String namespaceURI) {
-                return null;
-            }
-
-            public Iterator getPrefixes(String namespaceURI) {
-                return null;
-            }
-        };
+        NamespaceContext ctx = new NamespaceContextImpl();
 
         XPathFactory xpathFact =
                       XPathFactory.newInstance();
@@ -453,30 +436,8 @@ public class ApacheBPELManager extends AbstractProcessManager {
 		SOAPFactory fac = OMAbstractFactory.getSOAP11Factory();
 		SOAPEnvelope envelope = fac.getDefaultEnvelope();
 
-		NamespaceContext ctx = new NamespaceContext() {
-
-			public String getNamespaceURI(String prefix) {
-				String uri;
-				if (prefix.equals("wps"))
-					uri = "http://www.opengis.net/wps/1.0.0";
-				else if (prefix.equals("ows"))
-					uri = "http://www.opengis.net/ows/1.1";
-				else
-					uri = null;
-				return uri;
-			}
-
-			public String getPrefix(String namespaceURI) {
-				return null;
-			}
-
-			public Iterator getPrefixes(String namespaceURI) {
-				return null;
-			}
-		};
-
 		_client = new ODEServiceClient();
-		HashMap<String, String> allProcesses = new HashMap<String, String>();
+		HashMap<String, String> allProcesses = new HashMap<>();
 
 		OMElement listRoot = _client.buildMessage("listAllProcesses",
 				new String[] {}, new String[] {});
@@ -501,9 +462,9 @@ public class ApacheBPELManager extends AbstractProcessManager {
 									"http://www.apache.org/ode/pmapi/types/2006/08/02/",
 									"pid")).getText();
 			allProcesses.put(
-					fullName.substring(fullName.indexOf("}") + 1,
-							fullName.indexOf("-")),
-					fullName.substring(1, fullName.indexOf("}")));
+					fullName.substring(fullName.indexOf('}') + 1,
+							fullName.indexOf('-')),
+					fullName.substring(1, fullName.indexOf('}')));
 
 		}
 
@@ -543,10 +504,8 @@ public class ApacheBPELManager extends AbstractProcessManager {
 				// input1.getData().getComplexData().getDomNode().getChildNodes().item(1);
 				// value.setText("<![CDATA[" + nodeToString(no) + "]>");
 				// value.addChild(no);
-				OMElement reference = fac.createOMElement("Reference",
-						"http://www.opengis.net/wps/1.0.0", "wps");
-				OMNamespace xlin = fac.createOMNamespace(
-						"http://www.w3.org/1999/xlink", "xlin");
+				OMElement reference = fac.createOMElement("Reference", WPSConstants.NS_WPS, "wps");
+				OMNamespace xlin = fac.createOMNamespace(WPSConstants.NS_XLINK, "xlin");
 
 				OMAttribute attr = fac.createOMAttribute("href", xlin, input1
 						.getReference().getHref());
@@ -561,4 +520,41 @@ public class ApacheBPELManager extends AbstractProcessManager {
 		return envelope;
 
 	}
+
+    private class NamespaceContextImpl implements NamespaceContext {
+
+        @Override
+        public String getNamespaceURI(String prefix) {
+            switch (prefix) {
+                case "wps":
+                    return "http://www.opengis.net/wps/1.0.0";
+                case "ows":
+                    return "http://www.opengis.net/ows/1.1";
+                default:
+                    return null;
+            }
+        }
+
+            @Override
+            public String getPrefix(String namespaceURI) {
+                switch (namespaceURI) {
+                    case "http://www.opengis.net/wps/1.0.0":
+                        return "wps";
+                    case "http://www.opengis.net/ows/1.1":
+                        return "ows";
+                    default:
+                        return null;
+                }
+            }
+
+            @Override
+            public Iterator<String> getPrefixes(String namespaceURI) {
+                String prefix = getPrefix(namespaceURI);
+                if (prefix == null) {
+                    return Iterators.emptyIterator();
+                } else {
+                    return Iterators.singletonIterator(prefix);
+                }
+            }
+    }
 }

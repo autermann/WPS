@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.io.datahandler.parser.KMLParser;
 import org.n52.wps.io.test.datahandler.AbstractTestCase;
@@ -53,11 +54,10 @@ public class KMLParserTest extends AbstractTestCase<KMLParser> {
 			fail(e1.getMessage());
 		}
 		
-		String[] mimetypes = dataHandler.getSupportedFormats();
 		
 		InputStream input = null;
 		
-		for (String mimetype : mimetypes) {
+		for (Format format : dataHandler.getSupportedFormats()) {
 			
 			try {
 				input = new FileInputStream(new File(testFilePath));
@@ -65,7 +65,7 @@ public class KMLParserTest extends AbstractTestCase<KMLParser> {
 				fail(e.getMessage());
 			}
 			
-			GTVectorDataBinding theBinding = dataHandler.parse(input, mimetype, "");
+			GTVectorDataBinding theBinding = dataHandler.parse(input, format);
 			
 			assertNotNull(theBinding.getPayload());
 			

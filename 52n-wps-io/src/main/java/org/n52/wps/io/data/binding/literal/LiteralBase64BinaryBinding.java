@@ -26,9 +26,6 @@ package org.n52.wps.io.data.binding.literal;
 import java.io.IOException;
 
 public class LiteralBase64BinaryBinding extends AbstractLiteralDataBinding {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -9025105142295309281L;
 	private transient byte[] binary;
 

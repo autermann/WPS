@@ -25,13 +25,11 @@ package org.n52.wps.server.algorithm.coordinatetransform;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.feature.DefaultFeatureCollections;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
@@ -46,27 +44,33 @@ import org.opengis.feature.Feature;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.geometry.MismatchedDimensionException;
+import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
+import org.opengis.referencing.operation.TransformException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableMap;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 
 public class CoordinateTransformAlgorithm extends
 		AbstractSelfDescribingAlgorithm {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(CoordinateTransformAlgorithm.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CoordinateTransformAlgorithm.class);
 
-	private final String inputIdentifierFeatures = "InputData";
-	private final String inputIdentifierTransformation = "Transformation";
-	private final String inputIdentifierTargetReferenceSystem = "TargetCRS";
-	private final String inputIdentifierSourceReferenceSystem = "SourceCRS";
-	private final String outputIdentifierResult = "TransformedData";
+	private static final String inputIdentifierFeatures = "InputData";
+	private static final String inputIdentifierTransformation = "Transformation";
+	private static final String inputIdentifierTargetReferenceSystem = "TargetCRS";
+	private static final String inputIdentifierSourceReferenceSystem = "SourceCRS";
+	private static final String outputIdentifierResult = "TransformedData";
 	private SimpleFeatureType featureType;
 
 	@Override
 	public List<String> getInputIdentifiers() {
-		List<String> identifierList = new ArrayList<String>();
+		List<String> identifierList = new ArrayList<>();
 		identifierList.add(inputIdentifierFeatures);
 		identifierList.add(inputIdentifierSourceReferenceSystem);
 		identifierList.add(inputIdentifierTargetReferenceSystem);
@@ -76,7 +80,7 @@ public class CoordinateTransformAlgorithm extends
 
 	@Override
 	public List<String> getOutputIdentifiers() {
-		List<String> identifierList = new ArrayList<String>();
+		List<String> identifierList = new ArrayList<>();
 		identifierList.add(outputIdentifierResult);
 		return identifierList;
 	}
@@ -140,7 +144,7 @@ public class CoordinateTransformAlgorithm extends
 
 			toCRS = CRS.decode(crs);
 
-		} catch (Exception e) {
+		} catch (FactoryException e) {
 			throw new RuntimeException(
 					"Could not determine target CRS. Valid EPSG code needed.",
 					e);
@@ -169,7 +173,7 @@ public class CoordinateTransformAlgorithm extends
 
 			fromCRS = CRS.decode(fromCRSString);
 
-		} catch (Exception e) {
+		} catch (FactoryException e) {
 			throw new RuntimeException(
 					"Could not determine target CRS. Valid EPSG code needed.",
 					e);
@@ -214,30 +218,29 @@ public class CoordinateTransformAlgorithm extends
 			}
 						
 
-		} catch (Exception e) {
+		} catch (NoSuchElementException | MismatchedDimensionException | FactoryException | TransformException e) {
 			throw new RuntimeException("Error while transforming", e);
 		}
 
-		HashMap<String, IData> result = new HashMap<String, IData>();
+		      return ImmutableMap
+                .of(outputIdentifierResult, (IData) new GTVectorDataBinding(fOut));
+    }
 
-		result.put(outputIdentifierResult, new GTVectorDataBinding(fOut));
-		return result;
-	}
+    private Feature createFeature(String id, Geometry geometry,
+                                  CoordinateReferenceSystem crs,
+                                  Collection<Property> properties) {
+        String uuid = UUID.randomUUID().toString();
 
-	private Feature createFeature(String id, Geometry geometry,
-			CoordinateReferenceSystem crs, Collection<Property> properties) {
-		String uuid = UUID.randomUUID().toString();
-		
-		if(featureType == null){
-		featureType = GTHelper.createFeatureType(properties,
-				geometry, uuid, crs);
-		GTHelper.createGML3SchemaForFeatureType(featureType);
-		}
+        if (featureType == null) {
+            featureType = GTHelper.createFeatureType(properties,
+                                                     geometry, uuid, crs);
+            GTHelper.createGML3SchemaForFeatureType(featureType);
+        }
 
-		Feature feature = GTHelper.createFeature(id, geometry, featureType,
-				properties);
+        Feature feature = GTHelper.createFeature(id, geometry, featureType,
+                                                 properties);
 
-		return feature;
-	}
+        return feature;
+    }
 
 }

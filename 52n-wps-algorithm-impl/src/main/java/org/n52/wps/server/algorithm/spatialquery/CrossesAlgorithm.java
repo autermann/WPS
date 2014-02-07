@@ -25,12 +25,9 @@
 package org.n52.wps.server.algorithm.spatialquery;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
 import org.n52.wps.io.data.IData;
@@ -39,6 +36,8 @@ import org.n52.wps.io.data.binding.literal.LiteralBooleanBinding;
 import org.n52.wps.server.AbstractSelfDescribingAlgorithm;
 import org.opengis.feature.simple.SimpleFeature;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.vividsolutions.jts.geom.Geometry;
 
 /**
@@ -47,16 +46,17 @@ import com.vividsolutions.jts.geom.Geometry;
  */
 public class CrossesAlgorithm extends AbstractSelfDescribingAlgorithm {
 
-	Logger LOGGER = LoggerFactory.getLogger(CrossesAlgorithm.class);
 	private final String inputID1 = "LAYER1";
 	private final String inputID2 = "LAYER2";
 	private final String outputID = "RESULT";
-	private List<String> errors = new ArrayList<String>();
+	private final List<String> errors = new ArrayList<>();
 
+    @Override
 	public List<String> getErrors() {
 		return errors;
 	}
 
+    @Override
 	public Class<GTVectorDataBinding> getInputDataType(String id) {
 		if (id.equalsIgnoreCase(inputID1) || id.equalsIgnoreCase(inputID2)) {
 			return GTVectorDataBinding.class;
@@ -64,6 +64,7 @@ public class CrossesAlgorithm extends AbstractSelfDescribingAlgorithm {
 		return null;
 	}
 
+    @Override
 	public Class<LiteralBooleanBinding> getOutputDataType(String id) {
 		if(id.equalsIgnoreCase(outputID)){
 			return LiteralBooleanBinding.class;
@@ -74,30 +75,13 @@ public class CrossesAlgorithm extends AbstractSelfDescribingAlgorithm {
 	@Override
 	public Map<String, IData> run(Map<String, List<IData>> inputData) {
 
-		if(inputData==null || !inputData.containsKey(inputID1)){
-			throw new RuntimeException("Error while allocating input parameters");
-		}
-		if(inputData==null || !inputData.containsKey(inputID2)){
-			throw new RuntimeException("Error while allocating input parameters");
-		}
-		List<IData> firstDataList = inputData.get(inputID1);
-		if(firstDataList == null || firstDataList.size() != 1){
-			throw new RuntimeException("Error while allocating input parameters");
-		}
-		IData firstInputData = firstDataList.get(0);
+		      if (inputData == null) {
+            throw new RuntimeException("Error while allocating input parameters");
+        }
 				
-		FeatureCollection<?, ?> firstCollection = ((GTVectorDataBinding) firstInputData).getPayload();
-
-		List<IData> secondDataList = inputData.get(inputID2);
-		if(secondDataList == null || secondDataList.size() != 1){
-			throw new RuntimeException("Error while allocating input parameters");
-		}
-		IData secondInputData = secondDataList.get(0);
-				
-		FeatureCollection<?, ?> secondCollection = ((GTVectorDataBinding) secondInputData).getPayload();
-		
+		FeatureCollection<?, ?> firstCollection = getSingleInput(inputID1, inputData);
+		FeatureCollection<?, ?> secondCollection = getSingleInput(inputID2, inputData);
 		FeatureIterator<?> firstIterator = firstCollection.features();
-		
 		FeatureIterator<?> secondIterator = secondCollection.features();
 		
 		if(!firstIterator.hasNext()){
@@ -109,31 +93,30 @@ public class CrossesAlgorithm extends AbstractSelfDescribingAlgorithm {
 		}
 		
 		SimpleFeature firstFeature = (SimpleFeature) firstIterator.next();
-		
 		SimpleFeature secondFeature = (SimpleFeature) secondIterator.next();
 		
 		boolean crosses = ((Geometry)firstFeature.getDefaultGeometry()).crosses((Geometry)secondFeature.getDefaultGeometry());
 		
-		HashMap<String, IData> result = new HashMap<String, IData>();
-
-		result.put(outputID,
-				new LiteralBooleanBinding(crosses));
-		return result;
+		return ImmutableMap.of(outputID, (IData) new LiteralBooleanBinding(crosses));
 	}
+
+    private FeatureCollection<?, ?> getSingleInput(String key, Map<String, List<IData>> inputData) {
+        List<IData> firstDataList = inputData.get(key);
+        if(firstDataList == null || firstDataList.size() != 1){
+            throw new RuntimeException("Error while allocating input parameters");
+        }
+        IData firstInputData = firstDataList.get(0);
+        return ((GTVectorDataBinding) firstInputData).getPayload();
+    }
 
 	@Override
 	public List<String> getInputIdentifiers() {
-		List<String> identifiers = new ArrayList<String>(2);
-		identifiers.add(inputID1);
-		identifiers.add(inputID2);
-		return identifiers;
+        return Lists.newArrayList(inputID1, inputID2);
 	}
 
 	@Override
 	public List<String> getOutputIdentifiers() {
-		List<String> identifiers = new ArrayList<String>(1);
-		identifiers.add(outputID);
-		return identifiers;
+		return Lists.newArrayList(outputID);
 	}
 
 }

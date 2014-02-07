@@ -21,43 +21,42 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA or
  * visit the Free Software Foundation web page, http://www.fsf.org.
  */
-
 package org.n52.wps.io.datahandler.generator;
 
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.GeneratorFactory;
 import org.n52.wps.io.IGenerator;
-import org.n52.wps.io.IOHandler;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
+import org.n52.wps.server.ExceptionReport;
 
 /**
  * @author Matthias Mueller, TU Dresden
  *
  */
-public class ProxyGMLGenerator4Files extends AbstractGenerator{
-	
-	public ProxyGMLGenerator4Files(){
-		super();
-		supportedIDataTypes.add(GenericFileDataBinding.class);
-	}
-	
-	//TODO: provides some logic for generic conversion trough piped generators
-	@Override
-	public InputStream generateStream(IData data, String mimeType, String schema) throws IOException {
-		
+public class ProxyGMLGenerator4Files extends AbstractGenerator {
+
+    public ProxyGMLGenerator4Files() {
+        super(GenericFileDataBinding.class);
+    }
+
+    @Override
+    public InputStream generateStream(IData data, Format format) throws
+            IOException, ExceptionReport {
+
 //		// check for correct request before returning the stream
 //		if (!(this.isSupportedGenerate(data.getSupportedClass(), mimeType, schema))){
 //			throw new IOException("I don't support the incoming datatype");
 //		}
-		
-		GTVectorDataBinding vectorBindingData = ((GenericFileDataBinding)data).getPayload().getAsGTVectorDataBinding();
-		IGenerator assistanceGen = GeneratorFactory.getInstance().getGenerator(schema, mimeType, IOHandler.DEFAULT_ENCODING, GTVectorDataBinding.class);
-		
-		return assistanceGen.generateStream(vectorBindingData, mimeType, schema);
-	}
-	
+        GTVectorDataBinding vectorBindingData = ((GenericFileDataBinding) data)
+                .getPayload().getAsGTVectorDataBinding();
+        IGenerator delegate = GeneratorFactory.getInstance()
+                .getGenerator(format, GTVectorDataBinding.class);
+        return delegate.generate(vectorBindingData, format);
+    }
+
 }

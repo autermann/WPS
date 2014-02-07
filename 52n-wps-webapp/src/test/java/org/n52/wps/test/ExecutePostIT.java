@@ -23,14 +23,21 @@
  */
 package org.n52.wps.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+
 import java.io.IOException;
 import java.io.InputStream;
+
 import javax.xml.parsers.ParserConfigurationException;
+
 import org.apache.xmlbeans.XmlException;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfig;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.datahandler.parser.GeotiffParser;
@@ -1435,7 +1442,7 @@ public class ExecutePostIT {
         InputStream stream = PostClient.sendRequestForInputStream(url, payload);
 
         GeotiffParser parser = new GeotiffParser();
-        IData iData = parser.parseBase64(stream, "image/tiff", null);
+        IData iData = parser.parseBase64(stream, new Format("image/tiff"));
         assertThat(iData, is(not(nullValue())));
     }
 
@@ -1468,7 +1475,7 @@ public class ExecutePostIT {
 
         InputStream stream = PostClient.sendRequestForInputStream(url, payload);
         GeotiffParser parser = new GeotiffParser();
-        IData iData = parser.parse(stream, "image/tiff", null);
+        IData iData = parser.parse(stream, new Format("image/tiff"));
         assertThat(iData, is(not(nullValue())));
     }
 

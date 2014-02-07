@@ -40,16 +40,17 @@ import net.opengis.gml.LinearRingType;
 import net.opengis.gml.PointPropertyType;
 import net.opengis.gml.PolygonPropertyType;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.xmlbeans.XmlException;
 import org.geotools.data.collection.ListFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
@@ -67,18 +68,17 @@ import com.vividsolutions.jts.geom.Polygon;
  */
 public class SimpleGMLParser extends AbstractParser {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(SimpleGMLParser.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SimpleGMLParser.class);
 	private SimpleFeatureType type;
 	private SimpleFeatureBuilder featureBuilder;
-	private GeometryFactory geomFactory;
+	private final GeometryFactory geomFactory;
 	
 	public SimpleGMLParser() {
-		super();
-		supportedIDataTypes.add(GTVectorDataBinding.class);
+		super(GTVectorDataBinding.class);
 		geomFactory = new GeometryFactory();
 	}
 	
-	public GTVectorDataBinding parse(InputStream stream, String mimeType, String schema) {
+	public GTVectorDataBinding parse(InputStream stream, Format format) {
 		GMLPacketDocument doc;
 		try {
 			doc = GMLPacketDocument.Factory.parse(stream);
@@ -98,7 +98,7 @@ public class SimpleGMLParser extends AbstractParser {
 	private GTVectorDataBinding parseXML(GMLPacketDocument doc) {
 		
 		int numberOfMembers = doc.getGMLPacket().getPacketMemberArray().length;
-		List<SimpleFeature> simpleFeatureList = new ArrayList<SimpleFeature>();
+		List<SimpleFeature> simpleFeatureList = new ArrayList<>();
 		for(int i = 0; i< numberOfMembers; i++) {
 			StaticFeatureType feature = doc.getGMLPacket().getPacketMemberArray(i).getStaticFeature();
 			//at the start create the featureType and the featureBuilder
@@ -140,7 +140,7 @@ public class SimpleGMLParser extends AbstractParser {
 		
 		if(type.getAttributeCount()>1){
 			if(staticFeature.sizeOfPropertyArray() > 0){
-				ArrayList<Object> properties = new ArrayList<Object>(staticFeature.sizeOfPropertyArray());
+				ArrayList<Object> properties = new ArrayList<>(staticFeature.sizeOfPropertyArray());
 				properties.add(geom);
 				for (int i = 0; i < staticFeature.sizeOfPropertyArray(); i++) {						
 					PropertyType ptype = staticFeature.getPropertyArray(i);
@@ -218,13 +218,13 @@ public class SimpleGMLParser extends AbstractParser {
 		LinearRingType outerRing = polygon.getPolygon().getOuterBoundaryIs().getLinearRing();
 		LinearRing jtsOuterRing = convertToJTSLinearRing(outerRing);
 		LinearRingMemberType[] innerRings = polygon.getPolygon().getInnerBoundaryIsArray();
-		List<LinearRing> jtsInnerRings = new ArrayList<LinearRing>();
+		List<LinearRing> jtsInnerRings = new ArrayList<>();
 		for(LinearRingMemberType ring : innerRings) {
 			if(ring.getLinearRing() != null) {
 				jtsInnerRings.add(convertToJTSLinearRing(ring.getLinearRing()));
 			}
 		}
-		return geomFactory.createPolygon(jtsOuterRing, (LinearRing[])jtsInnerRings.toArray(new LinearRing[jtsInnerRings.size()]));
+		return geomFactory.createPolygon(jtsOuterRing, jtsInnerRings.toArray(new LinearRing[jtsInnerRings.size()]));
 	}
 	
 	private LinearRing convertToJTSLinearRing(LinearRingType linearRing) {
@@ -238,7 +238,7 @@ public class SimpleGMLParser extends AbstractParser {
 	 * @return
 	 */
 	private Coordinate[] convertToJTSCoordinates(CoordType[] coords) {
-		List<Coordinate> coordList = new ArrayList<Coordinate>();
+		List<Coordinate> coordList = new ArrayList<>();
 		for(CoordType coord : coords) {
 			Coordinate coordinate = convertToJTSCoordinate(coord);
 			coordList.add(coordinate);

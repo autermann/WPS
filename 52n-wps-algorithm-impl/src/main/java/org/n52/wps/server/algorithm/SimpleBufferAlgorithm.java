@@ -28,38 +28,34 @@ import java.util.UUID;
 
 import javax.xml.namespace.QName;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.feature.DefaultFeatureCollections;
 import org.geotools.feature.FeatureCollection;
-import org.n52.wps.io.GTHelper;
-import org.n52.wps.io.SchemaRepository;
-import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
-import org.opengis.feature.simple.SimpleFeature;
-import org.opengis.feature.simple.SimpleFeatureType;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
-
-import com.vividsolutions.jts.geom.Geometry;
-
 import org.n52.wps.algorithm.annotation.Algorithm;
 import org.n52.wps.algorithm.annotation.ComplexDataInput;
 import org.n52.wps.algorithm.annotation.ComplexDataOutput;
-import org.n52.wps.algorithm.annotation.LiteralDataInput;
 import org.n52.wps.algorithm.annotation.Execute;
+import org.n52.wps.algorithm.annotation.LiteralDataInput;
+import org.n52.wps.io.GTHelper;
+import org.n52.wps.io.SchemaRepository;
+import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.server.AbstractAnnotatedAlgorithm;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.vividsolutions.jts.geom.Geometry;
 
 @Algorithm(version = "1.1.0")
 public class SimpleBufferAlgorithm extends AbstractAnnotatedAlgorithm {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(SimpleBufferAlgorithm.class);
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(SimpleBufferAlgorithm.class);
     private Double percentage;
 
-    public SimpleBufferAlgorithm() {
-        super();
-    }
-    
-    private FeatureCollection result;
-    private FeatureCollection data;
+    private FeatureCollection<SimpleFeatureType, SimpleFeature> result;
+    private FeatureCollection<SimpleFeatureType, SimpleFeature> data;
     private double width;
 
     @ComplexDataOutput(identifier = "result", binding = GTVectorDataBinding.class)
@@ -80,23 +76,23 @@ public class SimpleBufferAlgorithm extends AbstractAnnotatedAlgorithm {
     @Execute
     public void runBuffer() {
         //Collection resultColl = new ArrayList();
-        double i = 0;
+        int i = 0;
         int totalNumberOfFeatures = data.size();
         String uuid = UUID.randomUUID().toString();
         result = DefaultFeatureCollections.newCollection();
         SimpleFeatureType featureType = null;
-        for (Iterator ia = data.iterator(); ia.hasNext();) {
+        for (Iterator<SimpleFeature> ia = data.iterator(); ia.hasNext();) {
             /**
              * ******* How to publish percentage results ************
              */
-            i = i + 1;
-            percentage = (i / totalNumberOfFeatures) * 100;
+            i += 1;
+            percentage = ((double) i / totalNumberOfFeatures) * 100;
             this.update(new Integer(percentage.intValue()));
 
             /**
              * ******************
              */
-            SimpleFeature feature = (SimpleFeature) ia.next();
+            SimpleFeature feature = ia.next();
             Geometry geometry = (Geometry) feature.getDefaultGeometry();
             Geometry geometryBuffered = runBuffer(geometry, width);
 
@@ -112,11 +108,12 @@ public class SimpleBufferAlgorithm extends AbstractAnnotatedAlgorithm {
             }
 
             if (geometryBuffered != null) {
-                SimpleFeature createdFeature = (SimpleFeature) GTHelper.createFeature("ID" + new Double(i).intValue(), geometryBuffered, (SimpleFeatureType) featureType, feature.getProperties());
+                SimpleFeature createdFeature = GTHelper.createFeature("ID" + i, geometryBuffered, featureType, feature.getProperties());
                 feature.setDefaultGeometry(geometryBuffered);
                 result.add(createdFeature);
             } else {
-                LOGGER.warn("GeometryCollections are not supported, or result null. Original dataset will be returned");
+                LOGGER
+                        .warn("GeometryCollections are not supported, or result null. Original dataset will be returned");
             }
         }
 

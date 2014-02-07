@@ -33,6 +33,7 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
 import org.n52.wps.io.datahandler.generator.GeoserverWMSGenerator;
 import org.n52.wps.io.datahandler.parser.GeotiffParser;
@@ -56,8 +57,7 @@ public class GeoserverWMSGeneratorTest extends AbstractTestCase<GeoserverWMSGene
 		}
 
 		GeotiffParser theParser = new GeotiffParser();
-
-		String[] mimetypes = theParser.getSupportedFormats();
+        Format format = theParser.getSupportedFormats().iterator().next();
 
 		InputStream input = null;
 
@@ -67,20 +67,17 @@ public class GeoserverWMSGeneratorTest extends AbstractTestCase<GeoserverWMSGene
 			fail(e.getMessage());
 		}
 
-		GTRasterDataBinding theBinding = theParser.parse(input, mimetypes[0],
-				null);
+		GTRasterDataBinding theBinding = theParser.parse(input, format);
 
 		assertTrue(theBinding.getPayload() != null);
 
-		String[] mimetypes2 = dataHandler.getSupportedFormats();
-
-		for (String string : mimetypes2) {
+		for (Format format2 : dataHandler.getSupportedFormats()) {
 			try {
-				InputStream resultStream = dataHandler.generateStream(theBinding, string, null);
+				InputStream resultStream = dataHandler.generateStream(theBinding, format2);
 				
 				BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(resultStream));
 				
-				String line = "";
+				String line;
 				
 				while((line = bufferedReader.readLine()) != null){
 					System.out.println(line);

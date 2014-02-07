@@ -33,6 +33,7 @@ import net.opengis.wps.x100.ComplexDataDescriptionType;
 import net.opengis.wps.x100.ComplexDataType;
 import net.opengis.wps.x100.DocumentOutputDefinitionType;
 import net.opengis.wps.x100.ExecuteDocument;
+import net.opengis.wps.x100.ExecuteDocument.Execute;
 import net.opengis.wps.x100.InputDescriptionType;
 import net.opengis.wps.x100.InputReferenceType;
 import net.opengis.wps.x100.InputType;
@@ -40,16 +41,17 @@ import net.opengis.wps.x100.LiteralDataType;
 import net.opengis.wps.x100.OutputDefinitionType;
 import net.opengis.wps.x100.OutputDescriptionType;
 import net.opengis.wps.x100.ProcessDescriptionType;
-import net.opengis.wps.x100.ExecuteDocument.Execute;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.GeneratorFactory;
 import org.n52.wps.io.IGenerator;
 import org.n52.wps.io.IOHandler;
 import org.n52.wps.io.data.IData;
+import org.n52.wps.server.ExceptionReport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author foerster
@@ -57,9 +59,9 @@ import org.n52.wps.io.data.IData;
  */
 
 public class ExecuteRequestBuilder {
-	ProcessDescriptionType processDesc;
-	ExecuteDocument execute;
-	String SUPPORTED_VERSION = "1.0.0";
+	private ProcessDescriptionType processDesc;
+	private ExecuteDocument execute;
+	private String SUPPORTED_VERSION = "1.0.0";
 	
 	private static Logger LOGGER = LoggerFactory.getLogger(ExecuteRequestBuilder.class);
 	
@@ -84,12 +86,10 @@ public class ExecuteRequestBuilder {
 	 * 
 	 * @param parameterID the ID of the input (see process description)
 	 * @param value the actual value (for xml data xml for binary data is should be base64 encoded data)
-	 * @param schema schema if applicable otherwise null
-	 * @param encoding encoding if not the default encoding (for default encoding set it to null) (i.e. binary data, use base64)
-	 * @param mimeType mimetype of the data, has to be set
+	 * @param format the format
 	 * @throws WPSClientException
 	 */
-	public void addComplexData(String parameterID, IData value, String schema, String encoding, String mimeType) throws WPSClientException {
+	public void addComplexData(String parameterID, IData value, Format format) throws WPSClientException {
 		GeneratorFactory fac = StaticDataHandlerRepository.getGeneratorFactory();
 		InputDescriptionType inputDesc = getParameterDescription(parameterID);
 		if (inputDesc == null) {
@@ -100,12 +100,9 @@ public class ExecuteRequestBuilder {
 		}
 		
 			
-		LOGGER.debug("Looking for matching Generator ..." + 
-				" schema: " + schema +
-				" mimeType: " + mimeType +
-				" encoding: " + encoding);
+		LOGGER.debug("Looking for matching Generator... {}", format);
 		
-		IGenerator generator = fac.getGenerator(schema, mimeType, encoding, value.getClass());
+		IGenerator generator = fac.getGenerator(format, value.getClass());
 		
 		if (generator == null) {
 			// generator is still null
@@ -113,40 +110,28 @@ public class ExecuteRequestBuilder {
 		}
 		
 		
-		InputStream stream = null;  
-				
-			InputType input = execute.getExecute().getDataInputs().addNewInput();
-			input.addNewIdentifier().setStringValue(inputDesc.getIdentifier().getStringValue());
+	       InputStream stream = null;
+
+        InputType input = execute.getExecute().getDataInputs().addNewInput();
+        input.addNewIdentifier().setStringValue(inputDesc.getIdentifier()
+                .getStringValue());
 			// encoding is UTF-8 (or nothing and we default to UTF-8)
-			// everything that goes to this condition should be inline xml data
-		try {
-			
-			if (encoding == null || encoding.equals("") || encoding.equalsIgnoreCase(IOHandler.DEFAULT_ENCODING)){
-					stream = generator.generateStream(value, mimeType, schema);
-					
-			}else if(encoding.equalsIgnoreCase("base64")){
-					stream = generator.generateBase64Stream(value, mimeType, schema);
-			}else{
-				throw new WPSClientException("Encoding not supported");
-			}
-					ComplexDataType data = input.addNewData().addNewComplexData();
-					data.set(XmlObject.Factory.parse(stream));
-					if (schema != null) {
-						data.setSchema(schema);
-					}
-					if (mimeType != null) {
-						data.setMimeType(mimeType);
-					}
-					if (encoding != null) {
-						data.setEncoding(encoding);
-					}
-			}catch(XmlException e) {
-					throw new IllegalArgumentException("error inserting node into execute request", e);
-			} catch (IOException e) {
-					throw new IllegalArgumentException("error reading generator output", e);
-			}
-			
-	}
+        // everything that goes to this condition should be inline xml data
+        try {
+
+            stream = generator.generate(value, format);
+            ComplexDataType data = input.addNewData().addNewComplexData();
+            data.set(XmlObject.Factory.parse(stream));
+            format.encodeTo(data);
+        } catch (XmlException e) {
+            throw new IllegalArgumentException("error inserting node into execute request", e);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("error reading generator output", e);
+        } catch (ExceptionReport ex) {
+            throw new IllegalArgumentException("error encoding output");
+        }
+
+    }
 
 	/**
 	 * Add literal data to the request
@@ -179,7 +164,7 @@ public class ExecuteRequestBuilder {
  * @param encoding encoding if applicable (typically not), otherwise null
  * @param mimetype mimetype of the input according to the process description. has to be set
  */
-	public void addComplexDataReference(String parameterID, String value, String schema, String encoding, String mimetype) {
+	public void addComplexDataReference(String parameterID, String value, Format format) {
 		InputDescriptionType inputDesc = getParameterDescription(parameterID);
 		if (inputDesc == null) {
 			throw new IllegalArgumentException("inputDesription is null for: " + parameterID);
@@ -191,16 +176,7 @@ public class ExecuteRequestBuilder {
 		InputType input = execute.getExecute().getDataInputs().addNewInput();
 		input.addNewIdentifier().setStringValue(parameterID);
 		input.addNewReference().setHref(value);
-		if (schema != null) {
-			input.getReference().setSchema(schema);
-		}
-
-		if (encoding != null) {
-			input.getReference().setEncoding(encoding);
-		}
-		if (mimetype != null) {
-			input.getReference().setMimeType(mimetype);
-		}
+        format.encodeTo(input.getReference());
 	}
 
 	/**
@@ -444,8 +420,8 @@ public class ExecuteRequestBuilder {
 	 */
 	public String getExecuteAsGETString() {
 		String request = "?service=wps&request=execute&version=1.0.0&identifier=";
-		request = request + processDesc.getIdentifier().getStringValue();
-		request = request + "&DataInputs=";
+		request += processDesc.getIdentifier().getStringValue();
+		request += "&DataInputs=";
 		InputType[] inputs = execute.getExecute().getDataInputs().getInputArray();
 		int inputCounter = 0;
 		for(InputType input : inputs){

@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.io.datahandler.generator.KMLGenerator;
 import org.n52.wps.io.datahandler.parser.GTBinZippedSHPParser;
@@ -57,33 +58,23 @@ public class KMLGeneratorTest extends AbstractTestCase<KMLGenerator> {
 		
 		KMLParser kmlParser = new KMLParser();
 		
-		String[] mimetypes1 = theParser.getSupportedFormats();
-		
 		InputStream input = null;
-		
 		try {
 			input = new FileInputStream(new File(testFilePath));
 		} catch (FileNotFoundException e) {
 			fail(e.getMessage());
 		}
 		
-		String mimetype = mimetypes1[0];
-		
-		GTVectorDataBinding theBinding = theParser.parse(input, mimetype, "");
+		GTVectorDataBinding theBinding = theParser.parse(input, theParser.getSupportedFormats().iterator().next());
 			
 		assertNotNull(theBinding.getPayload());		
 		assertTrue(!theBinding.getPayload().isEmpty());	
 		
-		String[] mimetypes2 = dataHandler.getSupportedFormats();
-		String[] schemas2 = dataHandler.getSupportedSchemas();
-		
-		for (String string : mimetypes2) {
-			
-			for (String schema : schemas2) {
+		for (Format format : dataHandler.getSupportedFormats()) {
 				try {
-					InputStream in = dataHandler.generateStream(theBinding, string, schema);
+					InputStream in = dataHandler.generateStream(theBinding, format);
 					
-					GTVectorDataBinding generatedParsedBinding = kmlParser.parse(in, kmlParser.getSupportedFormats()[0], kmlParser.getSupportedSchemas()[0]);
+					GTVectorDataBinding generatedParsedBinding = kmlParser.parse(in, format);
 					
 					assertNotNull(generatedParsedBinding.getPayload());	
 					assertTrue(generatedParsedBinding.getPayloadAsShpFile().exists());		
@@ -93,8 +84,6 @@ public class KMLGeneratorTest extends AbstractTestCase<KMLGenerator> {
 					e.printStackTrace();
 					fail(e.getMessage());
 				}
-			}
-			
 		}
 		
 	}

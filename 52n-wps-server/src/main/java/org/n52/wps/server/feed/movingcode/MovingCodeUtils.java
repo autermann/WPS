@@ -44,7 +44,7 @@ import org.n52.wps.io.data.binding.literal.LiteralStringBinding;
  */
 public class MovingCodeUtils {
 	
-	public static Class getInputDataType(MovingCodeObject mco, String id) {
+	public static Class<? extends IData> getInputDataType(MovingCodeObject mco, String id) {
 		InputDescriptionType[] inputs = mco.getProcessDescription().getDataInputs().getInputArray();
 		
 		for(InputDescriptionType input : inputs){

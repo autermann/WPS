@@ -33,14 +33,14 @@ import java.util.UUID;
 import org.geotools.data.DataStore;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.IOUtils;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 
 public class GTBinZippedSHPParser extends AbstractParser {
 	
 	public GTBinZippedSHPParser(){
-		super();
-		supportedIDataTypes.add(GTVectorDataBinding.class);
+		super(GTVectorDataBinding.class);
 	}
 	
 	/**
@@ -50,20 +50,21 @@ public class GTBinZippedSHPParser extends AbstractParser {
 	 * @see org.n52.wps.io.IParser#parse(java.io.InputStream)
 	 */
 	@Override
-	public GTVectorDataBinding parse(InputStream stream, String mimeType, String schema) {
+	public GTVectorDataBinding parse(InputStream stream, Format format) {
 		try {
 			String fileName = "tempfile" + UUID.randomUUID() + ".zip";
 			String tmpDirPath = System.getProperty("java.io.tmpdir");
 			File tempFile = new File(tmpDirPath + File.separatorChar + fileName);
 			finalizeFiles.add(tempFile); // mark tempFile for final delete
 			try {
-				FileOutputStream outputStream = new FileOutputStream(tempFile);
-				byte buf[] = new byte[4096];
-				int len;
-				while ((len = stream.read(buf)) > 0) {
-					outputStream.write(buf, 0, len);
-				}
-				outputStream.close();
+                try (FileOutputStream outputStream
+                        = new FileOutputStream(tempFile)) {
+                    byte buf[] = new byte[4096];
+                    int len;
+                    while ((len = stream.read(buf)) > 0) {
+                        outputStream.write(buf, 0, len);
+                    }
+                }
 				stream.close();
 			} catch (FileNotFoundException e) {
 				System.gc();

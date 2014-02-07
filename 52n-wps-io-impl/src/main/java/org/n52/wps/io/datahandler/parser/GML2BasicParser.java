@@ -39,8 +39,6 @@ import java.util.UUID;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.data.collection.ListFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -52,6 +50,7 @@ import org.geotools.filter.identity.GmlObjectIdImpl;
 import org.geotools.gml2.GMLConfiguration;
 import org.geotools.gml3.ApplicationSchemaConfiguration;
 import org.geotools.xml.Configuration;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.SchemaRepository;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.opengis.feature.GeometryAttribute;
@@ -60,6 +59,8 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.GeometryDescriptor;
 import org.opengis.feature.type.GeometryType;
 import org.opengis.filter.identity.Identifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -75,12 +76,10 @@ public class GML2BasicParser extends AbstractParser {
 	private static Logger LOGGER = LoggerFactory.getLogger(GML2BasicParser.class);
 
 	public GML2BasicParser() {
-		super();
-		supportedIDataTypes.add(GTVectorDataBinding.class);
+		super(GTVectorDataBinding.class);
 	}
 
-	public GTVectorDataBinding parse(InputStream stream, String mimeType,
-			String schema) {
+	public GTVectorDataBinding parse(InputStream stream, Format format) {
 
 		FileOutputStream fos = null;
 		try {

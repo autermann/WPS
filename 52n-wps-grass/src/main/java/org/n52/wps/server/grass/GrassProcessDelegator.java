@@ -24,24 +24,17 @@
 
 package org.n52.wps.server.grass;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.opengis.ows.x11.CodeType;
 import net.opengis.wps.x100.InputDescriptionType;
-import net.opengis.wps.x100.LiteralInputType;
 import net.opengis.wps.x100.OutputDefinitionType;
 import net.opengis.wps.x100.OutputDescriptionType;
 import net.opengis.wps.x100.ProcessDescriptionType;
-import net.opengis.wps.x100.ProcessDescriptionType.DataInputs;
-import net.opengis.wps.x100.ProcessDescriptionType.ProcessOutputs;
-import net.opengis.wps.x100.SupportedComplexDataInputType;
 import net.opengis.wps.x100.SupportedComplexDataType;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.n52.wps.commons.context.ExecutionContextFactory;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
@@ -51,105 +44,79 @@ import org.n52.wps.io.data.binding.literal.LiteralFloatBinding;
 import org.n52.wps.io.data.binding.literal.LiteralIntBinding;
 import org.n52.wps.io.data.binding.literal.LiteralStringBinding;
 import org.n52.wps.server.grass.io.GrassIOHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.ImmutableMap;
 
 /**
  * @author Benjamin Pross (bpross-52n)
  *
  */
 public class GrassProcessDelegator extends GenericGrassAlgorithm{
-
-	private static Logger LOGGER = LoggerFactory.getLogger(GrassProcessDelegator.class);
-
-	private String processID;
-	private boolean isAddon;
-	private ProcessDescriptionType processDescription;
-	private List<String> errors;	
-	private HashMap<String, Class<?>> complexInputTypes;	
-	private HashMap<String, Class<?>> literalInputTypes;
-	private HashMap<String, String> outputTypeMimeTypeMap;
-	
-	private final String dataTypeFloat = "float";
-	private final String dataTypeBoolean = "boolean";
-	private final String dataTypeString = "string";
-	private final String dataTypeInteger ="integer";
-	private final String dataTypeDouble = "double";
+	private static final Logger LOGGER = LoggerFactory.getLogger(GrassProcessDelegator.class);
+	private static final String DATA_TYPE_FLOAT = "float";
+	private static final String DATA_TYPE_BOOLEAN = "boolean";
+	private static final String DATA_TYPE_STRING = "string";
+	private static final String DATA_TYPE_INTEGER ="integer";
+	private static final String DATA_TYPE_DOUBLE = "double";
+	private final boolean isAddon;
+	private final ProcessDescriptionType processDescription;
+	private final HashMap<String, Class<?>> complexInputTypes = new HashMap<>();
+	private final HashMap<String, Class<?>> literalInputTypes = new HashMap<>();
+	private final HashMap<String, String> outputTypeMimeTypeMap = new HashMap<>();
 	
 	
 	public GrassProcessDelegator(String processID, ProcessDescriptionType processDescriptionType, boolean isAddon){
-		this.processID = processID;
+        super(processID);
 		this.isAddon = isAddon;
 		this.processDescription = processDescriptionType;
-		this.errors = new ArrayList<String>();
-		mapInputAndOutputTypes(processDescriptionType);		
+		mapInputAndOutputTypes();
 	}
 	
-	private void mapInputAndOutputTypes(ProcessDescriptionType processDescriptionType){
-		
-		complexInputTypes = new HashMap<String, Class<?>>();
-		literalInputTypes = new HashMap<String, Class<?>>();
-		outputTypeMimeTypeMap = new HashMap<String, String>();
-		
-		DataInputs inputs = processDescriptionType.getDataInputs();			
-		
-		for (int j = 0; j < inputs.getInputArray().length; j++) {
-			InputDescriptionType input = inputs.getInputArray(j);
-			
-			CodeType identifierType = input.getIdentifier();
-			
-			String identifierString = identifierType.getStringValue();
-			
-			SupportedComplexDataInputType complexData = input.getComplexData();
+	private void mapInputAndOutputTypes(){
+        for (InputDescriptionType input : processDescription.getDataInputs().getInputArray()) {
+			String identifier = input.getIdentifier().getStringValue();
 
-			if (complexData != null) {
-
-				complexInputTypes.put(identifierString,
-						GenericFileDataBinding.class);
-
+			if (input.getComplexData() != null) {
+				complexInputTypes.put(identifier, GenericFileDataBinding.class);
 			} else if (input.getLiteralData() != null) {
-				
-				LiteralInputType literalType = input.getLiteralData();
-				
-				String datatype = literalType.getDataType().getStringValue();
-				
-				if(datatype.equals(dataTypeFloat)){
-					literalInputTypes.put(identifierString, LiteralFloatBinding.class);
-				}else if(datatype.equals(dataTypeBoolean)){
-					literalInputTypes.put(identifierString, LiteralBooleanBinding.class);
-				}else if(datatype.equals(dataTypeString)){
-					literalInputTypes.put(identifierString, LiteralStringBinding.class);
-				}else if(datatype.equals(dataTypeInteger)){
-					literalInputTypes.put(identifierString, LiteralIntBinding.class);
-				}else if(datatype.equals(dataTypeDouble)){
-					literalInputTypes.put(identifierString, LiteralDoubleBinding.class);
-				}
-				
+                switch (input.getLiteralData().getDataType().getStringValue()) {
+                    case DATA_TYPE_FLOAT:
+                        literalInputTypes.put(identifier, LiteralFloatBinding.class);
+                        break;
+                    case DATA_TYPE_BOOLEAN:
+                        literalInputTypes.put(identifier, LiteralBooleanBinding.class);
+                        break;
+                    case DATA_TYPE_STRING:
+                        literalInputTypes.put(identifier, LiteralStringBinding.class);
+                        break;
+                    case DATA_TYPE_INTEGER:
+                        literalInputTypes.put(identifier, LiteralIntBinding.class);
+                        break;
+                    case DATA_TYPE_DOUBLE:
+                        literalInputTypes.put(identifier, LiteralDoubleBinding.class);
+                        break;
+                }
 			}
 		}
 		
-		ProcessOutputs pOutputs = processDescriptionType.getProcessOutputs();
-		
-		for (int i = 0; i < pOutputs.getOutputArray().length; i++) {
-			
-			OutputDescriptionType oDescType = pOutputs.getOutputArray(i);
-			
-			SupportedComplexDataType type = oDescType.getComplexOutput();
-
-			String outputIdentifier = oDescType.getIdentifier().getStringValue();
-			
+		for (OutputDescriptionType output : processDescription.getProcessOutputs().getOutputArray()) {
+			SupportedComplexDataType type = output.getComplexOutput();
+			String outputIdentifier = output.getIdentifier().getStringValue();
 			String defaultMimeType = type.getDefault().getFormat().getMimeType();
-			
 			outputTypeMimeTypeMap.put(outputIdentifier, defaultMimeType);
 		}
 	}
-	
-	@Override
-	public ProcessDescriptionType getDescription() {
-		return processDescription;
-	}
+
+    @Override
+    protected ProcessDescriptionType initializeDescription() {
+        return processDescription;
+    }
 
 	@Override
 	public List<String> getErrors() {
-		return errors;
+		return Collections.emptyList();
 	}
 
 	@Override
@@ -169,11 +136,6 @@ public class GrassProcessDelegator extends GenericGrassAlgorithm{
 	}
 
 	@Override
-	public String getWellKnownName() {
-		return processID;
-	}
-
-	@Override
 	public boolean processDescriptionIsValid() {
 		return processDescription.validate();
 	}
@@ -181,52 +143,38 @@ public class GrassProcessDelegator extends GenericGrassAlgorithm{
 	@Override
 	public Map<String, IData> run(Map<String, List<IData>> inputData) {
 
-		LOGGER.info("Executing GRASS process " + processID + ".");
+        LOGGER.info("Executing GRASS process {}.", getWellKnownName());
 		
-		Map<String, IData> result = new HashMap<String, IData>();
-
 		OutputDefinitionType output = ExecutionContextFactory.getContext().getOutputs().get(0);
-		
 		String outputSchema = output.getSchema();
-		
 		String outputMimeType = output.getMimeType();
-		
-		CodeType outputIdentifierCT = output.getIdentifier();
-		
-		String outputIdentifier = outputIdentifierCT.getStringValue();	
-		
-		HashMap<String, List<IData>> firstInputMap = new HashMap<String, List<IData>>();
+		String outputIdentifier = output.getIdentifier().getStringValue();
 
+		HashMap<String, List<IData>> firstInputMap = new HashMap<>();
 		for (String key : complexInputTypes.keySet()) {
-
 			if (inputData.containsKey(key)) {
 				firstInputMap.put(key, inputData.get(key));
 			}
 		}
 		
-		HashMap<String, List<IData>> secondInputMap = new HashMap<String, List<IData>>();
-		
+		HashMap<String, List<IData>> secondInputMap = new HashMap<>();
 		for (String key : literalInputTypes.keySet()) {
-
 			if (inputData.containsKey(key)) {
 				secondInputMap.put(key, inputData.get(key));
 			}
 		}
 		
-		if(outputMimeType == null || outputMimeType.equals("")){
+		if(outputMimeType == null || outputMimeType.isEmpty()){
 			outputMimeType = outputTypeMimeTypeMap.get(outputIdentifier);
 		}
 		
 		IData outputFileDB = new GrassIOHandler().executeGrassProcess(
-				processID, firstInputMap, secondInputMap, outputIdentifier, outputMimeType, outputSchema, isAddon);
+				getWellKnownName(), firstInputMap, secondInputMap,
+                outputIdentifier, outputMimeType, outputSchema, isAddon);
 		
-		if(outputIdentifier == null || outputIdentifier.equals("")){
+		if(outputIdentifier == null || outputIdentifier.isEmpty()){
 			outputIdentifier = "output";
 		}
-		
-		result.put(outputIdentifier, outputFileDB);
-
-		return result;
-
+		return ImmutableMap.of(outputIdentifier, outputFileDB);
 	}
 }

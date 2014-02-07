@@ -21,80 +21,52 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA or
  * visit the Free Software Foundation web page, http://www.fsf.org.
  */
-
 package org.n52.wps.io.datahandler.generator;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.codec.binary.Base64InputStream;
-import org.n52.wps.FormatDocument.Format;
-import org.n52.wps.commons.WPSConfig;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.AbstractIOHandler;
 import org.n52.wps.io.IGenerator;
-import org.n52.wps.io.IOHandler;
 import org.n52.wps.io.data.IData;
+import org.n52.wps.server.ExceptionReport;
 
 /**
  * @author Matthias Mueller, TU Dresden
  *
  */
-public abstract class AbstractGenerator extends AbstractIOHandler implements IGenerator {
-	
-	/**
-	 * A list of files that shall be deleted by destructor.
-	 * Convenience mechanism to delete temporary files that had
-	 * to be written during the generation procedure.
-	 */
-	protected List<File> finalizeFiles;
-	
-	public AbstractGenerator(){
-		super();
-		
-		this.properties = WPSConfig.getInstance().getPropertiesForGeneratorClass(this.getClass().getName());
-		
-		this.formats = WPSConfig.getInstance().getFormatsForGeneratorClass(this.getClass().getName());
-				
-		for (Format format : formats) {			
+public abstract class AbstractGenerator extends AbstractIOHandler
+        implements IGenerator {
 
-			if(format.getMimetype()!= null && !format.getMimetype().equals("")){
-				String mimetype = format.getMimetype();
-				supportedFormats.add(mimetype);
-			}
-			if(format.getSchema()!= null && !format.getSchema().equals("")){
-				String schema = format.getSchema();
-				supportedSchemas.add(schema);				
-			}
-			
-			if(format.getEncoding()!= null && !format.getEncoding().equals("")){
-				String encoding = format.getEncoding();
-				supportedEncodings.add(encoding);
-			}else{
-				supportedEncodings.add(IOHandler.DEFAULT_ENCODING);
-			}			
-		}
-		
-		finalizeFiles = new ArrayList<File>();
-	}
-	
-	public InputStream generateBase64Stream(IData data, String mimeType, String schema) throws IOException {
-		return new Base64InputStream(generateStream(data, mimeType, schema), true);
-	}
-	
-	/**
-	 * Destructor deletes generated temporary files.
-	 */
-	@Override
-	protected void finalize() throws Throwable {
-		
-		for (File currentFile : finalizeFiles){
-			currentFile.delete();
-		}
-		
-		super.finalize();
-	}
+    public AbstractGenerator(Set<Format> formats,
+                             Set<Class<?>> dataTypes) {
+        super(formats, dataTypes);
+    }
 
+    public AbstractGenerator(Set<Class<?>> dataTypes) {
+        super(dataTypes);
+    }
+
+    public AbstractGenerator(Class<?>... dataTypes) {
+        super(dataTypes);
+    }
+
+    @Override
+    public InputStream generate(IData data, Format format)
+            throws IOException, ExceptionReport {
+        if (!format.hasEncoding()|| format.hasEncoding(DEFAULT_ENCODING)) {
+            return generateStream(data, format);
+        } else if (format.hasEncoding(ENCODING_BASE64)) {
+            return new Base64InputStream(generate(data, format.withoutEncoding()), true);
+        } else {
+            throw new ExceptionReport("Unable to generate encoding " + format
+                    .getEncoding().orNull(), ExceptionReport.NO_APPLICABLE_CODE);
+        }
+    }
+
+    protected abstract InputStream generateStream(IData data, Format format)
+            throws IOException, ExceptionReport;
 }

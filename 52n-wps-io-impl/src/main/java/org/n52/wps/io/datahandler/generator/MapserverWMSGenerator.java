@@ -34,6 +34,7 @@ import javax.xml.transform.TransformerException;
 import org.apache.commons.httpclient.HttpException;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.n52.wps.PropertyDocument.Property;
+import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfig;
 import org.n52.wps.commons.XMLUtil;
 import org.n52.wps.io.data.IData;
@@ -62,7 +63,7 @@ public class MapserverWMSGenerator extends AbstractGenerator {
 	private String shapefileRepository;
 	private String wmsUrl;
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(MapserverWMSGenerator.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(MapserverWMSGenerator.class);
 
 	/**
 	 * Initialize a new MapserverWMSGenerator object. Parse the parameter
@@ -71,9 +72,7 @@ public class MapserverWMSGenerator extends AbstractGenerator {
 	 */
 	public MapserverWMSGenerator() {
 
-		super();
-
-		this.supportedIDataTypes.add(GTVectorDataBinding.class);
+		super(GTVectorDataBinding.class);
 
 		Property[] properties = WPSConfig.getInstance()
 				.getPropertiesForGeneratorClass(this.getClass().getName());
@@ -92,15 +91,10 @@ public class MapserverWMSGenerator extends AbstractGenerator {
 				wmsUrl = property.getStringValue();
 			}
 		}
-		for (String supportedFormat : supportedFormats) {
-			if (supportedFormat.equals("text/xml")) {
-				supportedFormats.remove(supportedFormat);
-			}
-		}
 	}
 
 	@Override
-	public InputStream generateStream(IData data, String mimeType, String schema)
+	public InputStream generateStream(IData data, Format format)
 			throws IOException {
 
 		InputStream stream = null;	
@@ -108,16 +102,10 @@ public class MapserverWMSGenerator extends AbstractGenerator {
 			Document doc = storeLayer(data);			
 			String xmlString = XMLUtil.nodeToString(doc);			
 			stream = new ByteArrayInputStream(xmlString.getBytes("UTF-8"));			
-	    } catch(TransformerException ex){
+	    } catch( TransformerException | IOException | ParserConfigurationException ex){
 	    	LOGGER.error("Error generating MapServer WMS output. Reason: " + ex);
 	    	throw new RuntimeException("Error generating MapServer WMS output. Reason: " + ex);
-	    } catch (IOException e) {
-	    	LOGGER.error("Error generating MapServer WMS output. Reason: " + e);
-	    	throw new RuntimeException("Error generating MapServer WMS output. Reason: " + e);
-		} catch (ParserConfigurationException e) {
-	    	LOGGER.error("Error generating MapServer WMS output. Reason: " + e);
-			throw new RuntimeException("Error generating MapServer WMS output. Reason: " + e);
-		}	
+	    }	
 		return stream;
 	}
 
@@ -142,8 +130,7 @@ public class MapserverWMSGenerator extends AbstractGenerator {
 			//MapserverProperties.getInstance().testMapscriptLibrary();
 			LOGGER.info("Mapscript is running correctly");
 		} catch (Exception e){
-			e.printStackTrace();
-			LOGGER.warn("Mapscript isn't running correctly");
+			LOGGER.warn("Mapscript isn't running correctly", e);
 			return null;
 		} 
 		

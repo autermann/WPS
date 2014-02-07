@@ -25,21 +25,16 @@ package org.n52.wps.server.handler;
 
 import java.io.OutputStream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.n52.wps.commons.WPSConfig;
 import org.n52.wps.server.ExceptionReport;
-import org.n52.wps.server.WebProcessingService;
+import org.n52.wps.server.WPSConstants;
 import org.n52.wps.server.request.CapabilitiesRequest;
 import org.n52.wps.server.request.DescribeProcessRequest;
 import org.n52.wps.server.request.ExecuteRequest;
-import org.n52.wps.server.request.Request;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 public class SOAPRequestHandler extends RequestHandler {
-
-	private static Logger LOGGER = LoggerFactory.getLogger(SOAPRequestHandler.class);
 
 	/**
 	 * Handles requests of type SOAPMessage (currently capabilities and
@@ -65,7 +60,7 @@ public class SOAPRequestHandler extends RequestHandler {
 		String nodeName, localName, nodeURI, version;
 		String sleepTime = WPSConfig.getInstance().getWPSConfig().getServer()
 				.getComputationTimeoutMilliSeconds();
-		if (sleepTime == null || sleepTime.equals("")) {
+		if (sleepTime == null || sleepTime.isEmpty()) {
 			sleepTime = "5";
 		}
 		//this.sleepingTime = new Integer(sleepTime);
@@ -80,22 +75,21 @@ public class SOAPRequestHandler extends RequestHandler {
 			nodeURI = child.getNamespaceURI();
 
 		// get the request type
-		if (nodeURI.equals(WebProcessingService.WPS_NAMESPACE)
-				&& localName.equals("Execute")) {
+		if (nodeURI.equals(WPSConstants.NS_WPS) && localName.equals(WPSConstants.EN_EXECUTE)) {
 			
-			Node versionNode = child.getAttributes().getNamedItem("version");
+			Node versionNode = child.getAttributes().getNamedItem(WPSConstants.AN_VERSION);
 			if (versionNode == null) {
 				throw new ExceptionReport("No version parameter supplied.",
 						ExceptionReport.MISSING_PARAMETER_VALUE);
 			}
-			version = child.getAttributes().getNamedItem("version")
+			version = child.getAttributes().getNamedItem(WPSConstants.AN_VERSION)
 					.getNodeValue();
 
 			if (version == null) {
 				throw new ExceptionReport("version is null: ",
 						ExceptionReport.MISSING_PARAMETER_VALUE);
 			}
-			if (!version.equals(Request.SUPPORTED_VERSION)) {
+			if (!version.equals(WPSConstants.WPS_SERVICE_VERSION)) {
 				throw new ExceptionReport("version is null: ",
 						ExceptionReport.INVALID_PARAMETER_VALUE);
 			}
@@ -104,16 +98,16 @@ public class SOAPRequestHandler extends RequestHandler {
 			if (req instanceof ExecuteRequest) {
 				setResponseMimeType((ExecuteRequest) req);
 			} else {
-				this.responseMimeType = "text/xml";
+				this.responseMimeType = WPSConstants.MIME_TYPE_TEXT_XML;
 			}
-		} else if (localName.equals("GetCapabilities")) {
+		} else if (localName.equals(WPSConstants.EN_GET_CAPABILITIES)) {
 			req = new CapabilitiesRequest(inputDoc);
-		} else if (localName.equals("DescribeProcess")) {
+		} else if (localName.equals(WPSConstants.EN_DESCRIBE_PROCESS)) {
 			req = new DescribeProcessRequest(inputDoc);
-		} else if (!localName.equals("Execute")) {
+		} else if (!localName.equals(WPSConstants.EN_EXECUTE)) {
 			throw new ExceptionReport("specified operation is not supported: "
 					+ nodeName, ExceptionReport.OPERATION_NOT_SUPPORTED);
-		} else if (nodeURI.equals(WebProcessingService.WPS_NAMESPACE)) {
+		} else if (nodeURI.equals(WPSConstants.NS_WPS)) {
 			throw new ExceptionReport("specified namespace is not supported: "
 					+ nodeURI, ExceptionReport.INVALID_PARAMETER_VALUE);
 		}

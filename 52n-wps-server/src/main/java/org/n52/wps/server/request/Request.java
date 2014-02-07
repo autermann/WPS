@@ -28,10 +28,10 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.collections.map.CaseInsensitiveMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.n52.wps.server.ExceptionReport;
 import org.n52.wps.server.response.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
 /**
@@ -42,11 +42,10 @@ import org.w3c.dom.Document;
  */
 abstract public class Request implements Callable <Response> {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(Request.class);
 	protected CaseInsensitiveMap map = null;
 	protected Document doc = null;
-	protected static Logger LOGGER = LoggerFactory.getLogger(Request.class);
 	protected UUID id = null;
-	public static final String SUPPORTED_VERSION = "1.0.0";
 	public static final String[] SUPPORTED_LANGUAGES = new String[]{"en-US"};
 	
 	/**
@@ -94,7 +93,7 @@ abstract public class Request implements Callable <Response> {
 		if(map.containsKey(key)){
 			return ((String[]) map.get(key))[0];
 		}else if(!required){
-			LOGGER.warn("Parameter <" + key + "> not found.");
+			LOGGER.warn("Parameter <{}> not found.", key);
 			return null;
 		}else{
 			//Fix for Bug 904 https://bugzilla.52north.org/show_bug.cgi?id=904
@@ -121,7 +120,7 @@ abstract public class Request implements Callable <Response> {
 			}
 			throw new ExceptionReport("Invalid value for parameter <" + key + ">.", ExceptionReport.INVALID_PARAMETER_VALUE, key);
 		}else if(!required){
-			LOGGER.warn("Parameter <" + key + "> not found.");
+			LOGGER.warn("Parameter <> not found.", key);
 			return null;
 		}else{
 			//Fix for Bug 904 https://bugzilla.52north.org/show_bug.cgi?id=904
@@ -140,7 +139,7 @@ abstract public class Request implements Callable <Response> {
 		if(map.containsKey(key)){
 			return (String[]) map.get(key);
 		}else if(!required){
-			LOGGER.warn("Parameter <" + key + "> not found.");
+			LOGGER.warn("Parameter <{}> not found.", key);
 			return null;
 		}else{
 			//Fix for Bug 904 https://bugzilla.52north.org/show_bug.cgi?id=904
@@ -150,7 +149,7 @@ abstract public class Request implements Callable <Response> {
 	
 	/**
 	 * Retrieve a value from the client-input-map with a lookup-key
-	 * @param The lookup-key
+	 * @param key The lookup-key
 	 * @return The value of the key-value pair
 	 */
 	protected String getMapValue(String key, boolean required) throws ExceptionReport{
@@ -159,7 +158,7 @@ abstract public class Request implements Callable <Response> {
 	
 	/**
 	 * Retrieve a value from the client-input-map with a lookup-key
-	 * @param The lookup-key
+	 * @param key The lookup-key
 	 * @return The value of the key-value pair
 	 */
 	protected String getMapValue(String key, boolean required, String[] supportedValues) throws ExceptionReport{
@@ -168,7 +167,7 @@ abstract public class Request implements Callable <Response> {
 
 	/**
 	 * Retrieve an array of values from the client-input-map with a lookup-key
-	 * @param The lookup-key
+	 * @param key The lookup-key
 	 * @return The array of values of the key-value pair
 	 */
 	protected String[] getMapArray(String key, boolean required) throws ExceptionReport{
@@ -213,11 +212,11 @@ abstract public class Request implements Callable <Response> {
 	 * @return The accumulated String
 	 */
 	public static String accumulateString(String[] strings) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for(int i = 0; i < strings.length; i++) {
 			String s = strings[i];
 			if(!(i == strings.length-1)){
-				sb.append(s + ", ");
+				sb.append(s).append(", ");
 			}else{
 				sb.append(s);
 			}
@@ -254,7 +253,7 @@ abstract public class Request implements Callable <Response> {
 				ExceptionReport.INVALID_PARAMETER_VALUE, "language");
 	}
 	
-	abstract public Object getAttachedResult();
+	public abstract Object getAttachedResult();
 	
 	/**
 	 * After creation a Request is handled. This is done by calling this method.
@@ -263,13 +262,13 @@ abstract public class Request implements Callable <Response> {
 	 * @return A Response to the client Request
 	 * @see java.util.concurrent.Callable#call()
 	 */
-	abstract public Response call() throws ExceptionReport;
+	public abstract Response call() throws ExceptionReport;
 	
 	/**
 	 * There should be some validation required on the (input of the) clients Request.
 	 * @return True if the clients Request can be handled without problems, False otherwise
 	 */
-	abstract public boolean validate() throws ExceptionReport;
+	public abstract boolean validate() throws ExceptionReport;
 
 }
 	

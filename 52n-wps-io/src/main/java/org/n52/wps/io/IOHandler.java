@@ -21,30 +21,26 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA or
  * visit the Free Software Foundation web page, http://www.fsf.org.
  */
-
 package org.n52.wps.io;
 
-import org.n52.wps.FormatDocument.Format;
+import java.util.Set;
+
+import org.n52.wps.commons.Format;
 
 public interface IOHandler {
-	
-	
-	public static final String DEFAULT_ENCODING="UTF-8";
-	public static final String ENCODING_BASE64 = "base64";
 
-	//public static final String DEFAULT_MIMETYPE = "text/xml";
-	
-	public static final String MIME_TYPE_ZIPPED_SHP = "application/x-zipped-shp";
-	
-	public boolean isSupportedSchema(String schema);
-	public boolean isSupportedFormat(String format);
-	public boolean isSupportedEncoding(String encoding);
-	public boolean isSupportedDataBinding(Class<?> clazz);
-	
-	public String[] getSupportedSchemas();
-	public String[] getSupportedFormats();
-	public String[] getSupportedEncodings();
-	public Format[] getSupportedFullFormats();
-	public Class<?>[] getSupportedDataBindings();
-	
+    public static final String DEFAULT_ENCODING = "UTF-8";
+    public static final String ENCODING_BASE64 = "base64";
+
+    //public static final String DEFAULT_MIMETYPE = "text/xml";
+    public static final String MIME_TYPE_ZIPPED_SHP = "application/x-zipped-shp";
+
+    boolean isSupportedDataBinding(Class<?> clazz);
+
+    Set<Class<?>> getSupportedDataBindings();
+
+    boolean isSupportedFormat(Format format);
+
+    Set<Format> getSupportedFormats();
+
 }

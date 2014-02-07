@@ -50,6 +50,7 @@ import net.opengis.wps.x100.OutputDataType;
 
 import org.apache.commons.codec.binary.Base64;
 import org.geotools.coverage.grid.GridCoverage2D;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.datahandler.parser.GeotiffParser;
 import org.w3c.dom.Document;
@@ -197,7 +198,7 @@ public class AllTestsIT {
 
         InputStream stream = getRefAsStream(response);
         GeotiffParser parser = new GeotiffParser();
-        IData data = parser.parseBase64(stream, "image/tiff", null);
+        IData data = parser.parseBase64(stream, new Format("image/tiff"));
         assertThat(data.getPayload() instanceof GridCoverage2D, is(true));
         stream.close();
     }
@@ -211,7 +212,7 @@ public class AllTestsIT {
 
         InputStream stream = getRefAsStream(response);
         GeotiffParser parser = new GeotiffParser();
-        IData data = parser.parse(stream, "image/tiff", null);
+        IData data = parser.parse(stream, new Format("image/tiff"));
         assertThat(data.getPayload() instanceof GridCoverage2D, is(true));
         stream.close();
     }

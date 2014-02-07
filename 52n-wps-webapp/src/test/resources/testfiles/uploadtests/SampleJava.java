@@ -11,7 +11,7 @@ to the WPS version 0.4.0 (OGC 05-007r4).
 	Carsten Priess, Institute for geoinformatics, University of
 Muenster, Germany
 	Timon Ter Braak, University of Twente, the Netherlands,
-	Benjamin Proß, Institute for geoinformatics, University of
+	Benjamin Proï¿½, Institute for geoinformatics, University of
 Muenster, Germany
 
 
@@ -43,8 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.feature.DefaultFeatureCollections;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
@@ -56,6 +54,8 @@ import org.opengis.feature.Feature;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.vividsolutions.jts.algorithm.ConvexHull;
 import com.vividsolutions.jts.geom.Coordinate;

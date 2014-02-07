@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.io.datahandler.parser.GTBinZippedSHPParser;
 import org.n52.wps.io.test.datahandler.AbstractTestCase;
@@ -50,22 +51,14 @@ public class GTBinZippedSHPParserTest extends AbstractTestCase<GTBinZippedSHPPar
 			fail(e1.getMessage());
 		}
 		
-		String[] mimetypes = dataHandler.getSupportedFormats();
-		
 		InputStream input = null;
-		
-		
-		
-		for (String mimetype : mimetypes) {
-			
+		for (Format mimetype : dataHandler.getSupportedFormats()) {
 			try {
 				input = new FileInputStream(new File(testFilePath));
 			} catch (FileNotFoundException e) {
 				fail(e.getMessage());
 			}
-			
-			GTVectorDataBinding theBinding = dataHandler.parse(input, mimetype, "");
-			
+			GTVectorDataBinding theBinding = dataHandler.parse(input, mimetype);
 			assertNotNull(theBinding.getPayload());
 			assertTrue(theBinding.getPayloadAsShpFile().exists());			
 			assertTrue(!theBinding.getPayload().isEmpty());			

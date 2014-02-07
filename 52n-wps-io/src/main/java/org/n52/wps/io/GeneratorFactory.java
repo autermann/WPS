@@ -31,15 +31,16 @@ import java.util.List;
 
 import org.n52.wps.GeneratorDocument.Generator;
 import org.n52.wps.PropertyDocument.Property;
+import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class GeneratorFactory {
 	
-	public static String PROPERTY_NAME_REGISTERED_GENERATORS = "registeredGenerators";
+	public static final String PROPERTY_NAME_REGISTERED_GENERATORS = "registeredGenerators";
 	private static GeneratorFactory factory;
-	private static Logger LOGGER = LoggerFactory.getLogger(GeneratorFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GeneratorFactory.class);
 	
 	private List<IGenerator> registeredGenerators;
 
@@ -71,17 +72,17 @@ public class GeneratorFactory {
 	}
 
     private void loadAllGenerators(Generator[] generators){
-        registeredGenerators = new ArrayList<IGenerator>();
+        registeredGenerators = new ArrayList<>();
 		for(Generator currentGenerator : generators) {
 
 			// remove inactive properties
 			Property[] activeProperties = {};
-			ArrayList<Property> activeProps = new ArrayList<Property>();
-			for(int i=0; i< currentGenerator.getPropertyArray().length; i++){
-				if(currentGenerator.getPropertyArray()[i].getActive()){
-					activeProps.add(currentGenerator.getPropertyArray()[i]);
-				}
-			}			
+			ArrayList<Property> activeProps = new ArrayList<>();
+            for (Property propertyArray : currentGenerator.getPropertyArray()) {
+                if (propertyArray.getActive()) {
+                    activeProps.add(propertyArray);
+                }
+            }
 			currentGenerator.setPropertyArray(activeProps.toArray(activeProperties));
 			
 			IGenerator generator = null;
@@ -89,13 +90,7 @@ public class GeneratorFactory {
 			try {
 				 generator = (IGenerator) this.getClass().getClassLoader().loadClass(generatorClass).newInstance();
 			}
-			catch (ClassNotFoundException e) {
-				LOGGER.error("One of the generators could not be loaded: " + generatorClass, e);
-			}
-			catch(IllegalAccessException e) {
-				LOGGER.error("One of the generators could not be loaded: " + generatorClass, e);
-			}
-			catch(InstantiationException e) {
+			catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
 				LOGGER.error("One of the generators could not be loaded: " + generatorClass, e);
 			}
 			if(generator != null) {
@@ -113,23 +108,14 @@ public class GeneratorFactory {
 		return factory;
 	}
 	
-	public IGenerator getGenerator(String schema, String format, String encoding, Class<?> outputInternalClass) {
-		
-		// dealing with NULL encoding
-		if (encoding == null){
-			encoding = IOHandler.DEFAULT_ENCODING;
-		}
+	public IGenerator getGenerator(Format format, Class<?> outputInternalClass) {
 		
 		for(IGenerator generator : registeredGenerators) {
-			Class<?>[] supportedBindings = generator.getSupportedDataBindings();
-			for(Class<?> clazz : supportedBindings){
-				if(clazz.equals(outputInternalClass)) {
-					if(generator.isSupportedSchema(schema) && generator.isSupportedEncoding(encoding) && generator.isSupportedFormat(format)){
-						return generator;
-					}
-				}
-			}
-		}
+            if (generator.isSupportedFormat(format) &&
+                generator.isSupportedDataBinding(outputInternalClass)) {
+                return generator;
+            }
+        }
 		//TODO: try a chaining approach, by calculation all permutations and look for matches.
 		return null;
 	}

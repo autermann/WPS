@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  */
 public class DerbyDatabase extends AbstractDatabase {
 
-	private static Logger LOGGER = LoggerFactory.getLogger(DerbyDatabase.class); // Get access to the global logger.
+	private static final Logger LOGGER = LoggerFactory.getLogger(DerbyDatabase.class); // Get access to the global logger.
 	private static String connectionURL = null;
 	private static Connection conn = null;
 	private static DerbyDatabase db = new DerbyDatabase(); // Static loading.
@@ -69,8 +69,8 @@ public class DerbyDatabase extends AbstractDatabase {
 				throw new RuntimeException("Creating prepared statements failed.");
         }
 	}
-	
-	public static synchronized DerbyDatabase getInstance() { 
+
+    public static synchronized DerbyDatabase getInstance() {
 		if (DerbyDatabase.conn == null) {
 			if(!DerbyDatabase.createConnection()) {
 					throw new RuntimeException("Creating database connection failed.");

@@ -37,8 +37,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.data.DataStore;
 import org.geotools.data.DefaultTransaction;
@@ -55,6 +53,7 @@ import org.geotools.feature.type.GeometryDescriptorImpl;
 import org.geotools.feature.type.GeometryTypeImpl;
 import org.geotools.filter.identity.GmlObjectIdImpl;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.IOHandler;
 import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
@@ -71,6 +70,8 @@ import org.opengis.feature.type.GeometryDescriptor;
 import org.opengis.feature.type.GeometryType;
 import org.opengis.feature.type.PropertyType;
 import org.opengis.filter.identity.Identifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.MultiPolygon;
@@ -106,7 +107,7 @@ public class GenericFileData {
 
 	public GenericFileData(File primaryTempFile, String mimeType)
 			throws IOException {
-		primaryFile = primaryTempFile;
+		this.primaryFile = primaryTempFile;
 		this.mimeType = mimeType;
 		this.fileExtension = GenericFileDataConstants.mimeTypeFileTypeLUT()
 				.get(mimeType);
@@ -116,7 +117,7 @@ public class GenericFileData {
 		if (GenericFileDataConstants.getIncludeFilesByMimeType(mimeType) != null) {
 
 			String baseFile = primaryFile.getName();
-			baseFile = baseFile.substring(0, baseFile.lastIndexOf("."));
+			baseFile = baseFile.substring(0, baseFile.lastIndexOf('.'));
 			File temp = new File(primaryFile.getAbsolutePath());
 			File directory = new File(temp.getParent());
 			String[] extensions = GenericFileDataConstants
@@ -124,9 +125,10 @@ public class GenericFileData {
 
 			File[] allFiles = new File[extensions.length + 1];
 
-			for (int i = 0; i < extensions.length; i++)
-				allFiles[i] = new File(directory, baseFile + "."
-						+ extensions[i]);
+			for (int i = 0; i < extensions.length; i++) {
+                allFiles[i] = new File(directory, baseFile + "."
+                                                  + extensions[i]);
+            }
 
 			allFiles[extensions.length] = primaryFile;
 			
@@ -170,7 +172,7 @@ public class GenericFileData {
 			primaryFile = File.createTempFile("primary", ".tif");//changed to .tif
 			FileOutputStream outputStream = new FileOutputStream(primaryFile);
 			
-			InputStream is = generator.generateStream(new GTRasterDataBinding(payload), mimeType, null);
+			InputStream is = generator.generateStream(new GTRasterDataBinding(payload), new Format(mimeType));
 			IOUtils.copy(is,outputStream);
 			is.close();
 			
@@ -289,9 +291,8 @@ public class GenericFileData {
 			transaction.commit();
 			return shp;
 		} catch (Exception e1) {
-			e1.printStackTrace();
 			transaction.rollback();
-			throw new IOException(e1.getMessage());
+			throw new IOException(e1.getMessage(),e1);
 		} finally {
 			transaction.close();
 		}
@@ -332,37 +333,32 @@ public class GenericFileData {
 
 	private String unzipData(InputStream is, String extension,
 			File writeDirectory) throws IOException {
-		
 		String baseFileName = UUID.randomUUID().toString();
+        String returnFile;
+        try (ZipInputStream zipInputStream = new ZipInputStream(is)) {
+            ZipEntry entry;
+            returnFile = null;
+            while ((entry = zipInputStream.getNextEntry()) != null) {
 
-		ZipInputStream zipInputStream = new ZipInputStream(is);
-		ZipEntry entry;
+                String currentExtension = entry.getName();
+                int beginIndex = currentExtension.lastIndexOf('.') + 1;
+                currentExtension = currentExtension.substring(beginIndex);
 
-		String returnFile = null;
+                String fileName = baseFileName + "." + currentExtension;
+                File currentFile = new File(writeDirectory, fileName);
+                if (!writeDirectory.exists()){
+                    writeDirectory.mkdir();
+                }
+                currentFile.createNewFile();
+                try (FileOutputStream fos = new FileOutputStream(currentFile)) {
+                    IOUtils.copy(zipInputStream, fos);
 
-		while ((entry = zipInputStream.getNextEntry()) != null) {
-
-			String currentExtension = entry.getName();
-			int beginIndex = currentExtension.lastIndexOf(".") + 1;
-			currentExtension = currentExtension.substring(beginIndex);
-
-			String fileName = baseFileName + "." + currentExtension;
-			File currentFile = new File(writeDirectory, fileName);
-			if (!writeDirectory.exists()){
-				writeDirectory.mkdir();
-			}
-			currentFile.createNewFile();
-			FileOutputStream fos = new FileOutputStream(currentFile);
-			
-			IOUtils.copy(zipInputStream, fos);
-
-			if (currentExtension.equalsIgnoreCase(extension)) {
-				returnFile = currentFile.getAbsolutePath();
-			}
-			
-			fos.close();
-		}
-		zipInputStream.close();
+                    if (currentExtension.equalsIgnoreCase(extension)) {
+                        returnFile = currentFile.getAbsolutePath();
+                    }
+                }
+            }
+        }
 		return returnFile;
 	}
 
@@ -380,12 +376,9 @@ public class GenericFileData {
 
 		// alter FileName for return
 		fileName = currentFile.getAbsolutePath();
-
-		FileOutputStream fos = new FileOutputStream(currentFile);
-		
-		IOUtils.copy(is, fos);
-		
-		fos.close();
+        try (FileOutputStream fos = new FileOutputStream(currentFile)) {
+            IOUtils.copy(is, fos);
+        }
 		is.close();
 		System.gc();
 
@@ -417,23 +410,27 @@ public class GenericFileData {
 				return new GTVectorDataBinding(features);
 			} catch (MalformedURLException e) {
 				LOGGER.error("Something went wrong while creating data store.");
-				throw new RuntimeException(
-						"Something went wrong while creating data store.", e);
+				throw new RuntimeException("Something went wrong while creating data store.", e);
 			} catch (IOException e) {
 				LOGGER.error("Something went wrong while converting shapefile to FeatureCollection");
-				throw new RuntimeException(
-						"Something went wrong while converting shapefile to FeatureCollection",
-						e);
-			}
-		}
-		if(mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML200)|| mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML211) || mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML212)|| mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML2121)){
-			GML2BasicParser parser = new GML2BasicParser();
-			return parser.parse(getDataStream(), mimeType, null);
-		}
-		if(mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML300)|| mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML301) || mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML310)|| mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML311) || mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML321)){
-			GML3BasicParser parser = new GML3BasicParser();
-			return parser.parse(getDataStream(), mimeType, null);
-		}
+				throw new RuntimeException("Something went wrong while converting shapefile to FeatureCollection", e);
+            }
+        }
+        if (mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML200) ||
+            mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML211) ||
+            mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML212) ||
+            mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML2121)) {
+            GML2BasicParser parser = new GML2BasicParser();
+            return parser.parse(getDataStream(), new Format(mimeType));
+        }
+        if (mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML300) ||
+            mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML301) ||
+            mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML310) ||
+            mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML311) ||
+            mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML321)) {
+            GML3BasicParser parser = new GML3BasicParser();
+            return parser.parse(getDataStream(), new Format(mimeType));
+        }
 		throw new RuntimeException("Could not create GTVectorDataBinding for Input");
 		
 	}
@@ -467,32 +464,35 @@ public class GenericFileData {
 						e);
 			}
 			
-		}
-		if(unzipIfPossible && extension.contains("zip")){
-			try{
-			File tempFile1 = File.createTempFile(UUID.randomUUID().toString(),"");
-			File dir = new File(tempFile1.getParentFile()+"/"+UUID.randomUUID().toString());
-			dir.mkdir(); 
-			FileInputStream fis = new FileInputStream(primaryFile);
-			ZipInputStream zis = new ZipInputStream(fis);
-			ZipEntry entry;
-	        while((entry = zis.getNextEntry()) != null) {
-	            LOGGER.debug("Extracting: " +entry);
-	            // write the files to the disk
-	            FileOutputStream fos = new FileOutputStream(dir.getAbsoluteFile()+"/"+entry.getName());
-	            
-	            IOUtils.copy(zis, fos);
-	            
-	         }
-	         zis.close();
-	         
-	         File[] files = dir.listFiles();
+        }
+        if (unzipIfPossible && extension.contains("zip")) {
+            try {
+                File tempFile1 = File.createTempFile(UUID.randomUUID()
+                        .toString(), "");
+                File dir = new File(tempFile1.getParentFile() + "/" + UUID
+                        .randomUUID().toString());
+                dir.mkdir();
+                FileInputStream fis = new FileInputStream(primaryFile);
+                try (ZipInputStream zis = new ZipInputStream(fis)) {
+                    ZipEntry entry;
+                    while ((entry = zis.getNextEntry()) != null) {
+                        LOGGER.debug("Extracting: " + entry);
+                        // write the files to the disk
+                        FileOutputStream fos = new FileOutputStream(dir
+                                .getAbsoluteFile() + "/" + entry.getName());
+
+                        IOUtils.copy(zis, fos);
+
+                    }
+                }
+
+                File[] files = dir.listFiles();
 	         for(File file : files){
 	        	 if(file.getName().contains(".shp") || file.getName().contains(".SHP")){
 	        		 primaryFile = file;
 	        	 }
 	         }
-			}catch(Exception e){
+			}catch(IOException e){
 				LOGGER.error(e.getMessage(), e);
 				throw new RuntimeException("Error while unzipping input data", e);
 			}

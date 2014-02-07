@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
 import org.n52.wps.io.datahandler.parser.GenericFileParser;
 import org.n52.wps.io.test.datahandler.AbstractTestCase;
@@ -51,11 +52,9 @@ public class GenericFileParserTest extends AbstractTestCase<GenericFileParser> {
 			fail(e1.getMessage());
 		}
 				
-		String[] mimetypes = dataHandler.getSupportedFormats();
-		
 		InputStream input = null;
 		
-		for (String mimetype : mimetypes) {
+		for (Format mimetype : dataHandler.getSupportedFormats()) {
 			
 			try {
 				input = new FileInputStream(new File(testFilePath));
@@ -63,7 +62,7 @@ public class GenericFileParserTest extends AbstractTestCase<GenericFileParser> {
 				fail(e.getMessage());
 			}
 			
-			GenericFileDataBinding theBinding = dataHandler.parse(input, mimetype, "");
+			GenericFileDataBinding theBinding = dataHandler.parse(input, mimetype);
 			
 			assertTrue(theBinding.getPayload().getBaseFile(true).exists());			
 			

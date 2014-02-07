@@ -29,11 +29,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.ArrayDataBinding;
 
@@ -44,15 +42,12 @@ import org.n52.wps.io.data.binding.complex.ArrayDataBinding;
  */
 public class WCPSGenerator extends AbstractGenerator {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(WCPSGenerator.class);
-
 	public WCPSGenerator(){
-		super();
-		supportedIDataTypes.add(ArrayDataBinding.class);
+		super(ArrayDataBinding.class);
 	}
 	
 	@Override
-	public InputStream generateStream(IData data, String mimeType, String schema) throws IOException {
+	public InputStream generateStream(IData data, Format format) throws IOException {
 
 //		// check for correct request before returning the stream
 //		if (!(this.isSupportedGenerate(data.getSupportedClass(), mimeType, schema))){
@@ -60,26 +55,14 @@ public class WCPSGenerator extends AbstractGenerator {
 //		}
 		
 		List<byte[]> wcpsoutput = ((ArrayDataBinding)data).getPayload();
-		
 		File tempFile = File.createTempFile("wcps", ".bin");
 		this.finalizeFiles.add(tempFile);
-		FileOutputStream fos = new FileOutputStream(tempFile);
-		
-		for (byte[] currentArray : wcpsoutput){
-			fos.write(currentArray);
-		}
-		
-		fos.flush();
-		fos.close();
-		
-		InputStream stream = new FileInputStream(tempFile);
-		
-		return stream;
+        try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+            for (byte[] currentArray : wcpsoutput){
+                fos.write(currentArray);
+            }
+            fos.flush();
+        }
+		return new FileInputStream(tempFile);
 	}
-
-	public void writeToStream(IData outputData, OutputStream outputStream) {
-		
-		
-	}
-	
 }

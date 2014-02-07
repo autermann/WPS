@@ -45,6 +45,7 @@ import java.util.UUID;
 
 import net.opengis.wps.x100.ProcessDescriptionType;
 
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.IOUtils;
 import org.n52.wps.io.data.GenericFileData;
 import org.n52.wps.io.data.GenericFileDataConstants;
@@ -746,8 +747,9 @@ public class GenericRProcess extends AbstractObservableAlgorithm {
             result = "c(";
             // parsing elements 1..n-1 to vector:
             for (int i = 0; i < input.size() - 1; i++) {
-                if (input.get(i).equals(null))
+                if (input.get(i).equals(null)) {
                     continue;
+                }
                 result += parseInput(input.subList(i, i + 1), rCon);
                 result += ", ";
             }
@@ -758,28 +760,25 @@ public class GenericRProcess extends AbstractObservableAlgorithm {
 
         IData ivalue = input.get(0);
         Class< ? extends IData> iclass = ivalue.getClass();
-        if (ivalue instanceof ILiteralData)
+        if (ivalue instanceof ILiteralData) {
             return parseLiteralInput(iclass, ivalue.getPayload());
+        }
 
         if (ivalue instanceof GenericFileDataBinding) {
             GenericFileData value = (GenericFileData) ivalue.getPayload();
-
-            InputStream is = value.getDataStream();
-            String ext = value.getFileExtension();
-            result = streamFromWPSToRserve(rCon, is, ext);
-            is.close();
-
-            return result;
+            try (InputStream is = value.getDataStream()) {
+                String ext = value.getFileExtension();
+                return streamFromWPSToRserve(rCon, is, ext);
+            }
         }
 
         if (ivalue instanceof GTRasterDataBinding) {
             GeotiffGenerator tiffGen = new GeotiffGenerator();
-            InputStream is = tiffGen.generateStream(ivalue, GenericFileDataConstants.MIME_TYPE_GEOTIFF, "base64");
-            // String ext = value.getFileExtension();
-            result = streamFromWPSToRserve(rCon, is, "tiff");
-            is.close();
-
-            return result;
+            try (InputStream is
+                    = tiffGen.generateStream(ivalue,new Format(GenericFileDataConstants.MIME_TYPE_GEOTIFF, "base64"))) {
+                // String ext = value.getFileExtension();
+                return streamFromWPSToRserve(rCon, is, "tiff");
+            }
         }
 
         if (ivalue instanceof GTVectorDataBinding) {
@@ -793,14 +792,10 @@ public class GenericRProcess extends AbstractObservableAlgorithm {
             File prj = new File(baseName + ".prj");
 
             File shpZip = IOUtils.zip(shp, shx, dbf, prj);
-
-            InputStream is = new FileInputStream(shpZip);
-            String ext = "shp";
-            result = streamFromWPSToRserve(rCon, is, ext);
-
-            is.close();
-
-            return result;
+            try (InputStream is = new FileInputStream(shpZip)) {
+                String ext = "shp";
+                return streamFromWPSToRserve(rCon, is, ext);
+            }
         }
 
         // if nothing was supported:
@@ -1051,7 +1046,7 @@ public class GenericRProcess extends AbstractObservableAlgorithm {
 
             GeotiffParser tiffPar = new GeotiffParser();
             FileInputStream fis = new FileInputStream(tempfile);
-            GTRasterDataBinding output = tiffPar.parse(fis, mimeType, "base64");
+            GTRasterDataBinding output = tiffPar.parse(fis, new Format(mimeType, "base64"));
             fis.close();
 
             return output;

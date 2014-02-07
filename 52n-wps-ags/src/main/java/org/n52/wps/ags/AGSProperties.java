@@ -30,10 +30,10 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.commons.WPSConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Matthias Mueller, TU Dresden
@@ -171,7 +171,7 @@ public final class AGSProperties {
 
 		try {
 
-			Method method = sysclass.getDeclaredMethod("addURL", new Class[] { URL.class });
+			Method method = sysclass.getDeclaredMethod("addURL", new Class<?>[] { URL.class });
 			method.setAccessible(true);
 			method.invoke(sysloader, new Object[] {aoFile.toURI().toURL()});
 			

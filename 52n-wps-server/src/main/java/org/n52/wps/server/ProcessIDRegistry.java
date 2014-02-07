@@ -36,7 +36,7 @@ import com.google.common.collect.Sets;
  */
 public class ProcessIDRegistry {
 
-    private static ProcessIDRegistry instance = new ProcessIDRegistry();
+    private static final ProcessIDRegistry instance = new ProcessIDRegistry();
     private final Set<String> ids = Sets.newHashSet();
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Lock read = lock.readLock();

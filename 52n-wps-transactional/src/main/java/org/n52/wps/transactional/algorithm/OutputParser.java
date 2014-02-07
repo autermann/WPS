@@ -32,6 +32,8 @@ import net.opengis.wps.x100.OutputDataType;
 import net.opengis.wps.x100.OutputDescriptionType;
 import net.opengis.wps.x100.ProcessDescriptionType;
 
+import org.n52.wps.commons.Format;
+import org.n52.wps.io.BasicXMLTypeFactory;
 import org.n52.wps.io.IOHandler;
 import org.n52.wps.io.IParser;
 import org.n52.wps.io.ParserFactory;
@@ -43,7 +45,6 @@ import org.n52.wps.io.data.binding.literal.LiteralDoubleBinding;
 import org.n52.wps.io.data.binding.literal.LiteralIntBinding;
 import org.n52.wps.io.data.binding.literal.LiteralStringBinding;
 import org.n52.wps.server.ExceptionReport;
-import org.n52.wps.io.BasicXMLTypeFactory;
 
 
 public class OutputParser {
@@ -85,32 +86,32 @@ public class OutputParser {
 		// get data specification from request
 		String schema = output.getData().getComplexData().getSchema();
 		String encoding = output.getData().getComplexData().getEncoding();
-		String format = output.getData().getComplexData().getMimeType();
+		String mimeType = output.getData().getComplexData().getMimeType();
 		
 		// check for null elements in request and replace by defaults
 		if(schema == null) {
 			schema = outputDesc.getComplexOutput().getDefault().getFormat().getSchema();
 		}
-		if(format == null) {
-			format = outputDesc.getComplexOutput().getDefault().getFormat().getMimeType();
+		if(mimeType == null) {
+			mimeType = outputDesc.getComplexOutput().getDefault().getFormat().getMimeType();
 		}
 		if(encoding == null) {
 			encoding = outputDesc.getComplexOutput().getDefault().getFormat().getEncoding();
 		}
 		
-		Class outputDataType = determineOutputDataType(outputID, outputDesc);
-		
-		IParser parser = ParserFactory.getInstance().getParser(schema, format, encoding, outputDataType);
+		Class<?> outputDataType = determineOutputDataType(outputID, outputDesc);
+		Format format = new Format(mimeType, encoding, schema);
+		IParser parser = ParserFactory.getInstance().getParser(format, outputDataType);
 //		if(parser == null) {
 //			parser = ParserFactory.getInstance().getSimpleParser();
 //		}
 		IData collection = null;
 		// encoding is UTF-8 (or nothing and we default to UTF-8)
 		// everything that goes to this condition should be inline xml data
-		if (encoding == null || encoding.equals("") || encoding.equalsIgnoreCase(IOHandler.DEFAULT_ENCODING)){
+		if (!format.getEncoding().isPresent() || encoding.equalsIgnoreCase(IOHandler.DEFAULT_ENCODING)){
 			try {
 				InputStream stream = new ByteArrayInputStream(complexValue.getBytes());
-				collection = parser.parse(stream, format, schema);
+				collection = parser.parse(stream, format);
 			}
 			catch(RuntimeException e) {
 				throw new ExceptionReport("Error occured, while XML parsing", 
@@ -125,7 +126,7 @@ public class OutputParser {
 	
 	
 
-	private static Class determineOutputDataType(String outputID, OutputDescriptionType output) {
+	private static Class<?> determineOutputDataType(String outputID, OutputDescriptionType output) {
 			
 		if(output.isSetLiteralOutput()){
 			String datatype = output.getLiteralOutput().getDataType().getStringValue();

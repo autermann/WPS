@@ -31,7 +31,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
-import org.n52.wps.FormatDocument.Format;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.io.datahandler.generator.GML2BasicGenerator;
 import org.n52.wps.io.datahandler.parser.GML2BasicParser;
@@ -62,31 +62,25 @@ public class GML2BasicParserGeneratorTest extends AbstractTestCase<GML2BasicGene
 
 		GML2BasicParser parser = new GML2BasicParser();
 
-		Format[] formats = parser.getSupportedFullFormats();
-		
-		Format format = formats[0];
-		
-		String mimeType = format.getMimetype();
-		String schema = format.getSchema();
+        Format format = parser.getSupportedFormats().iterator().next();
 		
 		InputStream input = null;
-
 		try {
 			input = new FileInputStream(new File(testFilePath));
 		} catch (FileNotFoundException e) {
 			fail(e.getMessage());
 		}
 		
-		GTVectorDataBinding theBinding = parser.parse(input, mimeType, schema);
+		GTVectorDataBinding theBinding = parser.parse(input, format);
 
 		assertNotNull(theBinding.getPayload());
 		assertTrue(theBinding.getPayloadAsShpFile().exists());
 		assertTrue(!theBinding.getPayload().isEmpty());
 		
 		try {
-			InputStream stream = dataHandler.generateStream(theBinding, mimeType, schema);
+			InputStream stream = dataHandler.generateStream(theBinding, format);
 			
-			theBinding = parser.parse(stream, mimeType, schema);
+			theBinding = parser.parse(stream, format);
 
 			assertNotNull(theBinding.getPayload());
 			assertTrue(theBinding.getPayloadAsShpFile().exists());

@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.junit.Test;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.io.data.binding.complex.JTSGeometryBinding;
@@ -54,12 +55,11 @@ public class GeoJSONParserGeneratorTest extends AbstractTestCase<GeoJSONGenerato
 		
 		GeoJSONParser theParser = new GeoJSONParser();
 
-		String mimetype = theParser.getSupportedFormats()[0];
+        Format format = theParser.getSupportedFormats().iterator().next();
 		
 		System.out.println("Trying to parse GeoJSON: " + inputGeoJSONPointString);
 		
-		JTSGeometryBinding theBinding = (JTSGeometryBinding) theParser.parse(in, mimetype,
-				null);
+		JTSGeometryBinding theBinding = (JTSGeometryBinding) theParser.parse(in, format);
 
 		try {
 			in.close();
@@ -72,7 +72,7 @@ public class GeoJSONParserGeneratorTest extends AbstractTestCase<GeoJSONGenerato
 		InputStream generatedStream = null;
 		
 		try {
-			generatedStream = dataHandler.generateStream(theBinding, mimetype, null);
+			generatedStream = dataHandler.generateStream(theBinding, format);
 			
 		} catch (IOException e) {
 			System.err.println("Failed to generate result inputstream.");
@@ -143,12 +143,11 @@ public class GeoJSONParserGeneratorTest extends AbstractTestCase<GeoJSONGenerato
 		
 		GeoJSONParser theParser = new GeoJSONParser();
 
-		String mimetype = theParser.getSupportedFormats()[0];
+		Format mimetype = theParser.getSupportedFormats().iterator().next();
 		
 		System.out.println("Trying to parse GeoJSON: " + featureCollectionString);
 		
-		IData theBinding = theParser.parse(in, mimetype,
-				null);
+		IData theBinding = theParser.parse(in, mimetype);
 		
 		if(!(theBinding instanceof GTVectorDataBinding)){
 			fail();
@@ -163,10 +162,9 @@ public class GeoJSONParserGeneratorTest extends AbstractTestCase<GeoJSONGenerato
 		assertTrue(theBinding.getPayload() != null);
 		
 		try {
-			InputStream is = dataHandler.generateStream(theBinding, mimetype, null);
+			InputStream is = dataHandler.generateStream(theBinding, mimetype);
 			
-			IData theGeneratedParsedBinding = theParser.parse(is, mimetype,
-					null);
+			IData theGeneratedParsedBinding = theParser.parse(is, mimetype);
 			
 			if(!(theGeneratedParsedBinding instanceof GTVectorDataBinding)){
 				fail();
@@ -195,12 +193,11 @@ public class GeoJSONParserGeneratorTest extends AbstractTestCase<GeoJSONGenerato
 		
 		GeoJSONParser theParser = new GeoJSONParser();
 
-		String mimetype = theParser.getSupportedFormats()[0];
+		Format mimetype = theParser.getSupportedFormats().iterator().next();
 		
 		System.out.println("Trying to parse GeoJSON: " + featureCollectionString);
 		
-		IData theBinding = theParser.parse(in, mimetype,
-				null);
+		IData theBinding = theParser.parse(in, mimetype);
 		
 		if(!(theBinding instanceof GTVectorDataBinding)){
 			fail();
@@ -215,10 +212,9 @@ public class GeoJSONParserGeneratorTest extends AbstractTestCase<GeoJSONGenerato
 		assertTrue(theBinding.getPayload() != null);
 		
 		try {
-			InputStream is = dataHandler.generateStream(theBinding, mimetype, null);
+			InputStream is = dataHandler.generateStream(theBinding, mimetype);
 			
-			IData theGeneratedParsedBinding = theParser.parse(is, mimetype,
-					null);
+			IData theGeneratedParsedBinding = theParser.parse(is, mimetype);
 			
 			if(!(theGeneratedParsedBinding instanceof GTVectorDataBinding)){
 				fail();

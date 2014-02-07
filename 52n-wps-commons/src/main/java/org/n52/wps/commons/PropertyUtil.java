@@ -53,7 +53,7 @@ public class PropertyUtil {
     }
     
     public PropertyUtil(Property[] properties, String systemPropertyRoot) {
-        propertyNameMap = new LinkedHashMap<String, Property>();
+        propertyNameMap = new LinkedHashMap<>();
         if (properties != null) {
             for (Property property : properties) {
                 if (property != null) {

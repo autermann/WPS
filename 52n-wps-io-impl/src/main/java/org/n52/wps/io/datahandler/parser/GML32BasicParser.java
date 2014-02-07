@@ -29,7 +29,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -40,8 +39,6 @@ import javax.xml.namespace.QName;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
 import org.geotools.feature.GeometryAttributeImpl;
@@ -52,6 +49,7 @@ import org.geotools.gml3.ApplicationSchemaConfiguration;
 import org.geotools.gml3.v3_2.GMLConfiguration;
 import org.geotools.xml.Configuration;
 import org.geotools.xml.Parser;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.SchemaRepository;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.opengis.feature.GeometryAttribute;
@@ -60,6 +58,8 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.type.GeometryDescriptor;
 import org.opengis.feature.type.GeometryType;
 import org.opengis.filter.identity.Identifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import com.vividsolutions.jts.geom.Geometry;
@@ -71,13 +71,12 @@ import com.vividsolutions.jts.geom.Geometry;
  */
 public class GML32BasicParser extends AbstractParser {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(GML32BasicParser.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GML32BasicParser.class);
 	private Configuration configuration;
 
 
 	public GML32BasicParser() {
-		super();
-		supportedIDataTypes.add(GTVectorDataBinding.class);
+		super(GTVectorDataBinding.class);
 	}
 	
 	public void setConfiguration(Configuration config) {
@@ -85,7 +84,7 @@ public class GML32BasicParser extends AbstractParser {
 	}
 
 	@Override
-	public GTVectorDataBinding parse(InputStream stream, String mimeType, String schema) {
+	public GTVectorDataBinding parse(InputStream stream, Format format) {
 
 		FileOutputStream fos = null;
 		try {
@@ -104,7 +103,9 @@ public class GML32BasicParser extends AbstractParser {
 			return parse(new FileInputStream(tempFile), schematypeTuple);
 		}
 		catch (IOException e) {
-			if (fos != null) try { fos.close(); } catch (Exception e1) { }
+			if (fos != null) {
+                try { fos.close(); } catch (IOException e1) { }
+            }
 			throw new IllegalArgumentException("Error while creating tempFile", e);
 		}
 	}
@@ -195,24 +196,19 @@ public class GML32BasicParser extends AbstractParser {
 		/*
 		 * TODO all if-statements are nonsense.. clean up
 		 */
-		Configuration configuration = null;
 		if (schematypeTuple != null) {
 			String schemaLocation =  schematypeTuple.getLocalPart();
 			if (schemaLocation.startsWith("http://schemas.opengis.net/gml/3.2")){
-				configuration = new GMLConfiguration();
-			} else {
-				if (schemaLocation != null && schematypeTuple.getNamespaceURI()!=null){
-					SchemaRepository.registerSchemaLocation(schematypeTuple.getNamespaceURI(), schemaLocation);
-					configuration =  new ApplicationSchemaConfiguration(schematypeTuple.getNamespaceURI(), schemaLocation);
-				} else {
-					configuration = new GMLConfiguration();
-				}
+				return new GMLConfiguration();
+			} else if (schematypeTuple.getNamespaceURI()!=null){
+                SchemaRepository.registerSchemaLocation(schematypeTuple.getNamespaceURI(), schemaLocation);
+                return new ApplicationSchemaConfiguration(schematypeTuple.getNamespaceURI(), schemaLocation);
+            } else {
+                return new GMLConfiguration();
 			}
 		} else{
-			configuration = new GMLConfiguration();
+			return new GMLConfiguration();
 		}
-		
-		return configuration;
 	}
 
 	private QName determineFeatureTypeSchema(File file) {
@@ -235,13 +231,7 @@ public class GML32BasicParser extends AbstractParser {
 			 * TODO dude, wtf? Massive abuse of QName.
 			 */
 			return new QName(namespaceURI, schemaUrl);
-		} catch (MalformedURLException e) {
-			throw new IllegalArgumentException(e);
-		} catch (IOException e) {
-			throw new IllegalArgumentException(e);
-		} catch (SAXException e) {
-			throw new IllegalArgumentException(e);
-		} catch(ParserConfigurationException e) {
+		} catch (IOException| SAXException | ParserConfigurationException e) {
 			throw new IllegalArgumentException(e);
 		}
 	}

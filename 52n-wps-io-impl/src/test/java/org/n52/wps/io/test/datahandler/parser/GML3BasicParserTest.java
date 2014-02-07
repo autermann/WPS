@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.io.datahandler.parser.GML3BasicParser;
 import org.n52.wps.io.test.datahandler.AbstractTestCase;
@@ -65,8 +66,8 @@ public class GML3BasicParserTest extends AbstractTestCase<GML3BasicParser> {
 		// for (String mimetype : mimetypes) {
 
 		GTVectorDataBinding theBinding = dataHandler.parse(input,
-				"text/xml; subtype=gml/3.2.1",
-				"http://schemas.opengis.net/gml/3.2.1/base/feature.xsd");
+				new Format("text/xml; subtype=gml/3.2.1","UTF-8",
+				"http://schemas.opengis.net/gml/3.2.1/base/feature.xsd"));
 
 		assertNotNull(theBinding.getPayload());
 		assertTrue(theBinding.getPayloadAsShpFile().exists());

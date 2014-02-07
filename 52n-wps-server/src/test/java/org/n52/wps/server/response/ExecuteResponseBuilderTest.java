@@ -28,16 +28,21 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import net.opengis.wps.x100.DocumentOutputDefinitionType;
 import net.opengis.wps.x100.OutputDefinitionType;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.n52.wps.server.ExceptionReport;
 import org.n52.wps.server.request.ExecuteRequest;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 /**
  * This class tests the getMimeType method of the ExecuteResponseBuilder class.
@@ -95,37 +100,34 @@ public class ExecuteResponseBuilderTest {
 	}
 	
 	@Test
-	public void testGetMimeTypeLiteralOutputRawData() {
-		
-		try {
-			String sampleFileName = "src/test/resources/DTCExecuteLiteralOutputRawData.xml";
-			File sampleFile = new File(sampleFileName);
-			
-			FileInputStream is = new FileInputStream(sampleFile);
-			
-			// parse the InputStream to create a Document
-			Document doc = fac.newDocumentBuilder().parse(is);
-			
-			is.close();
-			
-			executeRequest = new ExecuteRequest(doc);
-			
-			/*
-			 * only one output here
-			 */
-			OutputDefinitionType definition = executeRequest.getExecute().getResponseForm().getRawDataOutput();
-			
-			String mimeType = executeRequest.getExecuteResponseBuilder()
-					.getMimeType(definition);
-			
-			/*
-			 * this should be text/plain as LiteralData was requested
-			 */
-			assertTrue(mimeType.equals("text/plain"));
-			
-		} catch (Exception e) {
-			fail(e.getMessage());
-		}
+	public void testGetMimeTypeLiteralOutputRawData() throws
+            FileNotFoundException, ParserConfigurationException, ExceptionReport,
+            SAXException, IOException {
+
+        String sampleFileName = "src/test/resources/DTCExecuteLiteralOutputRawData.xml";
+        File sampleFile = new File(sampleFileName);
+
+        FileInputStream is = new FileInputStream(sampleFile);
+
+        // parse the InputStream to create a Document
+        Document doc = fac.newDocumentBuilder().parse(is);
+
+        is.close();
+
+        executeRequest = new ExecuteRequest(doc);
+
+        /*
+         * only one output here
+         */
+        OutputDefinitionType definition = executeRequest.getExecute().getResponseForm().getRawDataOutput();
+
+        String mimeType = executeRequest.getExecuteResponseBuilder()
+                .getMimeType(definition);
+
+        /*
+         * this should be text/plain as LiteralData was requested
+         */
+        assertTrue(mimeType.equals("text/plain"));
 	}
 
 	@Test
@@ -325,39 +327,32 @@ public class ExecuteResponseBuilderTest {
 	}
 	
 	@Test
-	public void testGetMimeTypeBBOXOutputRawData() {
-		
-		try {
-			String sampleFileName = "src/test/resources/DTCExecuteBBOXOutputRawData.xml";
-			File sampleFile = new File(sampleFileName);
-			
-			FileInputStream is;
-			is = new FileInputStream(sampleFile);
-			
-			// parse the InputStream to create a Document
-			Document doc;
-			doc = fac.newDocumentBuilder().parse(is);
-			
-			is.close();
-			
-			executeRequest = new ExecuteRequest(doc);
-			
-			/*
-			 * only one output here
-			 */
-			OutputDefinitionType definition = executeRequest.getExecute().getResponseForm().getRawDataOutput();
-			
-			String mimeType = executeRequest.getExecuteResponseBuilder()
-					.getMimeType(definition);
-			
-			/*
-			 * this should be text/xml as BBOXData was requested
-			 */
-			assertTrue(mimeType.equals("text/xml"));
-			
-		} catch (Exception e) {
-			fail(e.getMessage());
-		}
+	public void testGetMimeTypeBBOXOutputRawData() throws Exception {
+        String sampleFileName = "src/test/resources/DTCExecuteBBOXOutputRawData.xml";
+        File sampleFile = new File(sampleFileName);
+
+        FileInputStream is;
+        is = new FileInputStream(sampleFile);
+
+        // parse the InputStream to create a Document
+        Document doc;
+        doc = fac.newDocumentBuilder().parse(is);
+
+        is.close();
+
+        executeRequest = new ExecuteRequest(doc);
+
+        /*
+         * only one output here
+         */
+        OutputDefinitionType definition = executeRequest.getExecute().getResponseForm().getRawDataOutput();
+
+        String mimeType = executeRequest.getExecuteResponseBuilder().getMimeType(definition);
+
+        /*
+         * this should be text/xml as BBOXData was requested
+         */
+        assertTrue(mimeType.equals("text/xml"));
 	}
 
 }

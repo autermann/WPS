@@ -25,13 +25,12 @@
 package org.n52.wps.server.algorithm.convexhull;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.feature.DefaultFeatureCollections;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
@@ -44,6 +43,8 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.vividsolutions.jts.algorithm.ConvexHull;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
@@ -55,32 +56,37 @@ import com.vividsolutions.jts.geom.GeometryFactory;
  */
 public class ConvexHullAlgorithm extends AbstractSelfDescribingAlgorithm {
 
-	Logger LOGGER = LoggerFactory.getLogger(ConvexHullAlgorithm.class);
-	private List<String> errors = new ArrayList<String>();
+    private static final String RESULT = "RESULT";
+    private static final String FEATURES = "FEATURES";
+	private final List<String> errors = new ArrayList<>();
 
+    @Override
 	public List<String> getErrors() {
-		return errors;
+		return Collections.unmodifiableList(errors);
 	}
 
-	public Class getInputDataType(String id) {
-		if (id.equalsIgnoreCase("FEATURES")) {
+    @Override
+	public Class<?> getInputDataType(String id) {
+		if (id.equalsIgnoreCase(FEATURES)) {
 			return GTVectorDataBinding.class;
 		}
 		return null;
 	}
 
-	public Class getOutputDataType(String id) {
+    @Override
+	public Class<?> getOutputDataType(String id) {
 		return GTVectorDataBinding.class;
 	}
 	
+    @Override
 	public Map<String, IData> run(Map<String, List<IData>> inputData) {
 
-		if (inputData == null || !inputData.containsKey("FEATURES")) {
+		if (inputData == null || !inputData.containsKey(FEATURES)) {
 			throw new RuntimeException(
 					"Error while allocating input parameters");
 		}
 		
-		List<IData> dataList = inputData.get("FEATURES");
+		List<IData> dataList = inputData.get(FEATURES);
 		if (dataList == null || dataList.size() != 1) {
 			throw new RuntimeException(
 					"Error while allocating input parameters");
@@ -96,8 +102,6 @@ public class ConvexHullAlgorithm extends AbstractSelfDescribingAlgorithm {
 		
 		int counter = 0;
 		
-		Geometry unifiedGeometry = null;
-		
 		while (iter.hasNext()) {
 			SimpleFeature  feature = (SimpleFeature) iter.next();
 
@@ -110,9 +114,7 @@ public class ConvexHullAlgorithm extends AbstractSelfDescribingAlgorithm {
 			Geometry geom = (Geometry) feature.getDefaultGeometry();
 			
 			Coordinate[] coordinateArray = geom.getCoordinates();
-			for(Coordinate coordinate : coordinateArray){
-				coordinateList.add(coordinate);
-			}
+            coordinateList.addAll(Arrays.asList(coordinateArray));
 			
 		}	
 		
@@ -131,11 +133,7 @@ public class ConvexHullAlgorithm extends AbstractSelfDescribingAlgorithm {
 		
 		fOut.add(feature);
 
-		HashMap<String, IData> result = new HashMap<String, IData>();
-
-		result.put("RESULT",
-				new GTVectorDataBinding(fOut));
-		return result;
+		return ImmutableMap.of(RESULT, (IData) new GTVectorDataBinding(fOut));
 	}
 	
 	private Feature createFeature(Geometry geometry, CoordinateReferenceSystem crs) {
@@ -150,15 +148,11 @@ public class ConvexHullAlgorithm extends AbstractSelfDescribingAlgorithm {
 	
 	@Override
 	public List<String> getInputIdentifiers() {
-		List<String> identifierList =  new ArrayList<String>();
-		identifierList.add("FEATURES");
-		return identifierList;
+        return ImmutableList.of(FEATURES);
 	}
 
 	@Override
 	public List<String> getOutputIdentifiers() {
-		List<String> identifierList =  new ArrayList<String>();
-		identifierList.add("RESULT");
-		return identifierList;
+		return ImmutableList.of(RESULT);
 	}
 }

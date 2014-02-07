@@ -26,6 +26,7 @@ package org.n52.wps.commons;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
 import org.apache.xmlbeans.XmlException;
 
 /**
@@ -38,7 +39,7 @@ public class WPSConfigTestUtil {
         generateMockConfig(WPSConfigTestUtil.class, path);
     }
     
-    public static void generateMockConfig(Class clazz, String path) throws XmlException, IOException {
+    public static void generateMockConfig(Class<?> clazz, String path) throws XmlException, IOException {
 
             InputStream configInputStream = null;
             try {

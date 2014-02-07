@@ -31,10 +31,12 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.io.datahandler.generator.GTBinZippedSHPGenerator;
 import org.n52.wps.io.datahandler.parser.GTBinZippedSHPParser;
 import org.n52.wps.io.test.datahandler.AbstractTestCase;
+import org.n52.wps.server.ExceptionReport;
 
 public class GTBinZippedSHPGeneratorTest extends AbstractTestCase<GTBinZippedSHPGenerator> {
 
@@ -54,9 +56,8 @@ public class GTBinZippedSHPGeneratorTest extends AbstractTestCase<GTBinZippedSHP
 		}
 		
 		GTBinZippedSHPParser theParser = new GTBinZippedSHPParser();
-		
-		String[] mimetypes = theParser.getSupportedFormats();
-		
+
+        Format format = theParser.getSupportedFormats().iterator().next();
 		InputStream input = null;
 		
 		try {
@@ -67,25 +68,25 @@ public class GTBinZippedSHPGeneratorTest extends AbstractTestCase<GTBinZippedSHP
 		
 //		for (String mimetype : mimetypes) {
 			
-			GTVectorDataBinding theBinding = theParser.parse(input, mimetypes[0], "");
+			GTVectorDataBinding theBinding = theParser.parse(input, format);
 			
 			try {				
-				InputStream generatedStream = dataHandler.generateStream(theBinding, mimetypes[0], null);
+				InputStream generatedStream = dataHandler.generateStream(theBinding, format);
 				
-				GTVectorDataBinding parsedGeneratedBinding = (GTVectorDataBinding) theParser.parse(generatedStream, mimetypes[0], null);
+				GTVectorDataBinding parsedGeneratedBinding = theParser.parse(generatedStream, format);
 				
 				assertNotNull(parsedGeneratedBinding.getPayload());
 				assertTrue(parsedGeneratedBinding.getPayloadAsShpFile().exists());			
 				assertTrue(!parsedGeneratedBinding.getPayload().isEmpty());
 				
-				InputStream generatedStreamBase64 = dataHandler.generateBase64Stream(theBinding, mimetypes[0], null);
+				InputStream generatedStreamBase64 = dataHandler.generate(theBinding, format.withBase64Encoding());
 				
-				GTVectorDataBinding parsedGeneratedBindingBase64 = (GTVectorDataBinding) theParser.parseBase64(generatedStreamBase64, mimetypes[0], null);
+				GTVectorDataBinding parsedGeneratedBindingBase64 = (GTVectorDataBinding) theParser.parseBase64(generatedStreamBase64, format);
 				
 				assertNotNull(parsedGeneratedBindingBase64.getPayload());
 				assertTrue(parsedGeneratedBindingBase64.getPayloadAsShpFile().exists());			
 				assertTrue(!parsedGeneratedBindingBase64.getPayload().isEmpty());	
-			} catch (IOException e) {
+			} catch (IOException | ExceptionReport e) {
 				e.printStackTrace();
 				fail(e.getMessage());
 			}		

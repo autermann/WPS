@@ -28,7 +28,6 @@ package org.n52.wps.server.response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -47,20 +46,22 @@ import net.opengis.wps.x100.ProcessDescriptionType;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.BasicXMLTypeFactory;
-import org.n52.wps.io.IOHandler;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.literal.AbstractLiteralDataBinding;
 import org.n52.wps.server.ExceptionReport;
 import org.n52.wps.server.database.DatabaseFactory;
 import org.n52.wps.server.database.IDatabase;
 import org.opengis.geometry.Envelope;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+
+import com.google.common.primitives.Doubles;
 
 /*
  * @author foerster
@@ -68,24 +69,12 @@ import org.w3c.dom.Node;
  */
 public class OutputDataItem extends ResponseData {
 
-	private static Logger LOGGER = LoggerFactory.getLogger(OutputDataItem.class);
-	private static String COMPLEX_DATA_TYPE = "ComplexDataResponse";
-	private LanguageStringType title;	
+	private static final Logger LOGGER = LoggerFactory.getLogger(OutputDataItem.class);
+	private static final String COMPLEX_DATA_TYPE = "ComplexDataResponse";
+	private final LanguageStringType title;
 
-	/**
-	 * 
-	 * @param obj
-	 * @param id
-	 * @param schema
-	 * @param encoding
-	 * @param mimeType
-	 * @param title
-	 * @param algorithmIdentifier
-	 * @throws ExceptionReport 
-	 */
-	public OutputDataItem(IData obj, String id, String schema, String encoding, 
-			String mimeType, LanguageStringType title, String algorithmIdentifier, ProcessDescriptionType description) throws ExceptionReport {
-		super(obj, id, schema, encoding, mimeType, algorithmIdentifier, description);
+	public OutputDataItem(IData obj, String id, Format format, LanguageStringType title, ProcessDescriptionType description) throws ExceptionReport {
+		super(obj, id, format, description);
 		
 		this.title = title;
 	}
@@ -114,39 +103,26 @@ public class OutputDataItem extends ResponseData {
 			//
 			// in case encoding is 
 			// 
-			InputStream stream = null;
-			if (encoding == null || encoding.equals("") || encoding.equalsIgnoreCase(IOHandler.DEFAULT_ENCODING)){
-				stream = generator.generateStream(super.obj, mimeType, schema);
-			}
-			
-			// in case encoding is base64 create a new text node
-			// and parse the generator's result into it
-			else if (encoding.equalsIgnoreCase(IOHandler.ENCODING_BASE64)){
-				stream = generator.generateBase64Stream(super.obj, mimeType, schema);
-			}
-			else {
-				throw new ExceptionReport("Unable to generate encoding " + encoding, ExceptionReport.NO_APPLICABLE_CODE);
-			}
+			InputStream stream = getGenerator().generate(getPayload(), getFormat());
 			complexData = output.addNewData().addNewComplexData();
-			if(mimeType.contains("xml") || mimeType.contains("XML")){
-				complexData.set(XmlObject.Factory.parse(stream));
-				stream.close();
+            if (getFormat().getMimeType().get().contains("xml") ||
+                getFormat().getMimeType().get().contains("XML")) {
+                complexData.set(XmlObject.Factory.parse(stream));
+                stream.close();
 			}else{
 				DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 				Document document = builder.newDocument();
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				IOUtils.copy(stream, baos);
-				stream.close();
-				String text = baos.toString();
-				baos.close();
+                String text;
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                    IOUtils.copy(stream, baos);
+                    stream.close();
+                    text = baos.toString();
+                }
 				Node dataNode = document.createTextNode(text);
 				complexData.set(XmlObject.Factory.parse(dataNode));
 			}
 			
-		} catch(RuntimeException e) {
-			LOGGER.error(e.getMessage(), e);
-			throw new ExceptionReport("Could not create Inline Complex Data from the process result", ExceptionReport.NO_APPLICABLE_CODE, e);
-		} catch (IOException e) {
+		} catch(RuntimeException | IOException e) {
 			LOGGER.error(e.getMessage(), e);
 			throw new ExceptionReport("Could not create Inline Complex Data from the process result", ExceptionReport.NO_APPLICABLE_CODE, e);
 		} catch (XmlException e) {
@@ -156,36 +132,26 @@ public class OutputDataItem extends ResponseData {
 			LOGGER.error(e.getMessage(), e);
 			throw new ExceptionReport("Could not create Inline Base64 Complex Data from the process result", ExceptionReport.NO_APPLICABLE_CODE, e);
 		}
-		
-		if (complexData != null) {
-			if (schema != null) {
-				// setting the schema attribute for the output.
-				complexData.setSchema(schema);
-			}
-			if (encoding != null) {
-				complexData.setEncoding(encoding);
-			}
-			if (mimeType != null) {
-				complexData.setMimeType(mimeType);
-			}
-		}
+        getFormat().encodeTo(complexData);
 	}
 	
 	public void updateResponseForLiteralData(ExecuteResponseDocument res, String dataTypeReference){
 		OutputDataType output = prepareOutput(res);
-		String processValue = BasicXMLTypeFactory.getStringRepresentation(dataTypeReference, obj);
+		String processValue = BasicXMLTypeFactory.getStringRepresentation(dataTypeReference, getPayload());
 		LiteralDataType literalData = output.addNewData().addNewLiteralData();
 		if (dataTypeReference != null) {
 			literalData.setDataType(dataTypeReference);
 		}
 	    literalData.setStringValue(processValue);
-		if(obj instanceof AbstractLiteralDataBinding){
-			String uom = ((AbstractLiteralDataBinding)obj).getUnitOfMeasurement();
-			if(uom != null && !uom.equals("")){
-				literalData.setUom(uom);
-			}
-		}
-	}
+		if(getPayload() instanceof AbstractLiteralDataBinding) {
+            AbstractLiteralDataBinding abstractLiteralDataBinding
+                    = (AbstractLiteralDataBinding) getPayload();
+            String uom = abstractLiteralDataBinding.getUnitOfMeasurement();
+            if (uom != null && !uom.isEmpty()) {
+                literalData.setUom(uom);
+            }
+        }
+    }
 	
 	public void updateResponseAsReference(ExecuteResponseDocument res, String reqID, String mimeType) throws ExceptionReport {
 		prepareGenerator();
@@ -193,33 +159,13 @@ public class OutputDataItem extends ResponseData {
 		InputStream stream;
 		
 		OutputReferenceType outReference = output.addNewReference();
-		if (schema != null) {
-			outReference.setSchema(schema);
-		}
-		if (encoding != null) {
-			outReference.setEncoding(encoding);
-		}
-		if (mimeType != null) {
-			outReference.setMimeType(mimeType);
-		}
+        getFormat().encodeTo(outReference);
 		IDatabase db = DatabaseFactory.getDatabase();
-		String storeID = reqID + "" + id;
+		String storeID = reqID + "" + getId();
 		
 		try {
-			if (encoding == null || encoding.equals("") || encoding.equalsIgnoreCase(IOHandler.DEFAULT_ENCODING)){
-				stream = generator.generateStream(super.obj, mimeType, schema);
-			}
-			
-			// in case encoding is base64
-			else if (encoding.equalsIgnoreCase(IOHandler.ENCODING_BASE64)){
-				stream = generator.generateBase64Stream(super.obj, mimeType, schema);
-			}
-			
-			else {
-				throw new ExceptionReport("Unable to generate encoding " + encoding, ExceptionReport.NO_APPLICABLE_CODE);
-			}
-		}
-		catch (IOException e){
+            stream = getGenerator().generate(getPayload(), getFormat());
+		} catch (IOException e){
 			LOGGER.error(e.getMessage(), e);
 			throw new ExceptionReport("Error while generating Complex Data out of the process result", ExceptionReport.NO_APPLICABLE_CODE, e);
 		}
@@ -229,13 +175,13 @@ public class OutputDataItem extends ResponseData {
 		outReference.setHref(storeReference);
 		// MSS:  05-02-2009 changed default output type to text/xml to be certain that the calling application doesn't 
 		// serve the wrong type as it is a reference in this case.
-		this.mimeType = "text/xml";
+        setFormat(new Format("text/xml"));
 	}
 	
 	private OutputDataType prepareOutput(ExecuteResponseDocument res){
 		OutputDataType output = res.getExecuteResponse().getProcessOutputs().addNewOutput();
 		CodeType identifierCode = output.addNewIdentifier();
-		identifierCode.setStringValue(id);
+		identifierCode.setStringValue(getId());
 		output.setTitle(title);
 		return output;	
 	}
@@ -244,25 +190,15 @@ public class OutputDataItem extends ResponseData {
 		Envelope bbox = (Envelope) obj.getPayload();
 		OutputDataType output = prepareOutput(res);
 		BoundingBoxType bboxData = output.addNewData().addNewBoundingBoxData();
-		if(bbox.getCoordinateReferenceSystem()!=null && bbox.getCoordinateReferenceSystem().getIdentifiers().size()>0){
+		if (bbox.getCoordinateReferenceSystem() != null &&
+            !bbox.getCoordinateReferenceSystem().getIdentifiers().isEmpty()){
 			bboxData.setCrs(bbox.getCoordinateReferenceSystem().getIdentifiers().iterator().next().toString());
 		}
-		double[] lowerCorner = bbox.getLowerCorner().getCoordinate();
-		List<Double> lowerCornerList = new ArrayList<Double>();
-		for(double d : lowerCorner){
-			lowerCornerList.add(d);
-		}
-		double[] upperCorner = bbox.getUpperCorner().getCoordinate();
-		List<Double> upperCornerList = new ArrayList<Double>();
-		for(double d : upperCorner){
-			upperCornerList.add(d);
-		}
+		List<Double> lowerCornerList = Doubles.asList(bbox.getLowerCorner().getCoordinate());
+		List<Double> upperCornerList = Doubles.asList(bbox.getUpperCorner().getCoordinate());
 		
 		bboxData.setLowerCorner(lowerCornerList);
 		bboxData.setUpperCorner(upperCornerList);
-		
 		bboxData.setDimensions(BigInteger.valueOf(bbox.getDimension()));
-		
-		
 	}
 }

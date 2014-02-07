@@ -30,25 +30,25 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.factory.Hints;
 import org.geotools.gce.geotiff.GeoTiffReader;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.IOUtils;
 import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GeotiffZippedParser extends AbstractParser {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(GeotiffZippedParser.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GeotiffZippedParser.class);
 	
 	public GeotiffZippedParser() {
-		super();
-		supportedIDataTypes.add(GTRasterDataBinding.class);
+		super(GTRasterDataBinding.class);
 	}
 	
 	@Override
-	public GTRasterDataBinding parse(InputStream input, String mimeType, String schema) {
+	public GTRasterDataBinding parse(InputStream input, Format format) {
 		//unzip
 		File zippedFile;
 		try {
@@ -76,7 +76,7 @@ public class GeotiffZippedParser extends AbstractParser {
 		GeoTiffReader reader;
 		try {
 			reader = new GeoTiffReader(file, hints);
-			GridCoverage2D coverage = (GridCoverage2D) reader.read(null);
+			GridCoverage2D coverage = reader.read(null);
 			return new GTRasterDataBinding(coverage);
 		} catch (Exception e) {
 			LOGGER.error("Exception while trying to create GTRasterDataBinding out of tiff.", e);

@@ -40,18 +40,18 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.collections.map.CaseInsensitiveMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.RemoteRepositoryDocument;
 import org.n52.wps.RemoteRepositoryDocument.RemoteRepository;
 import org.n52.wps.RemoteRepositoryListDocument.RemoteRepositoryList;
 import org.n52.wps.WPSConfigurationDocument;
 import org.n52.wps.commons.WPSConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FeedServlet extends HttpServlet {
 
-	private static transient Logger LOGGER = LoggerFactory.getLogger(FeedServlet.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(FeedServlet.class);
 
 	/**
 	 * 

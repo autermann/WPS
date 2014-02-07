@@ -31,8 +31,6 @@ import java.util.Date;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.xmlbeans.impl.util.Base64;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.ILiteralData;
@@ -47,6 +45,8 @@ import org.n52.wps.io.data.binding.literal.LiteralIntBinding;
 import org.n52.wps.io.data.binding.literal.LiteralLongBinding;
 import org.n52.wps.io.data.binding.literal.LiteralShortBinding;
 import org.n52.wps.io.data.binding.literal.LiteralStringBinding;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BasicXMLTypeFactory {
 
@@ -103,6 +103,8 @@ public class BasicXMLTypeFactory {
 		} else if (xmlDataTypeURI.equalsIgnoreCase(LONG_URI)) {
 			return new LiteralLongBinding(Long.parseLong(obj));
 		} else if (xmlDataTypeURI.equalsIgnoreCase(INT_URI) || xmlDataTypeURI.equalsIgnoreCase(INTEGER_URI)) {
+            // FIXME xs:int is a signed 32 bit integer -> int
+            //       xs:integer is a unbounded integer -> BigInteger
 			return new LiteralIntBinding(Integer.parseInt(obj));
 		} else if (xmlDataTypeURI.equalsIgnoreCase(SHORT_URI)) {
 			return new LiteralShortBinding(Short.parseShort(obj));

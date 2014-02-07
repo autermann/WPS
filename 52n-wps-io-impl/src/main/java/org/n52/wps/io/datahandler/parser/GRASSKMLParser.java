@@ -21,11 +21,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA or
  * visit the Free Software Foundation web page, http://www.fsf.org.
  */
-
 package org.n52.wps.io.datahandler.parser;
 
 import java.io.InputStream;
 
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.GenericFileData;
 import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
 
@@ -35,16 +35,13 @@ import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
  */
 public class GRASSKMLParser extends AbstractParser {
 
-	public GRASSKMLParser(){
-		super();
-		supportedIDataTypes.add(GenericFileDataBinding.class);		
-	}
+    public GRASSKMLParser() {
+        super(GenericFileDataBinding.class);
+    }
 
-	@Override
-	public GenericFileDataBinding parse(InputStream stream, String mimeType, String schema) {
-		GenericFileDataBinding data = new GenericFileDataBinding(
-				new GenericFileData(stream, "text/xml"));
-		return data;
-	}
+    @Override
+    public GenericFileDataBinding parse(InputStream stream, Format format) {
+        return new GenericFileDataBinding(new GenericFileData(stream, "text/xml"));
+    }
 
 }

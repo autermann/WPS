@@ -49,8 +49,6 @@ import net.opengis.wps.x100.OutputDescriptionType;
 import net.opengis.wps.x100.ProcessDescriptionType;
 import net.opengis.wps.x100.ProcessDescriptionsDocument;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.apache.xpath.XPathAPI;
@@ -68,25 +66,26 @@ import org.n52.wps.io.data.binding.literal.LiteralStringBinding;
 import org.n52.wps.server.AbstractTransactionalAlgorithm;
 import org.n52.wps.transactional.deploy.IProcessManager;
 import org.n52.wps.transactional.service.TransactionalHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
-public class GenericTransactionalAlgorithm extends AbstractTransactionalAlgorithm{
-	
-	private List<String> errors;
-	private static Logger LOGGER = LoggerFactory.getLogger(GenericTransactionalAlgorithm.class);
-	private ProcessDescriptionType processDescription;
-	private String workspace;
-	
+public class GenericTransactionalAlgorithm extends AbstractTransactionalAlgorithm {
+	private static final Logger LOGGER = LoggerFactory.getLogger(GenericTransactionalAlgorithm.class);
 	private static final String OGC_OWS_URI = "http://www.opengeospatial.net/ows";
+
+	private final List<String> errors;
+	private final ProcessDescriptionType processDescription;
+	private final String workspace;
 	
 	public GenericTransactionalAlgorithm(String processID, Class<?> registeredRepository){
 		super(processID);
 		WPSConfig wpsConfig = WPSConfig.getInstance();
 		Property[] properties = wpsConfig.getPropertiesForRepositoryClass(registeredRepository.getName());
 		this.workspace = wpsConfig.getPropertyForKey(properties,"WorkspaceLocationRoot").getStringValue();
-		this.errors = new ArrayList<String>();
-		processDescription = initializeDescription();
+		this.errors = new ArrayList<>();
+		this.processDescription = initializeDescription();
 		
 	}
 	
@@ -95,7 +94,8 @@ public class GenericTransactionalAlgorithm extends AbstractTransactionalAlgorith
 	}
 	
 	
-	public HashMap<String, IData> run(ExecuteDocument payload){
+    @Override
+	public HashMap<String, IData> run(ExecuteDocument payload) {
 		Document responseDocument;
 		HashMap<String,IData> resultHash = new HashMap<String,IData>();
 		try {	
@@ -180,6 +180,7 @@ public class GenericTransactionalAlgorithm extends AbstractTransactionalAlgorith
 	}
 
 
+    @Override
 	public List<String> getErrors() {
 		return errors;
 	}
@@ -190,12 +191,14 @@ public class GenericTransactionalAlgorithm extends AbstractTransactionalAlgorith
 		int searchIndex= fullPath.indexOf("WEB-INF");
 		String subPath = fullPath.substring(0, searchIndex);
 		subPath = subPath.replaceFirst("file:/", "");
-                String processID = getAlgorithmID();
-                //sanitize processID: strip version number and namespace if passed in
-                if (processID.contains("-"))
-                    processID = processID.split("-")[0];
-                if (processID.contains("}"))
-                    processID = processID.split("}")[1];
+        String processID = getAlgorithmID();
+        //sanitize processID: strip version number and namespace if passed in
+        if (processID.contains("-")) {
+            processID = processID.split("-")[0];
+        }
+        if (processID.contains("}")) {
+            processID = processID.split("}")[1];
+        }
 		try {
 			File xmlDesc = new File(subPath+File.separator+"WEB-INF"+File.separator+"ProcessDescriptions"+File.separator+processID+".xml");
 			XmlOptions option = new XmlOptions();
@@ -211,25 +214,18 @@ public class GenericTransactionalAlgorithm extends AbstractTransactionalAlgorith
 
 			return doc.getProcessDescriptions().getProcessDescriptionArray(0);
 		}
-		catch(IOException e) {
+		catch(IOException | XmlException e) {
 			LOGGER.warn("Could not initialize algorithm, parsing error: " + getAlgorithmID(), e);
 		}
-		catch(XmlException e) {
-			LOGGER.warn("Could not initialize algorithm, parsing error: " +getAlgorithmID(), e);
-		}
 		return null;
-		
 	}
-		
 
-
+    @Override
 	public boolean processDescriptionIsValid() {
 		return processDescription.validate();
 	}
 
-	
-	
-	private Document checkResultDocument(Document doc){
+    private Document checkResultDocument(Document doc){
 		if(getFirstElementNode(doc.getFirstChild()).getNodeName().equals("ExceptionReport") && getFirstElementNode(doc.getFirstChild()).getNamespaceURI().equals(OGC_OWS_URI)) {
 			try {
 				ExceptionReportDocument exceptionDoc = ExceptionReportDocument.Factory.parse(doc);
@@ -242,149 +238,148 @@ public class GenericTransactionalAlgorithm extends AbstractTransactionalAlgorith
 		return doc;
 	}
 
-	private Node getFirstElementNode(Node node) {
-		if(node == null) {
-			return null;
-		}
-		if(node.getNodeType() == Node.ELEMENT_NODE) {
-			return node;
-		}
-		else {
-			return getFirstElementNode(node.getNextSibling());
-		}
-		
-	}
-	
+    private Node getFirstElementNode(Node node) {
+        if (node == null) {
+            return null;
+        } else if (node.getNodeType() == Node.ELEMENT_NODE) {
+            return node;
+        } else {
+            return getFirstElementNode(node.getNextSibling());
+        }
+    }
 
-	//private static void writeXmlFile(Document doc, String filename) {
+    @Override
+    public String getWellKnownName() {
+        return "";
+    }
+
+    @Override
+	public Class<?> getInputDataType(String id) {
+        InputDescriptionType[] inputs = processDescription.getDataInputs().getInputArray();
+        for(InputDescriptionType input : inputs){
+            if(input.getIdentifier().getStringValue().equals(id)){
+                if(input.isSetLiteralData()){
+                    String datatype = input.getLiteralData().getDataType().getStringValue();
+                    if(datatype.contains("tring")){
+                        return LiteralStringBinding.class;
+                    }
+                    if(datatype.contains("ollean")){
+                        return LiteralBooleanBinding.class;
+                    }
+                    if(datatype.contains("loat") || datatype.contains("ouble")){
+                        return LiteralDoubleBinding.class;
+                    }
+                    if(datatype.contains("nt")){
+                        return LiteralIntBinding.class;
+                    }
+                }
+                if(input.isSetComplexData()){
+                    String mimeType = input.getComplexData().getDefault().getFormat().getMimeType();
+                    if(mimeType.contains("xml") || (mimeType.contains("XML"))){
+                        return GTVectorDataBinding.class;
+                    }else{
+                        return GTRasterDataBinding.class;
+                    }
+                }
+            }
+        }
+        throw new RuntimeException("Could not determie internal inputDataType");
+    }
+        
+    @Override
+	public Class<?> getOutputDataType(String id) {
+        OutputDescriptionType[] outputs = processDescription.getProcessOutputs().getOutputArray();
+
+        for(OutputDescriptionType output : outputs){
+
+            if(output.isSetLiteralOutput()){
+                String datatype = output.getLiteralOutput().getDataType().getStringValue();
+                if(datatype.contains("tring")){
+                    return LiteralStringBinding.class;
+                }
+                if(datatype.contains("ollean")){
+                    return LiteralBooleanBinding.class;
+                }
+                if(datatype.contains("loat") || datatype.contains("ouble")){
+                    return LiteralDoubleBinding.class;
+                }
+                if(datatype.contains("nt")){
+                    return LiteralIntBinding.class;
+                }
+            }
+            if(output.isSetComplexOutput()){
+                String mimeType = output.getComplexOutput().getDefault().getFormat().getMimeType();
+                if(mimeType.contains("xml") || (mimeType.contains("XML"))){
+                    return GenericFileDataBinding.class;
+                }else{
+                    return GenericFileDataBinding.class;
+                }
+            }
+        }
+        throw new RuntimeException("Could not determie internal inputDataType");
+    }
+
+    @Override
+	public Map<String, IData> run(Map<String, List<IData>> inputData) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    //private static void writeXmlFile(Document doc, String filename) {
         private static void writeXmlFile(Document doc, File file) {
-        try {
+            try {
 //        	if(filename==null){
 //        		filename = "C:\\BPEL\\serverside.xml";
 //        	}
-            // Prepare the DOM document for writing
-            Source source = new DOMSource(doc);
-    
-            // Prepare the output file
-            //File file = new File(filename);
-            //file.createNewFile();
-            //Result result = new StreamResult(file);
-            Result result = new StreamResult(file.toURI().getPath());
-    
-            // Write the DOM document to the file
-            Transformer xformer = TransformerFactory.newInstance().newTransformer();
-            xformer.transform(source, result);
-        } catch (TransformerConfigurationException e) {
-        	System.out.println("error");
-        } catch (TransformerException e) {
-        	System.out.println("error");
-        } catch (Exception e) {
-        	System.out.println("error");
+                // Prepare the DOM document for writing
+                Source source = new DOMSource(doc);
+                
+                // Prepare the output file
+                //File file = new File(filename);
+                //file.createNewFile();
+                //Result result = new StreamResult(file);
+                Result result = new StreamResult(file.toURI().getPath());
+                
+                // Write the DOM document to the file
+                Transformer xformer = TransformerFactory.newInstance().newTransformer();
+                xformer.transform(source, result);
+            } catch (TransformerConfigurationException e) {
+                System.out.println("error");
+            } catch (TransformerException e) {
+                System.out.println("error");
+            } catch (Exception e) {
+                System.out.println("error");
+            }
+
+
         }
-		
-		
-	}
 
-        
-	private static void writeXmlFile(Node n, File file) {
-		try {
-			// if(filename==null){
-			// filename = "C:\\BPEL\\serverside.xml";
-			// }
-			// Prepare the DOM document for writing
-			Source source = new DOMSource(n);
+    	private static void writeXmlFile(Node n, File file) {
+            try {
+                // if(filename==null){
+                // filename = "C:\\BPEL\\serverside.xml";
+                // }
+                // Prepare the DOM document for writing
+                Source source = new DOMSource(n);
 
-			// Prepare the output file
-			// File file = new File(filename);
-			// file.createNewFile();
-			// Result result = new StreamResult(file);
-			Result result = new StreamResult(file.toURI().getPath());
+                // Prepare the output file
+                // File file = new File(filename);
+                // file.createNewFile();
+                // Result result = new StreamResult(file);
+                Result result = new StreamResult(file.toURI().getPath());
 
-			// Write the DOM document to the file
-			Transformer xformer = TransformerFactory.newInstance()
-					.newTransformer();
-			xformer.transform(source, result);
-		} catch (TransformerConfigurationException e) {
-			System.out.println("error");
-		} catch (TransformerException e) {
-			System.out.println("error");
-		} catch (Exception e) {
-			System.out.println("error");
-		}
+                // Write the DOM document to the file
+                Transformer xformer = TransformerFactory.newInstance()
+                        .newTransformer();
+                xformer.transform(source, result);
+            } catch (TransformerConfigurationException e) {
+                System.out.println("error");
+            } catch (TransformerException e) {
+                System.out.println("error");
+            } catch (Exception e) {
+                System.out.println("error");
+            }
 
-	}
-        
-	public String getWellKnownName() {
-		return "";
-	}
-
-	public Class getInputDataType(String id) {
-		InputDescriptionType[] inputs = processDescription.getDataInputs().getInputArray();
-		for(InputDescriptionType input : inputs){
-			if(input.getIdentifier().getStringValue().equals(id)){
-				if(input.isSetLiteralData()){
-					String datatype = input.getLiteralData().getDataType().getStringValue();
-					if(datatype.contains("tring")){
-							return LiteralStringBinding.class;
-					}
-					if(datatype.contains("ollean")){
-						return LiteralBooleanBinding.class;
-					}
-					if(datatype.contains("loat") || datatype.contains("ouble")){
-						return LiteralDoubleBinding.class;
-					}
-					if(datatype.contains("nt")){
-						return LiteralIntBinding.class;
-					}
-				}
-				if(input.isSetComplexData()){
-					 String mimeType = input.getComplexData().getDefault().getFormat().getMimeType();
-					 if(mimeType.contains("xml") || (mimeType.contains("XML"))){
-						 return GTVectorDataBinding.class;
-					 }else{
-						 return GTRasterDataBinding.class;
-					 }
-				}
-			}
-		}
-		throw new RuntimeException("Could not determie internal inputDataType");
-	}
-
-	public Class getOutputDataType(String id) {
-		OutputDescriptionType[] outputs = processDescription.getProcessOutputs().getOutputArray();
-		
-		for(OutputDescriptionType output : outputs){
-			
-			if(output.isSetLiteralOutput()){
-				String datatype = output.getLiteralOutput().getDataType().getStringValue();
-				if(datatype.contains("tring")){
-					return LiteralStringBinding.class;
-				}
-				if(datatype.contains("ollean")){
-					return LiteralBooleanBinding.class;
-				}
-				if(datatype.contains("loat") || datatype.contains("ouble")){
-					return LiteralDoubleBinding.class;
-				}
-				if(datatype.contains("nt")){
-					return LiteralIntBinding.class;
-				}
-			}
-			if(output.isSetComplexOutput()){
-				String mimeType = output.getComplexOutput().getDefault().getFormat().getMimeType();
-				if(mimeType.contains("xml") || (mimeType.contains("XML"))){
-					return GenericFileDataBinding.class;
-				}else{
-					return GenericFileDataBinding.class;
-				}
-			}
-		}
-		throw new RuntimeException("Could not determie internal inputDataType");
-	}
-
-	public Map<String, IData> run(Map<String, List<IData>> inputData) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+        }
 	
 }

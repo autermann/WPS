@@ -33,16 +33,13 @@ import net.opengis.ows.x11.ExceptionReportDocument.ExceptionReport;
 import net.opengis.wps.x100.DocumentOutputDefinitionType;
 import net.opengis.wps.x100.ExecuteDocument;
 import net.opengis.wps.x100.ExecuteResponseDocument;
-import net.opengis.wps.x100.ExecuteResponseDocument.ExecuteResponse.ProcessOutputs;
-import net.opengis.wps.x100.InputDescriptionType;
 import net.opengis.wps.x100.OutputDataType;
 import net.opengis.wps.x100.OutputDescriptionType;
 import net.opengis.wps.x100.ProcessDescriptionType;
 
-import org.n52.wps.io.IOHandler;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.IParser;
 import org.n52.wps.io.data.IData;
-import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 
 /*
  * 
@@ -51,12 +48,9 @@ import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
  *
  */
 public class ExecuteResponseAnalyser {
-	
-	
-	
-	ProcessDescriptionType processDesc;
-	ExecuteDocument exec;
-	Object response;
+	private ProcessDescriptionType processDesc;
+	private ExecuteDocument exec;
+	private Object response;
 	
 	public ExecuteResponseAnalyser(ExecuteDocument exec, Object response, ProcessDescriptionType processDesc) throws WPSClientException {
 		this.processDesc = processDesc;
@@ -146,7 +140,7 @@ public class ExecuteResponseAnalyser {
 	 */
 	private IData parseProcessOutput(String outputID, Class outputDataBindingClass) throws WPSClientException {
 		OutputDescriptionType outputDesc = null;
-		
+
 		String schema = null;
 		String mimeType = null;
 		String encoding = null;
@@ -180,8 +174,9 @@ public class ExecuteResponseAnalyser {
 			encoding = outputDesc.getComplexOutput().getDefault().getFormat().getEncoding();
 			schema = outputDesc.getComplexOutput().getDefault().getFormat().getSchema();
 		}
-		
-		IParser parser = StaticDataHandlerRepository.getParserFactory().getParser(schema, mimeType, encoding, outputDataBindingClass);
+
+        Format format = new Format(mimeType, encoding, schema);
+		IParser parser = StaticDataHandlerRepository.getParserFactory().getParser(format, outputDataBindingClass);
 		InputStream is = null;
 		if(response instanceof InputStream){
 			is = (InputStream)response;
@@ -217,9 +212,9 @@ public class ExecuteResponseAnalyser {
 		
 		if(parser != null) {
 			if(encoding.equalsIgnoreCase("base64")){
-				return parser.parseBase64(is, mimeType, schema);
+				return parser.parseBase64(is, format);
 			}else{
-				return parser.parse(is, mimeType, schema);
+				return parser.parse(is, format);
 			}
 		}
 

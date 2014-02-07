@@ -99,8 +99,8 @@ public class TransactionalHelper {
 				//return (IDeployManager) Class.forName(property.getStringValue()).newInstance();
                             try{
 
-                                Class depManager = Class.forName(property.getStringValue());
-                                Constructor con = depManager.getConstructor(ITransactionalAlgorithmRepository.class);
+                                Class<?> depManager = Class.forName(property.getStringValue());
+                                Constructor<?> con = depManager.getConstructor(ITransactionalAlgorithmRepository.class);
                                 Object o = con.newInstance(new Object[]{getMatchingTransactionalRepository(schema)});
                                 return (IProcessManager)o;
                             }catch(ClassNotFoundException e){

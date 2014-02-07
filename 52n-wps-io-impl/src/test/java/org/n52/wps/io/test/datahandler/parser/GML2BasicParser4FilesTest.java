@@ -30,7 +30,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
-import org.n52.wps.FormatDocument.Format;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
 import org.n52.wps.io.datahandler.parser.GML2BasicParser4Files;
 import org.n52.wps.io.test.datahandler.AbstractTestCase;
@@ -62,12 +62,8 @@ public class GML2BasicParser4FilesTest extends
 
 		InputStream input = null;
 
-		Format[] formats = dataHandler.getSupportedFullFormats();
+		Format format = dataHandler.getSupportedFormats().iterator().next();
 
-		Format format = formats[0];
-
-		String mimeType = format.getMimetype();
-		String schema = format.getSchema();
 
 		try {
 			input = new FileInputStream(new File(testFilePath));
@@ -75,8 +71,7 @@ public class GML2BasicParser4FilesTest extends
 			fail(e.getMessage());
 		}
 
-		GenericFileDataBinding theBinding = dataHandler.parse(input, mimeType,
-				schema);
+		GenericFileDataBinding theBinding = dataHandler.parse(input, format);
 
 		assertNotNull(theBinding.getPayload());
 		assertNotNull(theBinding.getPayload().getBaseFile(true).exists());

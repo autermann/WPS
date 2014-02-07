@@ -27,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.JTSGeometryBinding;
 
@@ -35,31 +36,25 @@ import com.vividsolutions.jts.io.WKTWriter;
 
 /**
  * This class generates a String representation out of a JTS Geometry.
+ *
  * @author Benjamin Pross
  *
  */
 public class WKTGenerator extends AbstractGenerator {
 
-	public WKTGenerator(){
-		super();
-		supportedIDataTypes.add(JTSGeometryBinding.class);
-	}
-	
-	@Override
-	public InputStream generateStream(IData data, String mimeType, String schema)
-			throws IOException {
-		
-		if(data instanceof JTSGeometryBinding){
-			Geometry g = ((JTSGeometryBinding)data).getPayload();
-			
-			String wktString = new WKTWriter().write(g);
-			
-			InputStream is = new ByteArrayInputStream(wktString.getBytes());
-			
-			return is;
-		}
-		
-		return null;
-	}
+    public WKTGenerator() {
+        super(JTSGeometryBinding.class);
+    }
+
+    @Override
+    public InputStream generateStream(IData data, Format format)
+            throws IOException {
+        if (data instanceof JTSGeometryBinding) {
+            Geometry g = ((JTSGeometryBinding) data).getPayload();
+            String wktString = new WKTWriter().write(g);
+            return new ByteArrayInputStream(wktString.getBytes());
+        }
+        return null;
+    }
 
 }

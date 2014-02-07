@@ -21,48 +21,22 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA or
  * visit the Free Software Foundation web page, http://www.fsf.org.
  */
-
 package org.n52.wps.io;
 
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
+import org.n52.wps.server.ExceptionReport;
 
-/** 
+/**
  * Basic interface for all Generators.
- * 
+ *
  * @author Matthias Mueller, TU Dresden
- * 
+ *
  */
 public interface IGenerator extends IOHandler {
-	
-	/**
-	 * 
-	 * @param data
-	 * @param mimeType
-	 * @param schema
-	 * @return
-	 * 
-	 * generates final output data produced by an IAlgorithm
-	 * and returns an InputStream for subsequent access.
-	 * 
-	 */
-	
-	public InputStream generateStream(IData data, String mimeType, String schema) throws IOException;
-	
-	
-	/**
-	 * 
-	 * @param data
-	 * @param mimeType
-	 * @param schema
-	 * @return
-	 * 
-	 * generates final output data produced by an IAlgorithm, encodes it in Base64
-	 * and returns an InputStream for subsequent access.
-	 * 
-	 */
-	public InputStream generateBase64Stream(IData data, String mimeType, String schema) throws IOException;
-	
+    public InputStream generate(IData data, Format format)
+            throws IOException, ExceptionReport;
 }

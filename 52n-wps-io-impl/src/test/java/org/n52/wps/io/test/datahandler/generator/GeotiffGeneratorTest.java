@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
 import org.n52.wps.io.datahandler.generator.GeotiffGenerator;
 import org.n52.wps.io.datahandler.parser.GeotiffParser;
@@ -55,7 +56,6 @@ public class GeotiffGeneratorTest extends AbstractTestCase<GeotiffGenerator> {
 
 		GeotiffParser theParser = new GeotiffParser();
 
-		String[] mimetypes = theParser.getSupportedFormats();
 
 		InputStream input = null;
 
@@ -65,23 +65,20 @@ public class GeotiffGeneratorTest extends AbstractTestCase<GeotiffGenerator> {
 			fail(e.getMessage());
 		}
 
-		GTRasterDataBinding theBinding = theParser.parse(input, mimetypes[0],
-				null);
+
+        Format mimeType = dataHandler.getSupportedFormats().iterator().next();
+		GTRasterDataBinding theBinding = theParser.parse(input, mimeType);
 
 		assertTrue(theBinding.getPayload() != null);
 		
-		String[] mimetypes2 = dataHandler.getSupportedFormats();
 
-		for (String string : mimetypes2) {
+		for (Format format : dataHandler.getSupportedFormats()) {
 			try {
-				InputStream resultStream = dataHandler.generateStream(theBinding, string, null);
-				
-				GTRasterDataBinding rasterBinding = theParser.parse(resultStream, mimetypes[0], null);
-				
+				InputStream resultStream = dataHandler.generateStream(theBinding, format);
+				GTRasterDataBinding rasterBinding = theParser.parse(resultStream, mimeType);
 				assertTrue(rasterBinding.getPayload() != null);
 				assertTrue(rasterBinding.getPayload().getDimension() != 0);
 				assertTrue(rasterBinding.getPayload().getEnvelope() != null);
-				
 			} catch (IOException e) {
 				e.printStackTrace();
 				fail(e.getMessage());

@@ -35,14 +35,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.data.collection.ListFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.NameImpl;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.geometry.jts.WKTReader2;
 import org.geotools.referencing.CRS;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.GTHelper;
 import org.n52.wps.io.IOUtils;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
@@ -53,6 +52,8 @@ import org.opengis.feature.type.Name;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.io.ParseException;
@@ -63,11 +64,10 @@ import com.vividsolutions.jts.io.ParseException;
  */
 public class GTBinZippedWKT64Parser extends AbstractParser {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(GTBinZippedWKT64Parser.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GTBinZippedWKT64Parser.class);
 	
 	public GTBinZippedWKT64Parser() {
-		super();
-		supportedIDataTypes.add(GTVectorDataBinding.class);
+		super(GTVectorDataBinding.class);
 	}
 
 	/**
@@ -77,7 +77,7 @@ public class GTBinZippedWKT64Parser extends AbstractParser {
 	 * @see org.n52.wps.io.IParser#parse(java.io.InputStream)
 	 */
 	@Override
-	public GTVectorDataBinding parse(InputStream stream, String mimeType, String schema) {
+	public GTVectorDataBinding parse(InputStream stream, Format format) {
 		try {
 			
 			String fileName = "tempfile" + UUID.randomUUID() + ".zip";
@@ -85,13 +85,14 @@ public class GTBinZippedWKT64Parser extends AbstractParser {
 			File tempFile = new File(tmpDirPath + File.separatorChar + fileName);
 			finalizeFiles.add(tempFile); // mark tempFile for final delete
 			try {
-				FileOutputStream outputStream = new FileOutputStream(tempFile);
-				byte buf[] = new byte[4096];
-				int len;
-				while ((len = stream.read(buf)) > 0) {
-					outputStream.write(buf, 0, len);
-				}
-				outputStream.close();
+                try (FileOutputStream outputStream
+                        = new FileOutputStream(tempFile)) {
+                    byte buf[] = new byte[4096];
+                    int len;
+                    while ((len = stream.read(buf)) > 0) {
+                        outputStream.write(buf, 0, len);
+                    }
+                }
 				stream.close();
 			} catch (FileNotFoundException e) {
 				System.gc();
@@ -108,13 +109,13 @@ public class GTBinZippedWKT64Parser extends AbstractParser {
 			List<File> wktFiles = IOUtils.unzip(tempFile, "wkt");
 			finalizeFiles.addAll(wktFiles); // mark for final delete
 			
-			if (wktFiles == null || wktFiles.size() == 0) {
+			if (wktFiles == null || wktFiles.isEmpty()) {
 				throw new RuntimeException(
 						"Cannot find a shapefile inside the zipped file.");
 			}
 
 			//set namespace namespace
-			List<Geometry> geometries = new ArrayList<Geometry>();
+			List<Geometry> geometries = new ArrayList<>();
 		
 			//read wkt file
 			//please not that only 1 geometry is returned. If multiple geometries are included, perhaps use the read(String wktstring) method
@@ -174,18 +175,18 @@ public class GTBinZippedWKT64Parser extends AbstractParser {
 		typeBuilder.setName(nameType);
 		typeBuilder.add("GEOMETRY", geometries.get(0).getClass());
 	
-		List<SimpleFeature> simpleFeatureList = new ArrayList<SimpleFeature>();		
-		
-		SimpleFeatureType featureType = typeBuilder.buildFeatureType();
-	
-		for(int i = 0; i<geometries.size();i++){
-				SimpleFeature feature = GTHelper.createFeature(""+i, geometries.get(i), featureType, new ArrayList<Property>());
-				simpleFeatureList.add(feature);		}
-		
-		
-		SimpleFeatureCollection collection =  new ListFeatureCollection(featureType, simpleFeatureList);
-		
-		return collection;
+        List<SimpleFeature> simpleFeatureList = new ArrayList<>();
+
+        SimpleFeatureType featureType = typeBuilder.buildFeatureType();
+
+        for (int i = 0; i < geometries.size(); i++) {
+            SimpleFeature feature = GTHelper.createFeature("" + i, geometries
+                    .get(i), featureType, new ArrayList<Property>());
+            simpleFeatureList.add(feature);
+        }
+
+
+		return new ListFeatureCollection(featureType, simpleFeatureList);
 	}
 
 }

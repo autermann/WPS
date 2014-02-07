@@ -29,6 +29,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.IOUtils;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
@@ -42,12 +43,11 @@ import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 public class GTBinZippedSHPGenerator extends AbstractGenerator {
 	
 	public GTBinZippedSHPGenerator(){
-		super();
-		supportedIDataTypes.add(GTVectorDataBinding.class);	
+		super(GTVectorDataBinding.class);	
 	}
 	
 	@Override
-	public InputStream generateStream(IData data, String mimeType, String schema) throws IOException {
+	public InputStream generateStream(IData data, Format format) throws IOException {
 		
 //		// check for correct request before returning the stream
 //		if (!(this.isSupportedGenerate(data.getSupportedClass(), mimeType, schema))){

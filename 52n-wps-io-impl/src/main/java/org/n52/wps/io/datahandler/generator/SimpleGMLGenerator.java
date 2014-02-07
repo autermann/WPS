@@ -41,8 +41,8 @@ import net.opengis.examples.packet.DataType;
 import net.opengis.examples.packet.GMLPacketDocument;
 import net.opengis.examples.packet.GMLPacketType;
 import net.opengis.examples.packet.PropertyType;
-import net.opengis.examples.packet.StaticFeatureType;
 import net.opengis.examples.packet.PropertyType.Value;
+import net.opengis.examples.packet.StaticFeatureType;
 import net.opengis.gml.CoordType;
 import net.opengis.gml.LineStringPropertyType;
 import net.opengis.gml.LinearRingMemberType;
@@ -51,6 +51,7 @@ import net.opengis.gml.PointPropertyType;
 import net.opengis.gml.PolygonType;
 
 import org.geotools.feature.FeatureIterator;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.opengis.feature.simple.SimpleFeature;
@@ -68,30 +69,24 @@ public class SimpleGMLGenerator extends AbstractGenerator {
 	
 	
 	public SimpleGMLGenerator() {
-		super();
-		supportedIDataTypes.add(GTVectorDataBinding.class);
+		super(GTVectorDataBinding.class);
 	}
 	
 	@Override
-	public InputStream generateStream(IData data, String mimeType, String schema) throws IOException {
+	public InputStream generateStream(IData data, Format format) throws IOException {
 		
-		File tempFile = null;
-		InputStream stream = null;
-		
+		File tempFile;
 		try {
 			tempFile = File.createTempFile("gml", "xml");
 			this.finalizeFiles.add(tempFile);
-			FileOutputStream outputStream = new FileOutputStream(tempFile);
-			this.writeToStream(data, outputStream);
-			outputStream.flush();
-			outputStream.close();
-			
-			stream = new FileInputStream(tempFile);
+            try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+                this.writeToStream(data, outputStream);
+                outputStream.flush();
+            }
+			return new FileInputStream(tempFile);
 		} catch (IOException e){
-			throw new IOException("Unable to generate GML");
+			throw new IOException("Unable to generate GML", e);
 		}
-		
-		return stream;
 	}
 
 	public Node generateXML(IData coll, String schema) {
@@ -101,12 +96,11 @@ public class SimpleGMLGenerator extends AbstractGenerator {
 	public void write(IData coll, Writer writer) {
 		GMLPacketDocument doc = generateXMLObj(coll, null);
 		try {
-			BufferedWriter bufferedWriter = new BufferedWriter(writer);
-			bufferedWriter.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-			doc.save(bufferedWriter);
-			bufferedWriter.close();
-		}
-		catch(IOException e) {
+            try (BufferedWriter bufferedWriter = new BufferedWriter(writer)) {
+                bufferedWriter.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+                doc.save(bufferedWriter);
+            }
+		} catch(IOException e) {
 			throw new RuntimeException(e);
 		}
 	}

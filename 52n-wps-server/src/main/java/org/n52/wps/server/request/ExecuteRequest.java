@@ -70,6 +70,7 @@ import org.n52.wps.server.AbstractTransactionalAlgorithm;
 import org.n52.wps.server.ExceptionReport;
 import org.n52.wps.server.IAlgorithm;
 import org.n52.wps.server.RepositoryManager;
+import org.n52.wps.server.WPSConstants;
 import org.n52.wps.server.database.DatabaseFactory;
 import org.n52.wps.server.observerpattern.IObserver;
 import org.n52.wps.server.observerpattern.ISubject;
@@ -86,11 +87,10 @@ import org.w3c.dom.Node;
  * Handles an ExecuteRequest
  */
 public class ExecuteRequest extends Request implements IObserver {
-
-	private static Logger LOGGER = LoggerFactory.getLogger(ExecuteRequest.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ExecuteRequest.class);
 	private ExecuteDocument execDom;
 	private Map<String, IData> returnResults;
-	private ExecuteResponseBuilder execRespType;
+	private final ExecuteResponseBuilder execRespType;
 	
 	
 
@@ -151,14 +151,14 @@ public class ExecuteRequest extends Request implements IObserver {
 	 * @param ciMap
 	 */
 	private void initForGET(CaseInsensitiveMap ciMap) throws ExceptionReport {
-		String version = getMapValue("version", ciMap, true);
-		if (!version.equals(Request.SUPPORTED_VERSION)) {
+		String version = getMapValue(WPSConstants.PARAMETER_VERSION, ciMap, true);
+		if (!version.equals(WPSConstants.WPS_SERVICE_VERSION)) {
 			throw new ExceptionReport("request version is not supported: "
 					+ version, ExceptionReport.VERSION_NEGOTIATION_FAILED);
 		}
 		this.execDom = ExecuteDocument.Factory.newInstance();
 		Execute execute = execDom.addNewExecute();
-		String processID = getMapValue("Identifier", true);
+		String processID = getMapValue(WPSConstants.PARAMETER_IDENTIFIER, true);
 		if (!RepositoryManager.getInstance().containsAlgorithm(processID)) {
 			throw new ExceptionReport("Process does not exist",
 					ExceptionReport.INVALID_PARAMETER_VALUE);
@@ -171,7 +171,7 @@ public class ExecuteRequest extends Request implements IObserver {
 		
 		// Handle data inputs
 		for (String inputString : inputs) {
-			int position = inputString.indexOf("=");
+			int position = inputString.indexOf('=');
 			if (position == -1) {
 				throw new ExceptionReport("No \"=\" supplied for attribute: "
 						+ inputString, ExceptionReport.MISSING_PARAMETER_VALUE);
@@ -181,7 +181,7 @@ public class ExecuteRequest extends Request implements IObserver {
 			String value = null;
 			if (key.length() + 1 < inputString.length()) {
 				// BS int valueDelimiter = inputString.indexOf("@");
-				int valueDelimiter = inputString.indexOf("@");
+				int valueDelimiter = inputString.indexOf('@');
 				if (valueDelimiter != -1 && position + 1 < valueDelimiter) {
 					value = inputString.substring(position + 1, valueDelimiter);
 				} else {
@@ -218,7 +218,7 @@ public class ExecuteRequest extends Request implements IObserver {
 			}
 			if (inputItemstemp.length > 1) {
 				for (int i = 0; i < inputItems.length; i++) {
-					int attributePos = inputItems[i].indexOf("=");
+					int attributePos = inputItems[i].indexOf('=');
 					if (attributePos == -1
 							|| attributePos + 1 >= inputItems[i].length()) {
 						continue;
@@ -259,7 +259,7 @@ public class ExecuteRequest extends Request implements IObserver {
 				if (inputDesc.isSetComplexData()) {
 					// TODO: check for different attributes
 					// handling ComplexReference
-					if (!(hrefAttribute == null) && !hrefAttribute.equals("")) {
+					if (!(hrefAttribute == null) && !hrefAttribute.isEmpty()) {
 						InputReferenceType reference = input.addNewReference();
 						reference.setHref(hrefAttribute);
 						if (schemaAttribute != null) {
@@ -326,12 +326,12 @@ public class ExecuteRequest extends Request implements IObserver {
 							+ inputDesc.getIdentifier().getStringValue(),
 							ExceptionReport.MISSING_PARAMETER_VALUE);
 				}
-				List<String> lowerCorner = new ArrayList<String>();
+				List<String> lowerCorner = new ArrayList<String>(2);
 				lowerCorner.add(values[0]);
 				lowerCorner.add(values[1]);
 				data.setLowerCorner(lowerCorner);
 				
-				List<String> upperCorner = new ArrayList<String>();
+				List<String> upperCorner = new ArrayList<String>(2);
 				upperCorner.add(values[2]);
 				upperCorner.add(values[3]);
 				data.setUpperCorner(upperCorner);
@@ -389,7 +389,7 @@ public class ExecuteRequest extends Request implements IObserver {
 				output.addNewIdentifier().setStringValue(outputDataInput);
 
 				for (int i = 1; i < outputDataparameters.length; i++) {
-					int attributePos = outputDataparameters[i].indexOf("=");
+					int attributePos = outputDataparameters[i].indexOf('=');
 					if (attributePos == -1
 							|| attributePos + 1 >= outputDataparameters[i]
 									.length()) {
@@ -440,7 +440,7 @@ public class ExecuteRequest extends Request implements IObserver {
 
 			if (rawDataparameters.length > 0) {
 				for (int i = 0; i < rawDataparameters.length; i++) {
-					int attributePos = rawDataparameters[i].indexOf("=");
+					int attributePos = rawDataparameters[i].indexOf('=');
 					if (attributePos == -1
 							|| attributePos + 1 >= rawDataparameters[i]
 									.length()) {
@@ -500,7 +500,7 @@ public class ExecuteRequest extends Request implements IObserver {
 		 * ExceptionReport.INVALID_PARAMETER_VALUE); }
 		 * 
 		 */
-		if (!execDom.getExecute().getVersion().equals(SUPPORTED_VERSION)) {
+		if (!execDom.getExecute().getVersion().equals(WPSConstants.WPS_SERVICE_VERSION)) {
 			throw new ExceptionReport("Specified version is not supported.",
 					ExceptionReport.INVALID_PARAMETER_VALUE, "version="
 							+ getExecute().getVersion());
@@ -512,7 +512,7 @@ public class ExecuteRequest extends Request implements IObserver {
 		if(identifier == null){
 			throw new ExceptionReport(
 					"No process identifier supplied.",
-					ExceptionReport.MISSING_PARAMETER_VALUE, "identifier");			
+					ExceptionReport.MISSING_PARAMETER_VALUE, WPSConstants.PARAMETER_IDENTIFIER);
 		}
 		
 		// check if the algorithm is in our repository
@@ -539,10 +539,11 @@ public class ExecuteRequest extends Request implements IObserver {
 		
 		//prevent NullPointerException for zero input values in execute request (if only default values are used)
 		InputType[] inputs;
-		if(getExecute().getDataInputs()==null)
-				inputs=new InputType[0];
-		else
-			inputs = getExecute().getDataInputs().getInputArray();
+		if(getExecute().getDataInputs()==null) {
+            inputs=new InputType[0];
+        } else {
+            inputs = getExecute().getDataInputs().getInputArray();
+            }
 			
 			// For each input supplied by the client
 			for (InputType input : inputs) {
@@ -629,6 +630,7 @@ public class ExecuteRequest extends Request implements IObserver {
 	 * 
 	 * @throws ExceptionReport
 	 */
+    @Override
 	public Response call() throws ExceptionReport {
         IAlgorithm algorithm = null;
         Map<String, List<IData>> inputMap = null;
@@ -756,7 +758,7 @@ public class ExecuteRequest extends Request implements IObserver {
 	 * 
 	 * @return The Execute
 	 */
-	public Execute getExecute() {
+	public ExecuteDocument.Execute getExecute() {
 		return execDom.getExecute();
 	}
 
@@ -765,25 +767,25 @@ public class ExecuteRequest extends Request implements IObserver {
 	}
 
 	public boolean isStoreResponse() {
-		if (execDom.getExecute().getResponseForm() == null) {
-			return false;
-		}
-		if (execDom.getExecute().getResponseForm().getRawDataOutput() != null) {
-			return false;
-		}
-		return execDom.getExecute().getResponseForm().getResponseDocument()
-				.getStoreExecuteResponse();
+        return hasResponseForm() &&
+               execDom.getExecute().getResponseForm().getRawDataOutput() == null &&
+               hasResponseDocument() &&
+               getResponseDocument().getStoreExecuteResponse();
 	}
 
+    public ResponseDocumentType getResponseDocument() {
+        return execDom.getExecute().getResponseForm().getResponseDocument();
+    }
+
+    public boolean hasResponseDocument() {
+        return getResponseDocument() != null;
+    }
+
 	public boolean isQuickStatus() {
-		if (execDom.getExecute().getResponseForm() == null) {
-			return false;
-		}
-		if (execDom.getExecute().getResponseForm().getRawDataOutput() != null) {
-			return false;
-		}
-		return execDom.getExecute().getResponseForm().getResponseDocument()
-				.getStatus();
+        return hasResponseForm() &&
+               execDom.getExecute().getResponseForm().getRawDataOutput() == null &&
+               hasResponseDocument() &&
+               getResponseDocument().getStatus();
 	}
 
 	public ExecuteResponseBuilder getExecuteResponseBuilder() {
@@ -791,16 +793,20 @@ public class ExecuteRequest extends Request implements IObserver {
 	}
 
 	public boolean isRawData() {
-		if (execDom.getExecute().getResponseForm() == null) {
-			return false;
-		}
-		if (execDom.getExecute().getResponseForm().getRawDataOutput() != null) {
-			return true;
-		} else {
-			return false;
-		}
+        return hasResponseForm() &&
+               execDom.getExecute().getResponseForm().getRawDataOutput() != null;
 	}
 
+
+    public boolean isLineage() {
+        return hasResponseForm() &&
+               hasResponseDocument() &&
+               getResponseDocument().getLineage();
+    }
+
+    public boolean hasResponseForm() {
+        return execDom.getExecute().getResponseForm() != null;
+    }
 	
 	public void update(ISubject subject) {
 		Object state = subject.getState();
@@ -839,7 +845,7 @@ public class ExecuteRequest extends Request implements IObserver {
 		StatusType status = StatusType.Factory.newInstance();
 		net.opengis.ows.x11.ExceptionReportDocument.ExceptionReport excRep = status
 				.addNewProcessFailed().addNewExceptionReport();
-		excRep.setVersion("1.0.0");
+		excRep.setVersion(WPSConstants.WPS_SERVICE_VERSION);
 		ExceptionType excType = excRep.addNewException();
 		excType.addNewExceptionText().setStringValue(errorMessage);
 		excType.setExceptionCode(ExceptionReport.NO_APPLICABLE_CODE);

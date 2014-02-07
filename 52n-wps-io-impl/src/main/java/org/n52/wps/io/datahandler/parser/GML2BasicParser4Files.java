@@ -31,11 +31,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.GenericFileData;
 import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This parser handles xml files compliant to GML2.
@@ -43,15 +44,14 @@ import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
  *
  */
 public class GML2BasicParser4Files extends AbstractParser {
-	private static Logger LOGGER = LoggerFactory.getLogger(GML2BasicParser4Files.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GML2BasicParser4Files.class);
 
 	
 	public GML2BasicParser4Files() {
-		super();
-		supportedIDataTypes.add(GenericFileDataBinding.class);
+		super(GenericFileDataBinding.class);
 	}
 	
-	public GenericFileDataBinding parse(InputStream stream, String mimeType, String schema) {
+	public GenericFileDataBinding parse(InputStream stream, Format format) {
 		
 		FileOutputStream fos = null;
 		try{
@@ -70,7 +70,9 @@ public class GML2BasicParser4Files extends AbstractParser {
 			return data;
 		}
 		catch(IOException e) {
-			if (fos != null) try { fos.close(); } catch (Exception e1) { }
+			if (fos != null) {
+                try { fos.close(); } catch (IOException e1) { }
+            }
 			throw new IllegalArgumentException("Error while creating tempFile", e);
 		}
 	}

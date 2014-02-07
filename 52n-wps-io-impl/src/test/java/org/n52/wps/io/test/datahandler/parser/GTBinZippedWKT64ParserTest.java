@@ -33,6 +33,7 @@ import java.net.URLDecoder;
 import org.apache.commons.codec.binary.Base64InputStream;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.io.datahandler.parser.GTBinZippedWKT64Parser;
 import org.n52.wps.io.test.datahandler.AbstractTestCase;
@@ -65,11 +66,9 @@ public class GTBinZippedWKT64ParserTest extends AbstractTestCase<GTBinZippedWKT6
 			fail(e1.getMessage());
 		}
 				
-		String[] mimetypes = dataHandler.getSupportedFormats();
-		
 		InputStream input = null;
 		
-		for (String mimetype : mimetypes) {
+		for (Format mimetype : dataHandler.getSupportedFormats()) {
 			
 			try {
 				
@@ -78,7 +77,7 @@ public class GTBinZippedWKT64ParserTest extends AbstractTestCase<GTBinZippedWKT6
 				fail(e.getMessage());
 			} 
 			
-			GTVectorDataBinding theBinding = dataHandler.parse(input, mimetype, "");
+			GTVectorDataBinding theBinding = dataHandler.parse(input, mimetype);
 			
 			assertNotNull(theBinding.getPayload());
 			assertTrue(!theBinding.getPayload().isEmpty());	

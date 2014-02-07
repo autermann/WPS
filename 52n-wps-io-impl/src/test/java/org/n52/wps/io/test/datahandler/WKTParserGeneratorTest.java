@@ -27,11 +27,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.binding.complex.JTSGeometryBinding;
 import org.n52.wps.io.datahandler.generator.WKTGenerator;
 import org.n52.wps.io.datahandler.parser.WKTParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test class for WKT parser and generator
@@ -54,12 +55,11 @@ public class WKTParserGeneratorTest extends AbstractTestCase<WKTGenerator> {
 		
 		WKTParser theParser = new WKTParser();
 
-		String mimetype = theParser.getSupportedFormats()[0];
+		Format mimetype = theParser.getSupportedFormats().iterator().next();
 		
 		LOGGER.info("Trying to parse WKT: " + inputWKTPolygonString);
 		
-		JTSGeometryBinding theBinding = theParser.parse(in, mimetype,
-				null);
+		JTSGeometryBinding theBinding = theParser.parse(in, mimetype);
 
 		try {
 			in.close();
@@ -72,7 +72,7 @@ public class WKTParserGeneratorTest extends AbstractTestCase<WKTGenerator> {
 		InputStream generatedStream = null;
 		
 		try {
-			generatedStream = dataHandler.generateStream(theBinding, mimetype, null);
+			generatedStream = dataHandler.generateStream(theBinding, mimetype);
 			
 		} catch (IOException e) {
 			LOGGER.error("Failed to generate result inputstream.");

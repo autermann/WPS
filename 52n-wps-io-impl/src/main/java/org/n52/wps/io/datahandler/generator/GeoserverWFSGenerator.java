@@ -36,6 +36,7 @@ import javax.xml.transform.TransformerException;
 
 import org.apache.commons.httpclient.HttpException;
 import org.n52.wps.PropertyDocument.Property;
+import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfig;
 import org.n52.wps.commons.XMLUtil;
 import org.n52.wps.io.data.GenericFileData;
@@ -49,7 +50,7 @@ import org.w3c.dom.Element;
 
 public class GeoserverWFSGenerator extends AbstractGenerator {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(GeoserverWFSGenerator.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GeoserverWFSGenerator.class);
 	
 	private String username;
 	private String password;
@@ -58,11 +59,9 @@ public class GeoserverWFSGenerator extends AbstractGenerator {
 	
 	public GeoserverWFSGenerator() {
 		
-		super();
-		this.supportedIDataTypes.add(GTVectorDataBinding.class);
+		super(GTVectorDataBinding.class);
 		
-		properties = WPSConfig.getInstance().getPropertiesForGeneratorClass(this.getClass().getName());
-		for(Property property : properties){
+		for(Property property : WPSConfig.getInstance().getPropertiesForGeneratorClass(this.getClass().getName())){
 			if(property.getName().equalsIgnoreCase("Geoserver_username")){
 				username = property.getStringValue();
 			}
@@ -79,31 +78,20 @@ public class GeoserverWFSGenerator extends AbstractGenerator {
 		if(port == null){
 			port = WPSConfig.getInstance().getWPSConfig().getServer().getHostport();
 		}
-		for(String supportedFormat : supportedFormats){
-			if(supportedFormat.equals("text/xml")){
-				supportedFormats.remove(supportedFormat);
-			}
-		}
 	}
 
 	@Override
-	public InputStream generateStream(IData data, String mimeType, String schema) throws IOException {
+	public InputStream generateStream(IData data, Format format) throws IOException {
 	
 		InputStream stream = null;	
 		try {
 			Document doc = storeLayer(data);			
 			String xmlString = XMLUtil.nodeToString(doc);			
 			stream = new ByteArrayInputStream(xmlString.getBytes("UTF-8"));			
-	    } catch(TransformerException e){
+	    } catch( TransformerException | IOException | ParserConfigurationException e){
 	    	LOGGER.error("Error generating WFS output. Reason: ", e);
 	    	throw new RuntimeException("Error generating WFS output. Reason: " + e);
-	    } catch (IOException e) {
-	    	LOGGER.error("Error generating WFS output. Reason: ", e);
-	    	throw new RuntimeException("Error generating WFS output. Reason: " + e);
-		} catch (ParserConfigurationException e) {
-	    	LOGGER.error("Error generating WFS output. Reason: ", e);
-			throw new RuntimeException("Error generating WFS output. Reason: " + e);
-		}	
+	    }	
 		return stream;
 	}
 	
@@ -114,8 +102,7 @@ public class GeoserverWFSGenerator extends AbstractGenerator {
 			GenericFileData fileData = new GenericFileData(gtData.getPayload());
 			file = fileData.getBaseFile(true);
 		} catch (IOException e1) {
-			e1.printStackTrace();
-			throw new RuntimeException("Error generating shp file for storage in WFS. Reason: " + e1);
+			throw new RuntimeException("Error generating shp file for storage in WFS.", e1);
 		}
 		
 		//zip shp file

@@ -34,31 +34,30 @@ import java.util.UUID;
 
 import javax.media.jai.JAI;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.coverage.grid.io.imageio.GeoToolsWriteParams;
 import org.geotools.gce.geotiff.GeoTiffFormat;
 import org.geotools.gce.geotiff.GeoTiffWriteParams;
 import org.geotools.gce.geotiff.GeoTiffWriter;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
 import org.n52.wps.io.data.binding.complex.GeotiffBinding;
 import org.opengis.coverage.grid.GridCoverage;
 import org.opengis.parameter.GeneralParameterValue;
 import org.opengis.parameter.ParameterValueGroup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GeotiffGenerator  extends AbstractGenerator {
-	private static Logger LOGGER = LoggerFactory.getLogger(GeotiffGenerator.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GeotiffGenerator.class);
 	
 	public GeotiffGenerator() {
-		super();
-		supportedIDataTypes.add(GTRasterDataBinding.class);
-		supportedIDataTypes.add(GeotiffBinding.class);
+		super(GTRasterDataBinding.class, GeotiffBinding.class);
 	}
 	
-	public InputStream generateStream(IData data, String mimeType, String schema) throws IOException {
+	public InputStream generateStream(IData data, Format format) throws IOException {
 		
 //		// check for correct request before returning the stream
 //		if (!(this.isSupportedGenerate(data.getSupportedClass(), mimeType, schema))){
@@ -120,15 +119,10 @@ public class GeotiffGenerator  extends AbstractGenerator {
 		
 		
 		try {
-			geoTiffWriter.write(coverage, (GeneralParameterValue[])paramWrite.values().toArray(new
-					GeneralParameterValue[1]));
-		} catch (IllegalArgumentException e1) {
+			geoTiffWriter.write(coverage, paramWrite.values().toArray(new
+                    GeneralParameterValue[1]));
+		} catch (IllegalArgumentException | IndexOutOfBoundsException | IOException e1) {
 			LOGGER.error(e1.getMessage(), e1);
-			throw new RuntimeException(e1);
-		} catch (IndexOutOfBoundsException e1) {
-			LOGGER.error(e1.getMessage(), e1);
-			throw new RuntimeException(e1);
-		} catch (IOException e1) {LOGGER.error(e1.getMessage(), e1);
 			throw new RuntimeException(e1);
 		}
 	}

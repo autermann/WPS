@@ -21,7 +21,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA or
  * visit the Free Software Foundation web page, http://www.fsf.org.
  */
-
 package org.n52.wps.server.response;
 
 import java.io.InputStream;
@@ -31,14 +30,12 @@ import org.n52.wps.server.request.RetrieveResultRequest;
 
 public class RetrieveResultResponse extends Response {
 
-	public RetrieveResultResponse(RetrieveResultRequest request) {
-		super(request);	
-	}
+    public RetrieveResultResponse(RetrieveResultRequest request) {
+        super(request);
+    }
 
-	public InputStream getAsStream() throws ExceptionReport {
-		return (InputStream)request.getAttachedResult();		
-	}
-
-	
+    public InputStream getAsStream() throws ExceptionReport {
+        return (InputStream) request.getAttachedResult();
+    }
 
 }

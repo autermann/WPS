@@ -37,6 +37,7 @@ import org.geotools.feature.FeatureCollection;
 import org.n52.wps.client.ExecuteResponseAnalyser;
 import org.n52.wps.client.WPSClientException;
 import org.n52.wps.client.WPSClientSession;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 
@@ -72,7 +73,7 @@ public class WPSClientExample {
 					describeProcessDocument, inputs);
 
 			if (data instanceof GTVectorDataBinding) {
-				FeatureCollection featureCollection = ((GTVectorDataBinding) data)
+				FeatureCollection<?,?> featureCollection = ((GTVectorDataBinding) data)
 						.getPayload();
 				System.out.println(featureCollection.size());
 			}
@@ -144,8 +145,7 @@ public class WPSClientExample {
 							.addComplexData(
 									inputName,
 									data,
-									"http://schemas.opengis.net/gml/3.1.1/base/feature.xsd",
-									"UTF-8", "text/xml");
+                                    new Format("text/xml", "UTF-8", "http://schemas.opengis.net/gml/3.1.1/base/feature.xsd"));
 				}
 				// Complexdata Reference
 				if (inputValue instanceof String) {
@@ -153,8 +153,7 @@ public class WPSClientExample {
 							.addComplexDataReference(
 									inputName,
 									(String) inputValue,
-									"http://schemas.opengis.net/gml/3.1.1/base/feature.xsd",
-									"UTF-8", "text/xml");
+                                    new Format("text/xml", "UTF-8", "http://schemas.opengis.net/gml/3.1.1/base/feature.xsd"));
 				}
 
 				if (inputValue == null && input.getMinOccurs().intValue() > 0) {
@@ -175,8 +174,7 @@ public class WPSClientExample {
 			ExecuteResponseDocument response = (ExecuteResponseDocument) responseObject;
 			ExecuteResponseAnalyser analyser = new ExecuteResponseAnalyser(
 					execute, response, processDescription);
-			IData data = (IData) analyser.getComplexDataByIndex(0,
-					GTVectorDataBinding.class);
+			IData data = analyser.getComplexDataByIndex(0, GTVectorDataBinding.class);
 			return data;
 		}
 		throw new Exception("Exception: " + responseObject.toString());

@@ -24,12 +24,12 @@
 
 package org.n52.wps.server.algorithm;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import net.opengis.wps.x100.ProcessDescriptionType;
 
@@ -41,9 +41,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
-
 import org.n52.wps.commons.WPSConfig;
 import org.n52.wps.server.IAlgorithm;
 import org.slf4j.LoggerFactory;
@@ -61,9 +58,7 @@ public class SimpleBufferAlgorithmTest {
     public static void setUpClass() {
         try {
             WPSConfig.forceInitialization("../52n-wps-webapp/src/main/webapp/config/wps_config.xml");
-        } catch (XmlException ex) {
-            LoggerFactory.getLogger(SimpleBufferAlgorithmTest.class.getName()).error(ex.getMessage());
-        } catch (IOException ex) {
+        } catch (XmlException | IOException ex) {
             LoggerFactory.getLogger(SimpleBufferAlgorithmTest.class.getName()).error(ex.getMessage());
         }
     }
@@ -96,7 +91,7 @@ public class SimpleBufferAlgorithmTest {
     
     private boolean validateAlgorithmProcessDescription(IAlgorithm algorithm) {
         XmlOptions xmlOptions = new XmlOptions();
-        List<XmlValidationError> xmlValidationErrorList = new ArrayList<XmlValidationError>();
+        List<XmlValidationError> xmlValidationErrorList = new LinkedList<>();
             xmlOptions.setErrorListener(xmlValidationErrorList);
         boolean valid = algorithm.getDescription().validate(xmlOptions);
         if (!valid) {
@@ -114,7 +109,7 @@ public class SimpleBufferAlgorithmTest {
         XmlOptions options = new XmlOptions();
         options.setSavePrettyPrint();
         options.setSaveOuter();
-        HashMap ns = new HashMap();
+        HashMap<String,String> ns = new HashMap<>(2);
         ns.put("http://www.opengis.net/wps/1.0.0", "wps");
         ns.put("http://www.opengis.net/ows/1.1", "ows");
         options.setSaveNamespacesFirst().

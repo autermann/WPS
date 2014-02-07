@@ -30,7 +30,6 @@ import java.io.InputStream;
 import java.io.StringWriter;
 
 import org.geotools.feature.FeatureCollection;
-
 import org.n52.wps.io.data.GenericFileData;
 import org.n52.wps.io.data.IComplexData;
 import org.n52.wps.io.datahandler.generator.SimpleGMLGenerator;
@@ -76,7 +75,7 @@ public class GTVectorDataBinding implements IComplexData{
 		InputStream stream = new ByteArrayInputStream(((String) oos.readObject()).getBytes());
 		
 		// use a default configuration for the parser by requesting the first supported format and schema
-		GTVectorDataBinding data = parser.parse(stream, parser.getSupportedFormats()[0], parser.getSupportedEncodings()[0]);
+		GTVectorDataBinding data = parser.parse(stream, parser.getSupportedFormats().iterator().next());
 		
 		this.featureCollection = data.getPayload();
 	}

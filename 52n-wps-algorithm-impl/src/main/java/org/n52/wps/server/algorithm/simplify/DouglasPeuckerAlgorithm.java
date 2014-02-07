@@ -25,23 +25,23 @@
 package org.n52.wps.server.algorithm.simplify;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
 import org.geotools.feature.IllegalAttributeException;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.io.data.binding.literal.LiteralDoubleBinding;
-import org.n52.wps.server.AbstractAlgorithm;
 import org.n52.wps.server.AbstractSelfDescribingAlgorithm;
-import org.opengis.feature.Feature;
 import org.opengis.feature.simple.SimpleFeature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableMap;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.MultiLineString;
@@ -50,10 +50,11 @@ import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.simplify.DouglasPeuckerSimplifier;
 
 public class DouglasPeuckerAlgorithm extends AbstractSelfDescribingAlgorithm{
-	Logger LOGGER = LoggerFactory.getLogger(DouglasPeuckerAlgorithm.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(DouglasPeuckerAlgorithm.class);
 	
-	private List<String> errors = new ArrayList<String>();
+	private final List<String> errors = new LinkedList<>();
 	
+    @Override
 	public Map<String, IData> run(Map<String, List<IData>> inputData) {
 		if(inputData==null || !inputData.containsKey("FEATURES")){
 			throw new RuntimeException("Error while allocating input parameters");
@@ -118,26 +119,28 @@ public class DouglasPeuckerAlgorithm extends AbstractSelfDescribingAlgorithm{
 				throw new RuntimeException("geometrytype of result is not matching", e);
 			}
 		}
-		HashMap<String, IData> result = new HashMap<String, IData>();
-		result.put("SIMPLIFIED_FEATURES", new GTVectorDataBinding(featureCollection));
-		return result;
+		return ImmutableMap.of("SIMPLIFIED_FEATURES", (IData)new GTVectorDataBinding(featureCollection));
 	}
 
 	
+    @Override
 	public List<String> getErrors() {
-		return errors;
+		return Collections.unmodifiableList(errors);
 	}
 
-	public Class getInputDataType(String id) {
+    @Override
+	public Class<?> getInputDataType(String id) {
 		if(id.equalsIgnoreCase("FEATURES")){
 			return GTVectorDataBinding.class;
 		}else if(id.equalsIgnoreCase("TOLERANCE")){
 			return LiteralDoubleBinding.class;
-		}
+		}else {
 		return null;
+        }
 	}
 
-	public Class getOutputDataType(String id) {
+    @Override
+	public Class<?> getOutputDataType(String id) {
 		if(id.equalsIgnoreCase("SIMPLIFIED_FEATURES")){
 			return GTVectorDataBinding.class;
 		}
@@ -146,7 +149,7 @@ public class DouglasPeuckerAlgorithm extends AbstractSelfDescribingAlgorithm{
 
 	@Override
 	public List<String> getInputIdentifiers() {
-		List<String> identifierList =  new ArrayList<String>();
+		List<String> identifierList =  new ArrayList<>();
 		identifierList.add("FEATURES");
 		identifierList.add("TOLERANCE");
 		return identifierList;
@@ -154,7 +157,7 @@ public class DouglasPeuckerAlgorithm extends AbstractSelfDescribingAlgorithm{
 
 	@Override
 	public List<String> getOutputIdentifiers() {
-		List<String> identifierList =  new ArrayList<String>();
+		List<String> identifierList =  new ArrayList<>();
 		identifierList.add("SIMPLIFIED_FEATURES");
 		return identifierList;
 	}

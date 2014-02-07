@@ -27,9 +27,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import org.n52.wps.commons.Format;
+import org.n52.wps.io.data.binding.complex.JTSGeometryBinding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.n52.wps.io.data.binding.complex.JTSGeometryBinding;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.io.ParseException;
@@ -37,37 +38,36 @@ import com.vividsolutions.jts.io.WKTReader;
 
 /**
  * This class parses String representations out of JTS Geometries.
+ *
  * @author Benjamin Pross
  *
  */
 public class WKTParser extends AbstractParser {
 
-	private static Logger LOGGER = LoggerFactory.getLogger(WKTParser.class);
-	
-	public WKTParser() {
-		super();
-		supportedIDataTypes.add(JTSGeometryBinding.class);
-	}
-	
-	@Override
-	public JTSGeometryBinding parse(InputStream input, String mimeType, String schema) {
-		
-		try {
-			Geometry g = new WKTReader().read(new InputStreamReader(input));	
-			
-			return new JTSGeometryBinding(g);
-			
-		} catch (ParseException e) {
-			LOGGER.error(e.getMessage(), e);
-		}finally{
-			try {
-				input.close();
-			} catch (IOException e) {
-				LOGGER.error(e.getMessage(), e);
-			}
-		}
-		
-		return null;
-	}
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(WKTParser.class);
+
+    public WKTParser() {
+        super(JTSGeometryBinding.class);
+    }
+
+    @Override
+    public JTSGeometryBinding parse(InputStream input, Format format) {
+
+        try {
+            InputStreamReader reader = new InputStreamReader(input);
+            Geometry g = new WKTReader().read(reader);
+            return new JTSGeometryBinding(g);
+        } catch (ParseException e) {
+            LOGGER.error(e.getMessage(), e);
+        } finally {
+            try {
+                input.close();
+            } catch (IOException e) {
+                LOGGER.error(e.getMessage(), e);
+            }
+        }
+        return null;
+    }
 
 }

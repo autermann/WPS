@@ -23,24 +23,25 @@
  */
 package org.n52.wps.io.datahandler.parser;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.data.collection.ListFeatureCollection;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.geojson.feature.FeatureJSON;
 import org.geotools.geojson.geom.GeometryJSON;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.io.data.binding.complex.JTSGeometryBinding;
 import org.opengis.feature.simple.SimpleFeature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.google.common.io.CharStreams;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
 
@@ -54,30 +55,22 @@ import com.vividsolutions.jts.geom.GeometryCollection;
  */
 public class GeoJSONParser extends AbstractParser {
 
-	private static Logger LOGGER = LoggerFactory.getLogger(GeoJSONParser.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GeoJSONParser.class);
 
 	public GeoJSONParser() {
-		super();
-		supportedIDataTypes.add(JTSGeometryBinding.class);
-		supportedIDataTypes.add(GTVectorDataBinding.class);
+		super(JTSGeometryBinding.class, GTVectorDataBinding.class);
 	}
 
 	@Override
-	public IData parse(InputStream input, String mimeType, String schema) {
+	public IData parse(InputStream input, Format format) {
 
-		String geojsonstring = "";
-
-		String line = "";
-
-		BufferedReader breader = new BufferedReader(
-				new InputStreamReader(input));
-
+		String geojsonstring;
 		try {
-			while ((line = breader.readLine()) != null) {
-				geojsonstring = geojsonstring.concat(line);
-			}
+            geojsonstring = CharStreams.toString(new InputStreamReader(input,
+                format.getEncoding().or(DEFAULT_ENCODING)));
 		} catch (IOException e) {
 			LOGGER.error("Exception while reading inputstream.", e);
+            throw new RuntimeException(e);
 		} finally {
 			try {
 				input.close();

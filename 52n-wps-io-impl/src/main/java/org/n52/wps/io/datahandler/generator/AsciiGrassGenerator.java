@@ -30,28 +30,29 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.data.DataSourceException;
 import org.geotools.gce.arcgrid.ArcGridWriter;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
 import org.opengis.coverage.grid.GridCoverageWriter;
 import org.opengis.parameter.GeneralParameterValue;
 import org.opengis.parameter.ParameterValueGroup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AsciiGrassGenerator extends AbstractGenerator {
 
-	private static Logger LOGGER = LoggerFactory.getLogger(AsciiGrassGenerator.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(AsciiGrassGenerator.class);
 	
 	public AsciiGrassGenerator() {
-		super();
-		this.supportedIDataTypes.add(GTRasterDataBinding.class);
+		super(GTRasterDataBinding.class);
 	}
 	
-	public InputStream generateStream(IData data, String mimeType, String schema) throws IOException {
-		
+    @Override
+	public InputStream generateStream(IData data, Format format) throws IOException {
+
 //		// check for correct request before returning the stream
 //		if (!(this.isSupportedGenerate(data.getSupportedClass(), mimeType, schema))){
 //			throw new IOException("I don't support the incoming datatype");

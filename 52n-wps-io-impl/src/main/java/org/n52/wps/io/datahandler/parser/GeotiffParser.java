@@ -32,49 +32,54 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.data.DataSourceException;
 import org.geotools.factory.Hints;
 import org.geotools.gce.geotiff.GeoTiffReader;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GeotiffParser extends AbstractParser {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(GeotiffParser.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GeotiffParser.class);
 
 	public GeotiffParser() {
-		super();
-		supportedIDataTypes.add(GTRasterDataBinding.class);
+		super(GTRasterDataBinding.class);
 	}
 	
 	
 	@Override
-	public GTRasterDataBinding parse(InputStream input, String mimeType, String schema) {
+	public GTRasterDataBinding parse(InputStream input, Format format) {
 		
 		File tempFile;
 		
 		try {
             tempFile = File.createTempFile("tempfile" + UUID.randomUUID(),"tmp");
             finalizeFiles.add(tempFile); // mark for final delete
-			FileOutputStream outputStream = new FileOutputStream(tempFile);
-			byte buf[] = new byte[4096];
-			int len;
-			while ((len = input.read(buf)) > 0) {
-				outputStream.write(buf, 0, len);
-			}
-			
-			outputStream.flush();
-			outputStream.close();
-			input.close();
+            try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+                byte buf[] = new byte[4096];
+                int len;
+                while ((len = input.read(buf)) > 0) {
+                    outputStream.write(buf, 0, len);
+                }
+                
+                outputStream.flush();
+            }
 		} catch (FileNotFoundException e) {
 			LOGGER.error(e.getMessage(), e);
 			throw new RuntimeException(e);
 		} catch (IOException e1) {
 			LOGGER.error(e1.getMessage(), e1);
 			throw new RuntimeException(e1);
-		}
+		} finally {
+            try {
+                input.close();
+            } catch (IOException ex) {
+                LOGGER.error("error closing stream", ex);
+            }
+        }
 
 		return parseTiff(tempFile);
 
@@ -86,7 +91,7 @@ public class GeotiffParser extends AbstractParser {
 		GeoTiffReader reader;
 		try {
 			reader = new GeoTiffReader(file, hints);
-			GridCoverage2D coverage = (GridCoverage2D) reader.read(null);
+			GridCoverage2D coverage = reader.read(null);
 			return new GTRasterDataBinding(coverage);
 		} catch (DataSourceException e) {
 			LOGGER.error(e.getMessage(), e);

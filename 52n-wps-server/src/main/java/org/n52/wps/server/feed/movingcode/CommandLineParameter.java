@@ -26,6 +26,8 @@ package org.n52.wps.server.feed.movingcode;
 
 import java.util.LinkedList;
 
+import com.google.common.base.Joiner;
+
 /**
  * @author Matthias Mueller, TU Dresden
  *
@@ -43,7 +45,7 @@ public class CommandLineParameter {
 		suffix = suffixString;
 		separator = separatorString;
 		
-		values = new LinkedList<String>();
+		values = new LinkedList<>();
 		
 	}
 	
@@ -52,20 +54,11 @@ public class CommandLineParameter {
 	}
 	
 	public String getAsCommandString(){
-		String str = prefix;
-		
-		boolean firstrun = true;
-		for (String currentValue : values){
-			if (!firstrun){
-				str = str + separator + currentValue;
-			} else {
-				str = str + currentValue;
-				firstrun = false;
-			}
-		}
-		
-		str = str + suffix;
-		return str;
+        StringBuilder sb = new StringBuilder();
+        sb.append(prefix);
+        Joiner.on(separator).appendTo(sb, values);
+        sb.append(suffix);
+        return sb.toString();
 	}
 	
 	public String getAsPlainString(){

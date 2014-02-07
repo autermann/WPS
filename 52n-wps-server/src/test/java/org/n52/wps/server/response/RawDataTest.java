@@ -24,7 +24,6 @@
 package org.n52.wps.server.response;
 
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,6 +38,7 @@ import org.junit.Test;
 import org.n52.wps.commons.WPSConfig;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.bbox.GTReferenceEnvelope;
+import org.n52.wps.server.ExceptionReport;
 import org.n52.wps.server.IAlgorithm;
 import org.n52.wps.server.algorithm.test.DummyTestClass;
 
@@ -50,9 +50,9 @@ import org.n52.wps.server.algorithm.test.DummyTestClass;
  */
 public class RawDataTest {
 
-	IAlgorithm algorithm;
-	ProcessDescriptionType processDescription;
-	String identifier;
+	private IAlgorithm algorithm;
+	private ProcessDescriptionType processDescription;
+	private String identifier;
 	
     @BeforeClass
     public static void setUpClass() {
@@ -73,47 +73,23 @@ public class RawDataTest {
     }
     
     @Test
-    public void testBBoxRawDataOutputCRS(){
-    	
-    	IData envelope = new GTReferenceEnvelope(46,102,47,103, "EPSG:4326");
-    	
-    	InputStream is;
-    	
-    	try {
-			RawData bboxRawData = new RawData(envelope, "BBOXOutputData", null, null, null, identifier, processDescription);
-					
-			is = bboxRawData.getAsStream();
-			
-			XmlObject bboxXMLObject = XmlObject.Factory.parse(is);			
-			
-			assertTrue(bboxXMLObject != null);
-			
-			assertTrue(bboxXMLObject.getDomNode().getFirstChild().getNodeName().equals("wps:BoundingBoxData"));
-		} catch (Exception e) {
-			fail(e.getMessage());
-		}
+    public void testBBoxRawDataOutputCRS() throws ExceptionReport, XmlException, IOException {
+        IData envelope = new GTReferenceEnvelope(46, 102, 47, 103, "EPSG:4326");
+        RawData bboxRawData = new RawData(envelope, "BBOXOutputData", null, processDescription);
+        InputStream is = bboxRawData.getAsStream();
+        XmlObject bboxXMLObject = XmlObject.Factory.parse(is);
+        assertTrue(bboxXMLObject != null);
+        assertTrue(bboxXMLObject.getDomNode().getFirstChild().getNodeName().equals("wps:BoundingBoxData"));
     }
     
     @Test
-    public void testBBoxRawDataOutput(){
-    	
-    	IData envelope = new GTReferenceEnvelope(46,102,47,103, null);
-    	
-    	InputStream is;
-    	
-    	try {
-			RawData bboxRawData = new RawData(envelope, "BBOXOutputData", null, null, null, identifier, processDescription);
-					
-			is = bboxRawData.getAsStream();
-			
-			XmlObject bboxXMLObject = XmlObject.Factory.parse(is);			
-			
-			assertTrue(bboxXMLObject != null);
-			
-			assertTrue(bboxXMLObject.getDomNode().getFirstChild().getNodeName().equals("wps:BoundingBoxData"));
-		} catch (Exception e) {
-			fail(e.getMessage());
-		}
+    public void testBBoxRawDataOutput() throws ExceptionReport, XmlException, IOException{
+    	IData envelope = new GTReferenceEnvelope(46, 102, 47, 103, null);
+        RawData bboxRawData = new RawData(envelope, "BBOXOutputData", null, processDescription);
+        InputStream is = bboxRawData.getAsStream();
+        XmlObject bboxXMLObject = XmlObject.Factory.parse(is);
+        assertTrue(bboxXMLObject != null);
+        assertTrue(bboxXMLObject.getDomNode().getFirstChild().getNodeName().equals("wps:BoundingBoxData"));
     }
     
 }

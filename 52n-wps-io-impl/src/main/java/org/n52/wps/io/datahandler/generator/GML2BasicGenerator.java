@@ -36,12 +36,12 @@ import java.util.Map;
 
 import javax.xml.transform.TransformerException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.gml.producer.FeatureTransformer;
 import org.geotools.gml.producer.FeatureTransformer.FeatureTypeNamespaces;
 import org.n52.wps.PropertyDocument.Property;
+import org.n52.wps.commons.Format;
+import org.n52.wps.commons.WPSConfig;
 import org.n52.wps.io.SchemaRepository;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
@@ -49,6 +49,8 @@ import org.opengis.feature.Feature;
 import org.opengis.feature.type.FeatureType;
 import org.opengis.referencing.ReferenceIdentifier;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Theodor Foerster, ITC; Matthias Mueller, TU Dresden
@@ -56,21 +58,20 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
  */
 public class GML2BasicGenerator extends AbstractGenerator {
 	
+	private static final Logger LOGGER = LoggerFactory.getLogger(GML2BasicGenerator.class);
+
 	private boolean featureTransformerIncludeBounding;
 	private int featureTransformerDecimalPlaces;
-	
-	private static Logger LOGGER = LoggerFactory.getLogger(GML2BasicGenerator.class);
 		
 	
 	public GML2BasicGenerator(){
-		super();
-		supportedIDataTypes.add(GTVectorDataBinding.class);
+		super(GTVectorDataBinding.class);
 		
 		featureTransformerIncludeBounding = false;
 		featureTransformerDecimalPlaces = 4;
-		for(Property property : properties){
+		for(Property property : WPSConfig.getInstance().getPropertiesForGeneratorClass(getClass().getName())){
 			if(property.getName().equalsIgnoreCase("featureTransformerIncludeBounding")){
-				featureTransformerIncludeBounding = new Boolean(property.getStringValue());
+				featureTransformerIncludeBounding = Boolean.valueOf(property.getStringValue());
 				
 			}
 			if(property.getName().equalsIgnoreCase("featureTransformerDecimalPlaces")){
@@ -83,7 +84,7 @@ public class GML2BasicGenerator extends AbstractGenerator {
 	private void write(IData data, Writer writer) throws IOException {
 		FeatureCollection<?,?> fc = ((GTVectorDataBinding)data).getPayload();
 		// this might be a workaround... 
-		if(fc == null || fc.size() == 0) {
+		if(fc == null || fc.isEmpty()) {
 			writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
 			writer.write("<wfs:FeatureCollection xmlns:wfs=\"http://www.opengis.net/wfs\" xmlns:gml=\"http://www.opengis.net/gml\"/>");
 			writer.flush();
@@ -146,15 +147,13 @@ public class GML2BasicGenerator extends AbstractGenerator {
 	}
 	
 	@Override
-	public InputStream generateStream(IData data, String mimeType, String schema) throws IOException {
-		
+	public InputStream generateStream(IData data, Format format) throws IOException {
 		File tempFile = File.createTempFile("gml2", "xml");
 		finalizeFiles.add(tempFile);
-		FileWriter fw = new FileWriter(tempFile);
-		write(data, fw);
-		fw.close();
-		InputStream is = new FileInputStream(tempFile);
-		return is;
+        try (FileWriter fw = new FileWriter(tempFile)) {
+            write(data, fw);
+        }
+		return new FileInputStream(tempFile);
 		
 	}
 

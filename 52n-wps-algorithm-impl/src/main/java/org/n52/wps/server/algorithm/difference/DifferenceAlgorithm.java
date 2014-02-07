@@ -24,17 +24,15 @@
 
 package org.n52.wps.server.algorithm.difference;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import javax.xml.namespace.QName;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.geotools.feature.DefaultFeatureCollections;
 import org.geotools.feature.FeatureCollection;
 import org.n52.wps.io.GTHelper;
@@ -45,32 +43,35 @@ import org.n52.wps.server.AbstractSelfDescribingAlgorithm;
 import org.opengis.feature.Feature;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.vividsolutions.jts.geom.Geometry;
 
 
 
 public class DifferenceAlgorithm extends AbstractSelfDescribingAlgorithm {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(DifferenceAlgorithm.class);
-	
-	public DifferenceAlgorithm() {
-		super();
-	}
+	private static final Logger LOGGER = LoggerFactory.getLogger(DifferenceAlgorithm.class);
+    private static final String RESULT = "result";
+    private static final String POLYGONS2 = "Polygons2";
+    private static final String POLYGONS1 = "Polygons1";
+	private final List<String> errors = new LinkedList<>();
 
-	private List<String> errors = new ArrayList<String>();
+	@Override
 	public List<String> getErrors() {
-		return errors;
-	}
+        return Collections.unmodifiableList(errors);
+    }
 	
-	
-	
+    @Override
 	public Map<String, IData> run(Map<String, List<IData>> inputData) {
 		/*----------------------Polygons Input------------------------------------------*/
-		if(inputData==null || !inputData.containsKey("Polygons1")){
+		if(inputData==null || !inputData.containsKey(POLYGONS1)){
 			throw new RuntimeException("Error while allocating input parameters");
 		}
-		List<IData> dataList = inputData.get("Polygons1");
+		List<IData> dataList = inputData.get(POLYGONS1);
 		if(dataList == null || dataList.size() != 1){
 			throw new RuntimeException("Error while allocating input parameters");
 		}
@@ -79,10 +80,10 @@ public class DifferenceAlgorithm extends AbstractSelfDescribingAlgorithm {
 		FeatureCollection polygons = ((GTVectorDataBinding) firstInputData).getPayload();
 		
 		/*----------------------LineStrings Input------------------------------------------*/
-		if(inputData==null || !inputData.containsKey("Polygons2")){
+		if(!inputData.containsKey(POLYGONS2)){
 			throw new RuntimeException("Error while allocating input parameters");
 		}
-		List<IData> dataListLS = inputData.get("Polygons2");
+		List<IData> dataListLS = inputData.get(POLYGONS2);
 		if(dataListLS == null || dataListLS.size() != 1){
 			throw new RuntimeException("Error while allocating input parameters");
 		}
@@ -91,10 +92,9 @@ public class DifferenceAlgorithm extends AbstractSelfDescribingAlgorithm {
 		FeatureCollection lineStrings = ((GTVectorDataBinding) secondInputData).getPayload();
 		
 		
-		System.out.println("****************************************************************");
-		System.out.println("difference algorithm started");
-		System.out.println("polygons size = " + polygons.size());
-		System.out.println("lineStrings size = " + lineStrings.size());
+		LOGGER.info("difference algorithm started");
+		LOGGER.info("polygons size = " + polygons.size());
+		LOGGER.info("lineStrings size = " + lineStrings.size());
 		
 		FeatureCollection featureCollection = DefaultFeatureCollections.newCollection();
 		
@@ -108,7 +108,7 @@ public class DifferenceAlgorithm extends AbstractSelfDescribingAlgorithm {
 		
 			Iterator lineStringIterator = lineStrings.iterator();
 			int i = 1;
-			System.out.println("Polygon = " + j +"/"+ polygons.size());
+			LOGGER.debug("Polygon = " + j +"/"+ polygons.size());
 			SimpleFeatureType featureType = null; 
 			while(lineStringIterator.hasNext()){
 				SimpleFeature lineString = (SimpleFeature) lineStringIterator.next();
@@ -129,7 +129,7 @@ public class DifferenceAlgorithm extends AbstractSelfDescribingAlgorithm {
 					if(resultFeature!=null){
 								
 						featureCollection.add(resultFeature);
-						System.out.println("result feature added. resultCollection = " + featureCollection.size());
+						LOGGER.debug("result feature added. resultCollection = " + featureCollection.size());
 					}
 				}catch(Exception e){
 						e.printStackTrace();
@@ -142,39 +142,27 @@ public class DifferenceAlgorithm extends AbstractSelfDescribingAlgorithm {
 			//	break;
 			//}
 		}
-		
-		
-		HashMap<String,IData> resulthash = new HashMap<String,IData>();
-		resulthash.put("result", new GTVectorDataBinding(featureCollection));
-		return resulthash;
+		return ImmutableMap.of(RESULT, (IData) new GTVectorDataBinding(featureCollection));
 	}
 	
-
-	
-	
-	
-	public Class getInputDataType(String id) {
+    @Override
+	public Class<?> getInputDataType(String id) {
 		return GTVectorDataBinding.class;
-	
 	}
 
-	public Class getOutputDataType(String id) {
+    @Override
+	public Class<?> getOutputDataType(String id) {
 		return GTVectorDataBinding.class;
 	}
 	
 	@Override
 	public List<String> getInputIdentifiers() {
-		List<String> identifierList =  new ArrayList<String>();
-		identifierList.add("Polygons1");
-		identifierList.add("Polygons2");
-		return identifierList;
+		return ImmutableList.of(POLYGONS1, POLYGONS2);
 	}
 
 	@Override
 	public List<String> getOutputIdentifiers() {
-		List<String> identifierList =  new ArrayList<String>();
-		identifierList.add("result");
-		return identifierList;
+		return ImmutableList.of(RESULT);
 	}
 	
 }

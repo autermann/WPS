@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -40,14 +41,16 @@ import net.opengis.wps.x100.ProcessDescriptionsDocument;
 import net.opengis.wps.x100.SupportedComplexDataInputType;
 import net.opengis.wps.x100.SupportedComplexDataType;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.xmlbeans.XmlException;
+import org.n52.wps.commons.Format;
+import org.n52.wps.commons.XmlConstants;
 import org.n52.wps.io.IOHandler;
 import org.n52.wps.io.data.GenericFileDataConstants;
 import org.n52.wps.io.datahandler.parser.GenericFileParser;
 import org.n52.wps.server.grass.io.GrassIOHandler;
 import org.n52.wps.server.grass.util.JavaProcessStreamReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Benjamin Pross (bpross-52n)
@@ -55,6 +58,8 @@ import org.n52.wps.server.grass.util.JavaProcessStreamReader;
  */
 public class GrassProcessDescriptionCreator {
 	
+	private static final Logger LOGGER = LoggerFactory.getLogger(GrassProcessDescriptionCreator.class);
+
 	private final String fileSeparator = System.getProperty("file.separator");
 	private final String lineSeparator = System.getProperty("line.separator");
 	private String grassHome = "";
@@ -63,12 +68,10 @@ public class GrassProcessDescriptionCreator {
 	private String addonPath = "";	
 
 	private String[] envp = null;
-	
-	private static Logger LOGGER = LoggerFactory.getLogger(GrassProcessDescriptionCreator.class);
 	private final String wpsProcessDescCmd = " --wps-process-description";
-	private Runtime rt = Runtime.getRuntime();
-	private ExecutorService executor = Executors.newFixedThreadPool(10);
-	private String gisrcDir;
+	private final Runtime rt = Runtime.getRuntime();
+	private final ExecutorService executor = Executors.newFixedThreadPool(10);
+	private final String gisrcDir;
 
 	public GrassProcessDescriptionCreator() {
 
@@ -162,7 +165,7 @@ public class GrassProcessDescriptionCreator {
 			errorLine = errorReader.readLine();
 		}
 
-		if (errors != "") {
+		if (!"".equals(errors)) {
 			LOGGER.error("Error while creating processdescription for process "
 					+ identifier + ": " + errors);
 		}
@@ -206,23 +209,17 @@ public class GrassProcessDescriptionCreator {
 
 				if (schema != null) {
 
-					if (schema
-							.contains("http://schemas.opengis.net/gml/2.0.0/feature.xsd")
-							|| schema
-									.contains("http://schemas.opengis.net/gml/2.1.1/feature.xsd")
-							|| schema
-									.contains("http://schemas.opengis.net/gml/2.1.2/feature.xsd")
-							|| schema
-									.contains("http://schemas.opengis.net/gml/2.1.2.1/feature.xsd")
-							|| schema
-									.contains("http://schemas.opengis.net/gml/3.0.0/base/feature.xsd")
-							|| schema
-									.contains("http://schemas.opengis.net/gml/3.0.1/base/feature.xsd")
-							|| schema
-									.contains("http://schemas.opengis.net/gml/3.1.1/base/feature.xsd")) {
+                    if (schema.contains(XmlConstants.SCHEMA_LOCATION_GML_2_0_0) ||
+                        schema.contains(XmlConstants.SCHEMA_LOCATION_GML_2_1_1) ||
+                        schema.contains(XmlConstants.SCHEMA_LOCATION_GML_2_1_2) ||
+                        schema.contains(XmlConstants.SCHEMA_LOCATION_GML_2_1_2_1) ||
+                        schema.contains(XmlConstants.SCHEMA_LOCATION_GML_3_0_0) ||
+                        schema.contains(XmlConstants.SCHEMA_LOCATION_GML_3_0_1) ||
+                        schema.contains(XmlConstants.SCHEMA_LOCATION_GML_3_1_1)) {
 
-						ComplexDataDescriptionType xZippedShapeType = outputType.getSupported().addNewFormat();
-																		
+                        ComplexDataDescriptionType xZippedShapeType = outputType
+                                .getSupported().addNewFormat();
+										
 						xZippedShapeType.setMimeType(IOHandler.MIME_TYPE_ZIPPED_SHP);
 						xZippedShapeType.setEncoding(IOHandler.ENCODING_BASE64);
 
@@ -252,7 +249,7 @@ public class GrassProcessDescriptionCreator {
 			return;
 		}
 		
-		String[] genericFileParserMimeTypes = new GenericFileParser().getSupportedFormats();
+		Set<Format> genericFileParserMimeTypes = new GenericFileParser().getSupportedFormats();
 		
 		ComplexDataDescriptionType[] supportedTypes = complexData.getSupported().getFormatArray();
 		
@@ -262,11 +259,11 @@ public class GrassProcessDescriptionCreator {
 			String supportedEncoding = complexDataDescriptionType.getEncoding();
 			
 			if(supportedMimeType != null && supportedEncoding == null){			
-				for (String mimeType : genericFileParserMimeTypes) {
-					if(mimeType.equals(IOHandler.MIME_TYPE_ZIPPED_SHP)){
+				for (Format format : genericFileParserMimeTypes) {
+					if(format.hasMimeType(IOHandler.MIME_TYPE_ZIPPED_SHP)){
 						continue;
 					}
-					if(mimeType.equals(supportedMimeType)){					
+					if(format.hasMimeType(supportedMimeType)){
 						ComplexDataDescriptionType base64Format = complexData.getSupported().addNewFormat();						
 						base64Format.setMimeType(supportedMimeType);
 						base64Format.setEncoding(IOHandler.ENCODING_BASE64);
@@ -284,14 +281,14 @@ public class GrassProcessDescriptionCreator {
 			return;
 		}
 		
-		if(complexData.getDefault().getFormat().getSchema() != null && complexData.getDefault().getFormat().getSchema().equals("http://schemas.opengis.net/kml/2.2.0/ogckml22.xsd")){
+		if(complexData.getDefault().getFormat().getSchema() != null && complexData.getDefault().getFormat().getSchema().equals(XmlConstants.SCHEMA_LOCATION_KML_2_2_0)){
 			complexData.getDefault().getFormat().setMimeType(GenericFileDataConstants.MIME_TYPE_KML);
 			return; 
 		}
 		ComplexDataDescriptionType[] supportedTypes = complexData.getSupported().getFormatArray();
 		
 		for (ComplexDataDescriptionType complexDataDescriptionType : supportedTypes) {
-			if(complexDataDescriptionType.getSchema() != null && complexDataDescriptionType.getSchema().equals("http://schemas.opengis.net/kml/2.2.0/ogckml22.xsd")){
+			if(complexDataDescriptionType.getSchema() != null && complexDataDescriptionType.getSchema().equals(XmlConstants.SCHEMA_LOCATION_KML_2_2_0)){
 				complexDataDescriptionType.setMimeType(GenericFileDataConstants.MIME_TYPE_KML);
 				return;
 			}
@@ -309,7 +306,7 @@ public class GrassProcessDescriptionCreator {
 		ComplexDataDescriptionType[] supportedTypes = complexData.getSupported().getFormatArray();
 		
 		for (ComplexDataDescriptionType complexDataDescriptionType : supportedTypes) {
-			if(complexDataDescriptionType.getSchema() != null && complexDataDescriptionType.getSchema().equals("http://schemas.opengis.net/gml/2.1.2/feature.xsd")){
+			if(complexDataDescriptionType.getSchema() != null && complexDataDescriptionType.getSchema().equals(XmlConstants.SCHEMA_LOCATION_GML_2_1_2)){
 				inputDescriptionType.getComplexData().getSupported().addNewFormat().setMimeType(IOHandler.MIME_TYPE_ZIPPED_SHP);
 				return;
 			}
@@ -325,14 +322,14 @@ public class GrassProcessDescriptionCreator {
 			return;
 		}
 		
-		if(complexData.getDefault().getFormat().getSchema() != null && complexData.getDefault().getFormat().getSchema().equals("http://schemas.opengis.net/kml/2.2.0/ogckml22.xsd")){
+		if(complexData.getDefault().getFormat().getSchema() != null && complexData.getDefault().getFormat().getSchema().equals(XmlConstants.SCHEMA_LOCATION_KML_2_2_0)){
 			complexData.getDefault().getFormat().setMimeType(GenericFileDataConstants.MIME_TYPE_KML);
 			return; 
 		}
 		ComplexDataDescriptionType[] supportedTypes = complexData.getSupported().getFormatArray();
 		
 		for (ComplexDataDescriptionType complexDataDescriptionType : supportedTypes) {
-			if(complexDataDescriptionType.getSchema() != null && complexDataDescriptionType.getSchema().equals("http://schemas.opengis.net/kml/2.2.0/ogckml22.xsd")){
+			if(complexDataDescriptionType.getSchema() != null && complexDataDescriptionType.getSchema().equals(XmlConstants.SCHEMA_LOCATION_KML_2_2_0)){
 				complexDataDescriptionType.setMimeType(GenericFileDataConstants.MIME_TYPE_KML);
 				return;
 			}

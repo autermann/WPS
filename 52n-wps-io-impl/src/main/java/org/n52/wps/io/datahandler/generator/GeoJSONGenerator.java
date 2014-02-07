@@ -31,6 +31,7 @@ import java.io.InputStream;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.geojson.feature.FeatureJSON;
 import org.geotools.geojson.geom.GeometryJSON;
+import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.io.data.binding.complex.JTSGeometryBinding;
@@ -39,47 +40,47 @@ import com.vividsolutions.jts.geom.Geometry;
 
 /**
  * This class generates a GeoJSON String representation out of a JTS Geometry.
+ *
  * @author BenjaminPross(bpross-52n)
  *
  */
 public class GeoJSONGenerator extends AbstractGenerator {
 
-	public GeoJSONGenerator(){
-		super();
-		supportedIDataTypes.add(JTSGeometryBinding.class);
-		supportedIDataTypes.add(GTVectorDataBinding.class);
-	}
-	
-	@Override
-	public InputStream generateStream(IData data, String mimeType, String schema)
-			throws IOException {
-		
-		if(data instanceof JTSGeometryBinding){
-			Geometry g = ((JTSGeometryBinding)data).getPayload();
-			
-			File tempFile = File.createTempFile("wps", "json");
-			finalizeFiles.add(tempFile); // mark for final delete
-			
-			 new GeometryJSON().write(g, tempFile);
-					
-			InputStream is = new FileInputStream(tempFile);
-			
-			return is;
-		}else if(data instanceof GTVectorDataBinding){
-			
-			SimpleFeatureCollection f = (SimpleFeatureCollection)data.getPayload();
-			
-			File tempFile = File.createTempFile("wps", "json");
-			finalizeFiles.add(tempFile); // mark for final delete
-			
-			 new FeatureJSON().writeFeatureCollection(f, tempFile);
-					
-			InputStream is = new FileInputStream(tempFile);
-			
-			return is;
-		}
-		
-		return null;
-	}
+    public GeoJSONGenerator() {
+        super(JTSGeometryBinding.class, GTVectorDataBinding.class);
+    }
+
+    @Override
+    public InputStream generateStream(IData data, Format format)
+            throws IOException {
+
+        if (data instanceof JTSGeometryBinding) {
+            Geometry g = ((JTSGeometryBinding) data).getPayload();
+
+            File tempFile = File.createTempFile("wps", "json");
+            finalizeFiles.add(tempFile); // mark for final delete
+
+            new GeometryJSON().write(g, tempFile);
+
+            InputStream is = new FileInputStream(tempFile);
+
+            return is;
+        } else if (data instanceof GTVectorDataBinding) {
+
+            SimpleFeatureCollection f = (SimpleFeatureCollection) data
+                    .getPayload();
+
+            File tempFile = File.createTempFile("wps", "json");
+            finalizeFiles.add(tempFile); // mark for final delete
+
+            new FeatureJSON().writeFeatureCollection(f, tempFile);
+
+            InputStream is = new FileInputStream(tempFile);
+
+            return is;
+        }
+
+        return null;
+    }
 
 }
