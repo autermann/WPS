@@ -1,83 +1,247 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
 	<parent>
 		<artifactId>52-North</artifactId>
 		<groupId>org.n52</groupId>
 		<version>5.6.6</version>
 	</parent>
-	<modelVersion>4.0.0</modelVersion>
+
 	<groupId>org.n52.wps</groupId>
-	<artifactId>52n-wps-parent</artifactId>
-	<packaging>pom</packaging>
-	<name>52North Web Processing Service</name>
+	<artifactId>52n-wps</artifactId>
 	<version>3.3.0-SNAPSHOT</version>
-	<description>
-		52 North processing provides different tools for web based
-		processing in context of the OGC WPS specification.
-	</description>
+	<packaging>pom</packaging>
+
+	<name>52North Web Processing Service</name>
+	<inceptionYear>2007</inceptionYear>
+
+	<description>52 North processing provides different tools for web based processing in context of the OGC WPS specification.</description>
+
 	<url>http://52north.org/wps</url>
+
 	<issueManagement>
 		<system>Bugzilla</system>
-		<url>
-			https://bugzilla.52north.org/
-		</url>
+		<url>https://bugzilla.52north.org/</url>
 	</issueManagement>
+
 	<licenses>
 		<license>
 			<name>GNU GENERAL PUBLIC LICENSE Version 2, June 1991</name>
 			<url>http://www.gnu.org/licenses/gpl-2.0.txt</url>
 		</license>
 	</licenses>
-	<inceptionYear>2007</inceptionYear>
+
 	<scm>
-		<!-- Specification of the Source-Content-Managementsystem -->
 		<connection>scm:git:git://github.com/52North/WPS.git</connection>
 		<url>https://github.com/52North/WPS</url>
 		<developerConnection>scm:git:ssh://git@github.com/52North/WPS.git</developerConnection>
 	</scm>
+
+	<mailingLists>
+		<mailingList>
+			<name>Geoprocessing</name>
+			<archive>http://list.52north.org/pipermail/geoprocessingservices/</archive>
+			<post>geoprocessingservices@52north.org</post>
+			<subscribe>http://list.52north.org/mailman/listinfo/geoprocessingservices</subscribe>
+			<unsubscribe>http://list.52north.org/mailman/listinfo/geoprocessingservices</unsubscribe>
+		</mailingList>
+		<mailingList>
+			<name>Geoprocessing Commits</name>
+			<archive>http://list.52north.org/pipermail/geoprocessing-commits</archive>
+			<post>geoprocessing-commits@52north.org</post>
+			<subscribe>http://list.52north.org/mailman/listinfo/geoprocessing-commits</subscribe>
+			<unsubscribe>http://list.52north.org/mailman/listinfo/geoprocessing-commits</unsubscribe>
+		</mailingList>
+	</mailingLists>
+
 	<repositories>
 		<repository>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-			<id>geotools</id>
-			<name>Geotools Repo</name>
-			<url>http://download.osgeo.org/webdav/geotools</url>
-		</repository>
-		<repository>
 			<id>n52-releases</id>
-			<name>52n Releases</name>
+			<name>52N Release Repository</name>
 			<url>http://52north.org/maven/repo/releases</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
 		</repository>
 		<repository>
-			<id>Apache</id>
-			<name>Apache repository</name>
-			<url>http://repo1.maven.org/maven2</url>
+			<id>n52-snapshots</id>
+			<name>52N Snapshot Repository</name>
+			<url>http://52north.org/maven/repo/snapshots</url>
+			<snapshots><enabled>true</enabled></snapshots>
 		</repository>
 		<repository>
-			<id>OpenGEO</id>
-			<name>opengeo repository</name>
+			<id>opengeo</id>
+			<name>OpenGeo Repository</name>
 			<url>http://repo.opengeo.org</url>
+		</repository>
+		<repository>
+			<id>geotools</id>
+			<name>Geotools Repository</name>
+			<url>http://download.osgeo.org/webdav/geotools</url>
+			<releases><enabled>true</enabled></releases>
+			<snapshots><enabled>true</enabled></snapshots>
 		</repository>
 	</repositories>
 	<build>
 		<pluginManagement>
 			<plugins>
+
 				<plugin>
-					<artifactId>maven-compiler-plugin</artifactId>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>2.4</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>2.6</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-clean-plugin</artifactId>
+					<version>2.5</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>2.16</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-install-plugin</artifactId>
 					<version>2.5.1</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-site-plugin</artifactId>
+					<version>3.3</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-assembly-plugin</artifactId>
+					<version>2.4</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-deploy-plugin</artifactId>
+					<version>2.8.1</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.1</version>
 					<configuration>
 						<source>1.7</source>
 						<target>1.7</target>
-						<encoding>${project.build.sourceEncoding}</encoding>
+						<compilerArgument>-Xlint:all</compilerArgument>
+						<showWarnings>true</showWarnings>
+						<showDeprecation>true</showDeprecation>
+					</configuration>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-gpg-plugin</artifactId>
+					<version>1.4</version>
+					<configuration>
+						<useAgent>true</useAgent>
+					</configuration>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-javadoc-plugin</artifactId>
+					<version>2.9.1</version>
+					<configuration>
+						<show>package</show>
+						<author>false</author>
+						<quiet>true</quiet>
+					</configuration>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-source-plugin</artifactId>
+					<version>2.2.1</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-dependency-plugin</artifactId>
+					<version>2.8</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-enforcer-plugin</artifactId>
+					<version>1.3.1</version>
+					<configuration>
+						<rules>
+							<requireJavaVersion>
+								<version>1.7</version>
+							</requireJavaVersion>
+							<requirePluginVersions>
+								<message>Best Practice is to always define plugin versions!</message>
+								<banLatest>true</banLatest>
+								<banRelease>true</banRelease>
+								<banSnapshots>true</banSnapshots>
+								<phases>clean,deploy</phases>
+							</requirePluginVersions>
+						</rules>
+					</configuration>
+				</plugin>
+
+				<plugin>
+					<groupId>org.jasig.maven</groupId>
+					<artifactId>maven-notice-plugin</artifactId>
+					<version>1.0.6.1</version>
+					<configuration>
+						<noticeTemplate>misc/licenses/NOTICE.template</noticeTemplate>
+						<licenseMapping>
+							<param>misc/licenses/license-mappings.xml</param>
+						</licenseMapping>
+						<generateChildNotices>false</generateChildNotices>
+					</configuration>
+				</plugin>
+
+				<plugin>
+					<groupId>com.mycila</groupId>
+					<artifactId>license-maven-plugin</artifactId>
+					<version>2.5</version>
+					<configuration>
+						<header>misc/licenses/license_header.txt</header>
+						<aggregate>true</aggregate>
+						<properties>
+							<inceptionYear>${project.inceptionYear}</inceptionYear>
+							<latestYearOfContribution>${currentYear}</latestYearOfContribution>
+						</properties>
+						<includes>
+							<include>src/**/*.java</include>
+						</includes>
+						<excludes>
+							<exclude>**/LargeBufferStream.java</exclude>
+						</excludes>
+					</configuration>
+				</plugin>
+
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>buildnumber-maven-plugin</artifactId>
+					<version>1.2</version>
+					<configuration>
+						<getRevisionOnlyOnce>true</getRevisionOnlyOnce>
+						<shortRevisionLength>8</shortRevisionLength>
+						<doCheck>false</doCheck>
+						<doUpdate>false</doUpdate>
+						<timestampFormat>{0,date,yyyy-MM-dd HH:mm:ss}</timestampFormat>
+						<revisionOnScmFailure>0</revisionOnScmFailure>
 					</configuration>
 				</plugin>
 			</plugins>
@@ -89,9 +253,10 @@
 					<descriptor>src/main/assembly/assembly.xml</descriptor>
 				</configuration>
 			</plugin>
+
 			<plugin>
 				<artifactId>maven-scm-plugin</artifactId>
-				<version>1.0-rc1</version>
+				<version>1.8.1</version>
 				<configuration>
 					<connectionType>connection</connectionType>
 					<runChangeLog>true</runChangeLog>
@@ -99,10 +264,10 @@
 					<!--checkoutDirectory>${basedir}/src</checkoutDirectory -->
 				</configuration>
 			</plugin>
+
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>buildnumber-maven-plugin</artifactId>
-				<version>1.1</version>
 				<executions>
 					<execution>
 						<phase>validate</phase>
@@ -111,32 +276,12 @@
 						</goals>
 					</execution>
 				</executions>
-				<configuration>
-					<getRevisionOnlyOnce>true</getRevisionOnlyOnce>
-					<shortRevisionLength>8</shortRevisionLength>
-					<doCheck>false</doCheck>
-					<doUpdate>false</doUpdate>
-					<timestampFormat>{0,date,yyyy-MM-dd HH:mm:ss}</timestampFormat>
-					<revisionOnScmFailure>0</revisionOnScmFailure>
-				</configuration>
 			</plugin>
+
 			<plugin>
 				<groupId>com.mycila</groupId>
 				<artifactId>license-maven-plugin</artifactId>
-				<configuration>
-					<header>misc/licenses/license_header.txt</header>
-					<aggregate>true</aggregate>
-					<properties>
-						<inceptionYear>${project.inceptionYear}</inceptionYear>
-						<latestYearOfContribution>${currentYear}</latestYearOfContribution>
-					</properties>
-					<includes>
-						<include>src/**/*.java</include>
-					</includes>
-					<excludes>
-						<exclude>**/LargeBufferStream.java</exclude>
-					</excludes>
-				</configuration>
+				<inherited>false</inherited>
 				<executions>
 					<execution>
 						<phase>initialize</phase>
@@ -146,19 +291,13 @@
 					</execution>
 				</executions>
 			</plugin>
+
 			<plugin>
 				<groupId>org.jasig.maven</groupId>
 				<artifactId>maven-notice-plugin</artifactId>
-				<configuration>
-					<noticeTemplate>misc/licenses/NOTICE.template</noticeTemplate>
-					<licenseMapping>
-						<param>misc/licenses/license-mappings.xml</param>
-					</licenseMapping>
-					<generateChildNotices>false</generateChildNotices>
-				</configuration>
+				<inherited>false</inherited>
 				<executions>
 					<execution>
-						<id>check-licenses</id>
 						<phase>initialize</phase>
 						<goals>
 							<goal>check</goal>
@@ -166,29 +305,70 @@
 					</execution>
 				</executions>
 			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>analyze-only</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 	<modules>
-		<module>52n-wps-commons</module>
-		<module>52n-wps-io</module>
-		<module>52n-wps-io-impl</module>
-		<module>52n-wps-server</module>
-		<module>52n-wps-server-soap</module>
-		<module>52n-wps-algorithm</module>
 		<module>52n-wps-algorithm-impl</module>
-		<module>52n-wps-database</module>
-		<!-- module>52n-wps-unicore</module -->
-		<!-- module>52n-wps-gridgain</module -->
-		<module>52n-wps-webapp</module>
+		<module>52n-wps-algorithm</module>
 		<module>52n-wps-client-lib</module>
-		<module>52n-wps-sextante</module>
-		<module>52n-wps-grass</module>
+		<module>52n-wps-commons</module>
+		<module>52n-wps-database</module>
+		<module>52n-wps-io-impl</module>
+		<module>52n-wps-io</module>
+		<module>52n-wps-server-soap</module>
+		<module>52n-wps-server</module>
 		<module>52n-wps-transactional</module>
 		<module>52n-wps-webadmin</module>
-		<module>52n-wps-ags</module>
-		<module>52n-wps-python</module>
-		<module>52n-wps-r</module>
-		<module>52n-wps-mc</module>
+		<module>52n-wps-webapp</module>
+		<module>backends</module>
 	</modules>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -198,8 +378,8 @@
 		<apache.ode.version>1.3.3</apache.ode.version>
 		<apache.axis2.version>1.5.1</apache.axis2.version>
 		<currentYear>2014</currentYear> <!-- manual setting -->
-        <maven.build.timestamp.format>yyyy</maven.build.timestamp.format>
-        <currentYearDynamic>${maven.build.timestamp}</currentYearDynamic>
+		<maven.build.timestamp.format>yyyy</maven.build.timestamp.format>
+		<currentYearDynamic>${maven.build.timestamp}</currentYearDynamic>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -255,7 +435,7 @@
 			<dependency>
 				<groupId>commons-logging</groupId>
 				<artifactId>commons-logging</artifactId>
-				<version>1.0.4</version>
+				<version>1.1.3</version>
 				<!-- provided due to use of slf4j bridge -->
 				<scope>provided</scope>
 			</dependency>
@@ -807,7 +987,7 @@
 				<version>1.0.2</version>
 			</dependency>
 			<dependency>
-				<groupId>kxml2</groupId>
+				<groupId>net.sf.kxml</groupId>
 				<artifactId>kxml2</artifactId>
 				<version>2.2.2</version>
 			</dependency>

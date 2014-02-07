@@ -92,21 +92,24 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 
 public class ConvexHullAlgorithm extends AbstractSelfDescribingAlgorithm {
 
-	Logger LOGGER = LoggerFactory.getLogger(ConvexHullAlgorithm.class);
-	private List<String> errors = new ArrayList<String>();
+	private static final Logger LOGGER = LoggerFactory.getLogger(ConvexHullAlgorithm.class);
+	private final List<String> errors = new ArrayList<>();
 
+    @Override
 	public List<String> getErrors() {
 		return errors;
 	}
 
-	public Class getInputDataType(String id) {
+    @Override
+	public Class<?> getInputDataType(String id) {
 		if (id.equalsIgnoreCase("FEATURES")) {
 			return GTVectorDataBinding.class;
 		}
 		return null;
 	}
 
-	public Class getOutputDataType(String id) {
+    @Override
+	public Class<?> getOutputDataType(String id) {
 		return GTVectorDataBinding.class;
 	}
 	

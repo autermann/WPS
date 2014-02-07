@@ -1,16 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<!-- $Id: pom.xml 2767 2012-12-05 11:32:20Z TomKunicki $ -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
 	<parent>
 		<groupId>org.n52.wps</groupId>
-		<artifactId>52n-wps-parent</artifactId>
+		<artifactId>52n-wps</artifactId>
 		<version>3.3.0-SNAPSHOT</version>
 	</parent>
-	<modelVersion>4.0.0</modelVersion>
+
 	<artifactId>52n-wps-io-impl</artifactId>
-	<packaging>jar</packaging>
+
 	<name>52North WPS Input/Output Implementation</name>
 	<description>Implementation of the input/output API for WPS service</description>
+
 	<repositories>
 		<repository>
 			<id>osgeo</id>
@@ -18,16 +21,35 @@
 			<url>http://download.osgeo.org/webdav/geotools/</url>
 		</repository>
 		<repository>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
 			<id>opengeo</id>
 			<name>OpenGeo Maven Repository</name>
 			<url>http://repo.opengeo.org</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
 		</repository>
 	</repositories>
+
 	<dependencies>
-		<!-- Dependencies for Scope 'compile' -->
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>52n-wps-commons</artifactId>
+			<classifier>tests</classifier>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>52n-wps-commons</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>52n-wps-io</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>ogckml2.2</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>
@@ -84,8 +106,6 @@
 			<groupId>org.geotools</groupId>
 			<artifactId>gt-geojson</artifactId>
 		</dependency>
-		<!-- deprecated <dependency> <groupId>sapience</groupId> <artifactId>sapience-streams-kml</artifactId>
-			<version>0.1-SNAPSHOT</version> </dependency> -->
 		<dependency>
 			<groupId>org.n52.wps</groupId>
 			<artifactId>gmlpacket-2.0</artifactId>
@@ -110,18 +130,6 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>52n-wps-commons</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>52n-wps-io</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>ogckml2.2</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>axis</groupId>
@@ -150,12 +158,6 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-simple</artifactId>
-            <scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>52n-wps-commons</artifactId>
-			<classifier>tests</classifier>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

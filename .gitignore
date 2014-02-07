@@ -1,10 +1,8 @@
-target/
 **/target/
-nbactions*.xml
-**/nbactions*.xml
-nb-configuration*.xml
-**/nb-configuration*.xml
+**/nb-*.xml
 .settings
 .project
 .classpath
 .Rhistory
+/backends/moving-code/target/
+/backends/ags/target/

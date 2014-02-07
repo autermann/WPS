@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.n52.wps</groupId>
+		<artifactId>52n-wps-backends</artifactId>
+		<version>3.3.0-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>52n-wps-sextante</artifactId>
+
+	<name>52North WPS Sextante Backend</name>
+	<description>Exposing of the Sextante Libraries as WPS processes</description>
+	<inceptionYear>2008</inceptionYear>
+
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>commons-logging</groupId>
+			<artifactId>commons-logging</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>52n-wps-algorithm</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>es.unex.sextante</groupId>
+			<artifactId>sextante</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>es.unex.sextante</groupId>
+			<artifactId>sextante_gui</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>es.unex.sextante</groupId>
+			<artifactId>sextante_algorithms</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>es.unex.sextante</groupId>
+			<artifactId>libMath</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>es.unex.sextante</groupId>
+			<artifactId>sextante_gt27_bindings</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.beanshell</groupId>
+			<artifactId>bsh</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>jfree</groupId>
+			<artifactId>jfreechart</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>trove</groupId>
+			<artifactId>trove</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.sf.kxml</groupId>
+			<artifactId>kxml2</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>jep</groupId>
+			<artifactId>jep</artifactId>
+		</dependency>
+	</dependencies>
+</project>

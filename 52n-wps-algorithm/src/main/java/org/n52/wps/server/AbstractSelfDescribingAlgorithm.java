@@ -31,6 +31,7 @@ package org.n52.wps.server;
 import java.lang.reflect.Constructor;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import net.opengis.ows.x11.DomainMetadataType;
@@ -150,15 +151,15 @@ public abstract class AbstractSelfDescribingAlgorithm
 				}else if(implementedInterface.equals(IComplexData.class)){
 					SupportedComplexDataInputType complexData = dataInput.addNewComplexData();					
 					List<IParser> parsers = ParserFactory.getInstance().getAllParsers();
+
 					List<IParser> foundParsers = new ArrayList<>();
-					for(IParser parser : parsers) {
+					for(IParser parser : ParserFactory.getInstance().findParsers(inputDataTypeClass)) {
                         if (parser.isSupportedDataBinding(inputDataTypeClass)) {
                             foundParsers.add(parser);
                         }
 					}
-					
-					addInputFormats(complexData, foundParsers);					
 
+                    encodeFormats(complexData, foundParsers);
 				}		
 			}
 		}
@@ -270,19 +271,23 @@ public abstract class AbstractSelfDescribingAlgorithm
 	public abstract List<String> getInputIdentifiers();
 	public abstract List<String> getOutputIdentifiers();
 	
+    @Override
 	public Object getState() {
 	  return state;
 	}
 
+    @Override
 	public void update(Object state) {
 	   this.state = state;
 	   notifyObservers();
 	}
 
+    @Override
 	 public void addObserver(IObserver o) {
 	   observers.add(o);
 	 }
 
+    @Override
 	 public void removeObserver(IObserver o) {
 	   observers.remove(o);
 	 }
@@ -295,13 +300,8 @@ public abstract class AbstractSelfDescribingAlgorithm
 
     @Override
     public List<String> getErrors() {
-        List<String> errors = new ArrayList<>();
-        return errors;
+        return Collections.emptyList();
     }
-
-	private void addInputFormats(SupportedComplexDataInputType complexData, List<IParser> foundParsers) {
-        encodeFormats(complexData, foundParsers);
-	}
 
 	private void addOutputFormats(SupportedComplexDataType complexData, List<IGenerator> foundGenerators) {
         encodeFormats(complexData, foundGenerators);

@@ -28,9 +28,12 @@
  */
 package org.n52.wps.io;
 
+import static com.google.common.base.Predicates.and;
+
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.n52.wps.ParserDocument.Parser;
@@ -39,6 +42,9 @@ import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 
 /**
  * XMLParserFactory. Will be initialized within each Framework.
@@ -74,15 +80,15 @@ public class ParserFactory {
 
         // FvK: added Property Change Listener support
         // creates listener and register it to the wpsConfig instance.
-        org.n52.wps.commons.WPSConfig.getInstance()
-                .addPropertyChangeListener(org.n52.wps.commons.WPSConfig.WPSCONFIG_PROPERTY_EVENT_NAME, new PropertyChangeListener() {
+        WPSConfig.getInstance()
+                .addPropertyChangeListener(WPSConfig.WPSCONFIG_PROPERTY_EVENT_NAME, new PropertyChangeListener() {
                     public void propertyChange(
                             final PropertyChangeEvent propertyChangeEvent) {
                                 LOGGER.info(this.getClass().getName() +
                                             ": Received Property Change Event: " +
                                             propertyChangeEvent
                                         .getPropertyName());
-                                loadAllParsers(org.n52.wps.commons.WPSConfig
+                                loadAllParsers(WPSConfig
                                         .getInstance()
                                         .getActiveRegisteredParser());
                             }
@@ -125,31 +131,50 @@ public class ParserFactory {
 
     public static ParserFactory getInstance() {
         if (factory == null) {
-            Parser[] parsers = WPSConfig.getInstance()
-                    .getActiveRegisteredParser();
+            Parser[] parsers = WPSConfig.getInstance().getActiveRegisteredParser();
             initialize(parsers);
         }
         return factory;
     }
 
     public IParser getParser(Format format, Class<?> requiredInputClass) {
-
-        //first, look if we can find a direct way
-        for (IParser parser : registeredParsers) {
-            if (parser.isSupportedDataBinding(requiredInputClass) &&
-                parser.isSupportedFormat(format)) {
-                LOGGER.info("Matching parser found: {}", parser);
-                return parser;
-            }
-        }
-
-		//no parser could be found
-        //try an indirect way by creating all permutations and look if one matches
-        //TODO
-        return null;
+        return Iterables.tryFind(registeredParsers,
+                and(supports(format), supports(requiredInputClass))).orNull();
     }
 
     public List<IParser> getAllParsers() {
-        return registeredParsers;
+        return Collections.unmodifiableList(registeredParsers);
+    }
+
+    public Iterable<IParser> findParsers(Format format) {
+        return Iterables.filter(registeredParsers, supports(format));
+    }
+
+    public Iterable<IParser> findParsers(Class<?> dataBinding) {
+        return Iterables.filter(registeredParsers, supports(dataBinding));
+    }
+
+    private static Predicate<IOHandler> supports(Class<?> dataBinding) {
+        return new SupportsDataBinding(dataBinding);
+    }
+
+    private static Predicate<IOHandler> supports(Format format) {
+        return new SupportsFormat(format);
+    }
+
+    private static class SupportsDataBinding implements Predicate<IOHandler> {
+        private final Class<?> dataBinding;
+        SupportsDataBinding(Class<?> dataBinding) { this.dataBinding = dataBinding; }
+        @Override public boolean apply(IOHandler input) {
+            return input.isSupportedDataBinding(dataBinding);
+        }
+    }
+
+    private static class SupportsFormat implements Predicate<IOHandler> {
+        private final Format format;
+        SupportsFormat(Format format) { this.format = format; }
+        @Override public boolean apply(IOHandler input) {
+            return input.isSupportedFormat(format);
+        }
     }
 }

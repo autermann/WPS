@@ -1,41 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
 	<parent>
-		<artifactId>52n-wps-parent</artifactId>
 		<groupId>org.n52.wps</groupId>
+		<artifactId>52n-wps-backends</artifactId>
 		<version>3.3.0-SNAPSHOT</version>
 	</parent>
-    <modelVersion>4.0.0</modelVersion>
+
 	<artifactId>52n-wps-grass</artifactId>
-	<name>52North WPS GRASS Processing Backend</name>
+
+	<name>52North WPS GRASS Backend</name>
 	<description>Implementation of GRASS processing backend for a WPS server</description>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>com.mycila</groupId>
-				<artifactId>license-maven-plugin</artifactId>
-				<configuration>
-					<header>../misc/licenses/license_header.txt</header>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.jasig.maven</groupId>
-				<artifactId>maven-notice-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>check-licenses</id>
-						<phase></phase>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
+
 	<repositories>
 		<repository>
 			<id>wso2-maven2-repository</id>
 			<url>http://dist.wso2.org/maven2</url>
 		</repository>
 	</repositories>
+
 	<dependencies>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
@@ -50,12 +35,14 @@
 			<artifactId>52n-wps-algorithm</artifactId>
 		</dependency>
 		<dependency>
-            <groupId>org.n52.wps</groupId>
-            <artifactId>52n-wps-server</artifactId>
-        </dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>52n-wps-server</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>commons-logging</groupId>
