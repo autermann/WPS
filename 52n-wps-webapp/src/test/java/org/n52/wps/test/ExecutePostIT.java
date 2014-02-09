@@ -46,6 +46,7 @@ import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfig;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.datahandler.parser.GeotiffParser;
+import org.n52.wps.server.ExceptionReport;
 import org.xml.sax.SAXException;
 
 public class ExecutePostIT {
@@ -1003,7 +1004,7 @@ public class ExecutePostIT {
     }
 
     @Test
-    public void testExecutePOSTValueComplexBinarySynchronousBinaryOutputAsReferenceBase64() throws IOException, ParserConfigurationException, SAXException {
+    public void testExecutePOSTValueComplexBinarySynchronousBinaryOutputAsReferenceBase64() throws Exception {
         System.out.println("\nRunning testExecutePOSTValueComplexBinarySynchronousBinaryOutputAsReferenceBase64");
 
         String payload = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
@@ -1140,7 +1141,7 @@ public class ExecutePostIT {
     }
 
     @Test
-    public void testExecutePOSTValueComplexBinarySynchronousBinaryOutputAsReferenceStatusBase64() throws IOException, ParserConfigurationException, SAXException {
+    public void testExecutePOSTValueComplexBinarySynchronousBinaryOutputAsReferenceStatusBase64() throws IOException, ParserConfigurationException, SAXException, ExceptionReport {
         System.out.println("\nRunning testExecutePOSTValueComplexBinarySynchronousBinaryOutputAsReferenceStatusBase64");
 
         String payload = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
@@ -1279,7 +1280,7 @@ public class ExecutePostIT {
     }
 
     @Test
-    public void testExecutePOSTValueComplexBinaryASynchronousBinaryOutputStoreReferenceBase64() throws IOException, ParserConfigurationException, SAXException {
+    public void testExecutePOSTValueComplexBinaryASynchronousBinaryOutputStoreReferenceBase64() throws IOException, ParserConfigurationException, SAXException, ExceptionReport {
         System.out.println("\nRunning testExecutePOSTValueComplexBinaryASynchronousBinaryOutputStoreReferenceBase64");
 
         String payload = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
@@ -1418,7 +1419,7 @@ public class ExecutePostIT {
     }
 
     @Test
-    public void testExecutePOSTValueComplexBinaryASynchronousBinaryOutputRawBase64() throws IOException, ParserConfigurationException, SAXException {
+    public void testExecutePOSTValueComplexBinaryASynchronousBinaryOutputRawBase64() throws IOException, ParserConfigurationException, SAXException, ExceptionReport {
         System.out.println("\nRunning testExecutePOSTValueComplexBinaryASynchronousBinaryOutputRawBase64");
 
         String payload = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
@@ -1490,7 +1491,7 @@ public class ExecutePostIT {
     }
 
     @Test
-    public void testExecutePOSTValueComplexBinarySynchronousBinaryOutputRawbase64() throws IOException {
+    public void testExecutePOSTValueComplexBinarySynchronousBinaryOutputRawbase64() throws IOException, ExceptionReport {
         System.out.println("\nRunning testExecutePOSTValueComplexBinarySynchronousBinaryOutputRawbase64");
 
         String payload = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"

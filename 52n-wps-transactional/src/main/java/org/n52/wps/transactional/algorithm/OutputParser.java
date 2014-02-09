@@ -28,6 +28,7 @@
  */
 package org.n52.wps.transactional.algorithm;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 import net.opengis.wps.x100.OutputDataType;
@@ -112,13 +113,12 @@ public class OutputParser {
 		// everything that goes to this condition should be inline xml data
 		if (!format.getEncoding().isPresent() || encoding.equalsIgnoreCase(IOHandler.DEFAULT_ENCODING)){
 			try {
-				InputStream stream = new ByteArrayInputStream(complexValue.getBytes());
-				collection = parser.parse(stream, format);
-			}
-			catch(RuntimeException e) {
-				throw new ExceptionReport("Error occured, while XML parsing", 
-						ExceptionReport.NO_APPLICABLE_CODE, e);
-			}
+                InputStream stream = new ByteArrayInputStream(complexValue
+                        .getBytes());
+                collection = parser.parse(stream, format);
+            } catch (IOException | RuntimeException e) {
+                throw new NoApplicableCodeException("Error occured, while XML parsing").causedBy(e);
+            }
 		}
 		else {
 			throw new ExceptionReport("parser does not support operation: " + parser.getClass().getName(), ExceptionReport.INVALID_PARAMETER_VALUE);

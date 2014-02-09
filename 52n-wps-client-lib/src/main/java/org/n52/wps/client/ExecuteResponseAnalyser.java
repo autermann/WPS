@@ -213,14 +213,17 @@ public class ExecuteResponseAnalyser {
 			throw new WPSClientException("Wrong output type");
 		}
 		
-		
-		if(parser != null) {
-			if(encoding.equalsIgnoreCase("base64")){
-				return parser.parseBase64(is, format);
-			}else{
-				return parser.parse(is, format);
-			}
-		}
+        try {
+            if (parser != null) {
+                if (encoding.equalsIgnoreCase("base64")) {
+                    return parser.parseBase64(is, format);
+                } else {
+                    return parser.parse(is, format);
+                }
+            }
+        } catch (IOException | org.n52.wps.server.ExceptionReport ex) {
+            throw new WPSClientException("Error parsing output " + outputID, ex);
+        }
 
 		throw new RuntimeException("Could not find suitable parser");
 	}

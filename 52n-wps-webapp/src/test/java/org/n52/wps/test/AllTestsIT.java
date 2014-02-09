@@ -57,10 +57,12 @@ import net.opengis.wps.x100.OutputDataType;
 import net.opengis.wps.x100.OutputReferenceType;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.xmlbeans.XmlException;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.datahandler.parser.GeotiffParser;
+import org.n52.wps.server.ExceptionReport;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -197,7 +199,7 @@ public class AllTestsIT {
     	
     	try {    		
     		document = ExecuteResponseDocument.Factory.parse(refResult);	    		
-		} catch (Exception e) {
+		} catch (XmlException e) {
 			System.err.println("Could not parse execute response document.");
 		}   	
     	
@@ -232,10 +234,10 @@ public class AllTestsIT {
 		for (String field : headerFields) {
 			if(field.contains("filename")){
 				oneHeaderFieldContainsFilename = true;
-				if(suffix != null && !suffix.equals("")){
+				if(suffix != null && !suffix.isEmpty()){
 					assertTrue(field.endsWith(suffix + "\""));
 				}
-				if(filename != null && !filename.equals("")){
+				if(filename != null && !filename.isEmpty()){
 					assertTrue(field.contains(filename));
 				}
 			}
@@ -254,16 +256,16 @@ public class AllTestsIT {
 
     public static void checkReferenceBinaryResultBase64(String response) throws ParserConfigurationException,
             SAXException,
-            IOException {
+            IOException,
+            ExceptionReport {
         assertThat(response, response, not(containsString("ExceptionReport")));
         assertThat(response, response, containsString("ProcessSucceeded"));
         assertThat(response, response, containsString("Reference"));
-
-        InputStream stream = getRefAsStream(response);
-        GeotiffParser parser = new GeotiffParser();
-        IData data = parser.parseBase64(stream, new Format("image/tiff"));
-        assertThat(data.getPayload() instanceof GridCoverage2D, is(true));
-        stream.close();
+        try (InputStream stream = getRefAsStream(response)) {
+            GeotiffParser parser = new GeotiffParser();
+            IData data = parser.parseBase64(stream, new Format("image/tiff"));
+            assertThat(data.getPayload() instanceof GridCoverage2D, is(true));
+        }
     }
 
     public static void checkReferenceBinaryResultDefault(String response) throws ParserConfigurationException,
@@ -272,12 +274,11 @@ public class AllTestsIT {
         assertThat(response, response, not(containsString("ExceptionReport")));
         assertThat(response, response, containsString("ProcessSucceeded"));
         assertThat(response, response, containsString("Reference"));
-
-        InputStream stream = getRefAsStream(response);
-        GeotiffParser parser = new GeotiffParser();
-        IData data = parser.parse(stream, new Format("image/tiff"));
-        assertThat(data.getPayload() instanceof GridCoverage2D, is(true));
-        stream.close();
+        try (InputStream stream = getRefAsStream(response)) {
+            GeotiffParser parser = new GeotiffParser();
+            IData data = parser.parse(stream, new Format("image/tiff"));
+            assertThat(data.getPayload() instanceof GridCoverage2D, is(true));
+        }
     }
     
     public static void checkInlineResultBase64(String response){
@@ -286,7 +287,7 @@ public class AllTestsIT {
     	
     	try {    		
     		document = ExecuteResponseDocument.Factory.parse(response);	    		
-		} catch (Exception e) {
+		} catch (XmlException e) {
 			System.err.println("Could not parse execute response document.");
 		}   	
     	

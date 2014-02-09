@@ -28,6 +28,7 @@
  */
 package org.n52.wps.io.datahandler.parser;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 
@@ -36,6 +37,7 @@ import org.n52.wps.commons.Format;
 import org.n52.wps.io.AbstractIOHandler;
 import org.n52.wps.io.IParser;
 import org.n52.wps.io.data.IData;
+import org.n52.wps.server.ExceptionReport;
 
 /**
  * @author Matthias Mueller, TU Dresden
@@ -44,8 +46,7 @@ import org.n52.wps.io.data.IData;
 public abstract class AbstractParser extends AbstractIOHandler
         implements IParser {
 
-    public AbstractParser(Set<Format> formats,
-                          Set<Class<?>> dataTypes) {
+    public AbstractParser(Set<Format> formats, Set<Class<?>> dataTypes) {
         super(formats, dataTypes);
     }
 
@@ -58,7 +59,8 @@ public abstract class AbstractParser extends AbstractIOHandler
     }
 
     @Override
-    public IData parseBase64(InputStream input, Format format) {
+    public IData parseBase64(InputStream input, Format format) 
+            throws IOException, ExceptionReport {
         return parse(new Base64InputStream(input), format);
     }
 

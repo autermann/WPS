@@ -55,12 +55,8 @@ public class GeotiffZippedParser extends AbstractParser {
 		//unzip
 		File zippedFile;
 		try {
-			zippedFile = IOUtils.writeStreamToFile(input, "zip");
-			finalizeFiles.add(zippedFile); // mark for final delete
-		
-			List<File> files = IOUtils.unzipAll(zippedFile);
-			finalizeFiles.addAll(files); // mark for final delete
-			
+			zippedFile = registerTempFile(IOUtils.writeStreamToFile(input, "zip"));
+			List<File> files = registerTempFiles(IOUtils.unzipAll(zippedFile));
 			for(File file : files){
 				if(file.getName().toLowerCase().endsWith(".tif") || file.getName().toLowerCase().endsWith(".tiff")){
 					return parseTiff(file);

@@ -86,8 +86,7 @@ public class GTBinZippedWKT64Parser extends AbstractParser {
 			
 			String fileName = "tempfile" + UUID.randomUUID() + ".zip";
 			String tmpDirPath = System.getProperty("java.io.tmpdir");
-			File tempFile = new File(tmpDirPath + File.separatorChar + fileName);
-			finalizeFiles.add(tempFile); // mark tempFile for final delete
+			File tempFile = registerTempFile(new File(tmpDirPath + File.separatorChar + fileName));
 			try {
                 try (FileOutputStream outputStream
                         = new FileOutputStream(tempFile)) {
@@ -108,11 +107,8 @@ public class GTBinZippedWKT64Parser extends AbstractParser {
 				throw new RuntimeException(e);
 			}			
 			
-			finalizeFiles.add(tempFile); // mark for final delete
 			stream.close();
-			List<File> wktFiles = IOUtils.unzip(tempFile, "wkt");
-			finalizeFiles.addAll(wktFiles); // mark for final delete
-			
+			List<File> wktFiles = registerTempFiles(IOUtils.unzip(tempFile, "wkt"));
 			if (wktFiles == null || wktFiles.isEmpty()) {
 				throw new RuntimeException(
 						"Cannot find a shapefile inside the zipped file.");

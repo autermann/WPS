@@ -75,8 +75,7 @@ public class GeotiffGenerator  extends AbstractGenerator {
 			GeoTiffWriter geoTiffWriter = null;
 			String tmpDirPath = System.getProperty("java.io.tmpdir");			
 			String fileName = tmpDirPath + File.separatorChar + "temp" + UUID.randomUUID() + ".tmp";
-			File outputFile = new File(fileName);
-			this.finalizeFiles.add(outputFile); // mark file for final delete
+			File outputFile = registerTempFile(new File(fileName));
 			
 			try {
 				geoTiffWriter = new GeoTiffWriter(outputFile);

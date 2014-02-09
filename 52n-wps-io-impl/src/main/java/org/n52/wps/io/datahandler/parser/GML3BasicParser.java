@@ -91,8 +91,7 @@ public class GML3BasicParser extends AbstractParser {
 
 		FileOutputStream fos = null;
 		try{
-			File tempFile = File.createTempFile("wps", "tmp");
-			finalizeFiles.add(tempFile); // mark for final delete
+			File tempFile = registerTempFile(File.createTempFile("wps", "tmp"));
 			fos = new FileOutputStream(tempFile);
 			int i = stream.read();
 			while(i != -1){

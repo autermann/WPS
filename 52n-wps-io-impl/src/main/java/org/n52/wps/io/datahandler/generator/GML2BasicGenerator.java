@@ -152,8 +152,7 @@ public class GML2BasicGenerator extends AbstractGenerator {
 	
 	@Override
 	public InputStream generateStream(IData data, Format format) throws IOException {
-		File tempFile = File.createTempFile("gml2", "xml");
-		finalizeFiles.add(tempFile);
+		File tempFile = registerTempFile(File.createTempFile("gml2", "xml"));
         try (FileWriter fw = new FileWriter(tempFile)) {
             write(data, fw);
         }

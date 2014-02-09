@@ -62,8 +62,7 @@ public class GeoJSONGenerator extends AbstractGenerator {
         if (data instanceof JTSGeometryBinding) {
             Geometry g = ((JTSGeometryBinding) data).getPayload();
 
-            File tempFile = File.createTempFile("wps", "json");
-            finalizeFiles.add(tempFile); // mark for final delete
+            File tempFile = registerTempFile(File.createTempFile("wps", "json"));
 
             new GeometryJSON().write(g, tempFile);
 
@@ -75,9 +74,7 @@ public class GeoJSONGenerator extends AbstractGenerator {
             SimpleFeatureCollection f = (SimpleFeatureCollection) data
                     .getPayload();
 
-            File tempFile = File.createTempFile("wps", "json");
-            finalizeFiles.add(tempFile); // mark for final delete
-
+            File tempFile = registerTempFile(File.createTempFile("wps", "json"));
             new FeatureJSON().writeFeatureCollection(f, tempFile);
 
             InputStream is = new FileInputStream(tempFile);

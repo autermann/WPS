@@ -80,8 +80,7 @@ public class SimpleGMLGenerator extends AbstractGenerator {
 		
 		File tempFile;
 		try {
-			tempFile = File.createTempFile("gml", "xml");
-			this.finalizeFiles.add(tempFile);
+			tempFile = registerTempFile(File.createTempFile("gml", "xml"));
             try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
                 this.writeToStream(data, outputStream);
                 outputStream.flush();

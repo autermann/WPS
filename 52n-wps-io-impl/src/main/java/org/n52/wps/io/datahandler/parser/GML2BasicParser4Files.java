@@ -58,8 +58,7 @@ public class GML2BasicParser4Files extends AbstractParser {
 		
 		FileOutputStream fos = null;
 		try{
-			File tempFile = File.createTempFile(UUID.randomUUID().toString(), ".gml2");
-			finalizeFiles.add(tempFile); // mark for final delete
+			File tempFile = registerTempFile(File.createTempFile(UUID.randomUUID().toString(), ".gml2"));
 			fos = new FileOutputStream(tempFile);
 			int i = stream.read();
 			while(i != -1){

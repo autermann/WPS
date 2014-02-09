@@ -61,18 +61,18 @@ import org.w3c.dom.NodeList;
  */
 public class AGSProcessRepository implements IAlgorithmRepository {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(AGSProcessRepository.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(AGSProcessRepository.class);
 	
-	private Map<String, ProcessDescriptionType> registeredProcessDescriptions;
-	private Map<String, ToolParameter[]> registeredAlgorithmParameters;
+	private final Map<String, ProcessDescriptionType> registeredProcessDescriptions;
+	private final Map<String, ToolParameter[]> registeredAlgorithmParameters;
 	
 	
 	public AGSProcessRepository() {
 		LOGGER.info("Initializing ArcGIS Server Repository ...");
 		
 		//initialize local variables
-		this.registeredProcessDescriptions = new HashMap<String, ProcessDescriptionType>();
-		this.registeredAlgorithmParameters = new HashMap<String, ToolParameter[]>();
+		this.registeredProcessDescriptions = new HashMap<>();
+		this.registeredAlgorithmParameters = new HashMap<>();
 		
 		String describeProcessPathString = AGSProperties.getInstance().getProcessDescriptionDir();
 		LOGGER.info("Loading AGS process descriptions from: " + describeProcessPathString);
@@ -293,11 +293,7 @@ public class AGSProcessRepository implements IAlgorithmRepository {
 			}
 			
 			return doc.getProcessDescriptions().getProcessDescriptionArray(0);
-		}
-		catch(IOException e) {
-			LOGGER.warn("Could not initialize algorithm, parsing error! " + describeProcessFile.getName(), e);
-		}
-		catch(XmlException e) {
+		} catch(IOException | XmlException e) {
 			LOGGER.warn("Could not initialize algorithm, parsing error! " + describeProcessFile.getName(), e);
 		}
 		return null;

@@ -55,8 +55,7 @@ public class KMLParser extends AbstractParser {
 		
 		FileOutputStream fos = null;
 		try{
-			File tempFile = File.createTempFile("kml", "tmp");
-			finalizeFiles.add(tempFile); // mark for final delete
+			File tempFile = registerTempFile(File.createTempFile("kml", "tmp"));
 			fos = new FileOutputStream(tempFile);
 			int i = stream.read();
 			while(i != -1){

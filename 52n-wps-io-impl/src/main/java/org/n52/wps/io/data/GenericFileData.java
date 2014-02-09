@@ -166,22 +166,19 @@ public class GenericFileData {
 	
 	
 	public GenericFileData(GridCoverage2D payload, String mimeType) {
-		
-		dataStream = null;
-		fileExtension = "tiff";
+		this.dataStream = null;
+		this.fileExtension = "tiff";
 		this.mimeType = mimeType;
-		
-		try {
-			GeotiffGenerator generator = new GeotiffGenerator();
-			primaryFile = File.createTempFile("primary", ".tif");//changed to .tif
-			FileOutputStream outputStream = new FileOutputStream(primaryFile);
-			
-			InputStream is = generator.generateStream(new GTRasterDataBinding(payload), new Format(mimeType));
-			IOUtils.copy(is,outputStream);
-			is.close();
-			
-		} catch (IOException e){
-			LOGGER.error("Could not generate GeoTiff.");
+
+        try {
+            GeotiffGenerator generator = new GeotiffGenerator();
+            this.primaryFile = File.createTempFile("primary", ".tif");//changed to .tif
+            try (InputStream is = generator.generateStream(new GTRasterDataBinding(payload), new Format(mimeType));
+                    OutputStream os = new FileOutputStream(primaryFile)) {
+                IOUtils.copy(is, os);
+            }
+        } catch (IOException e){
+			LOGGER.error("Could not generate GeoTiff.", e);
 		}
 	}
 
@@ -284,8 +281,7 @@ public class GenericFileData {
 				build.add(sf.getProperty(attributeType.getName()).getValue());
 			}
 
-			SimpleFeature newSf = build.buildFeature(sf.getIdentifier()
-					.getID());
+			SimpleFeature newSf = build.buildFeature(sf.getIdentifier().getID());
 			
 			modifiedFeatureCollection.add(newSf);
 		}
@@ -319,16 +315,15 @@ public class GenericFileData {
 		String fileName = null;
 		if (GenericFileDataConstants.getIncludeFilesByMimeType(mimeType) != null) {
 			try {
-				fileName = unzipData(dataStream, fileExtension,
-						workspaceDir);
+				fileName = unzipData(dataStream, fileExtension, workspaceDir);
 			} catch (IOException e) {
-				LOGGER.error("Could not unzip the archive to " + workspaceDir);
+				LOGGER.error("Could not unzip the archive to " + workspaceDir, e);
 			}
 		} else {
 			try {
 				fileName = justWriteData(dataStream, fileExtension, workspaceDir);
 			} catch (IOException e) {
-				LOGGER.error("Could not write the input to " + workspaceDir);
+				LOGGER.error("Could not write the input to " + workspaceDir, e);
 			}
 		}
 
@@ -389,7 +384,7 @@ public class GenericFileData {
 		return fileName;
 	}
 
-	public GTVectorDataBinding getAsGTVectorDataBinding() {
+	public GTVectorDataBinding getAsGTVectorDataBinding() throws IOException {
 		
 		if(mimeType.equals(GenericFileDataConstants.MIME_TYPE_ZIPPED_SHP)){
 			String tmpDirPath = System.getProperty("java.io.tmpdir");
@@ -417,7 +412,7 @@ public class GenericFileData {
 				throw new RuntimeException("Something went wrong while creating data store.", e);
 			} catch (IOException e) {
 				LOGGER.error("Something went wrong while converting shapefile to FeatureCollection");
-				throw new RuntimeException("Something went wrong while converting shapefile to FeatureCollection", e);
+				throw new IOException("Something went wrong while converting shapefile to FeatureCollection", e);
             }
         }
         if (mimeType.equals(GenericFileDataConstants.MIME_TYPE_GML200) ||
@@ -441,7 +436,7 @@ public class GenericFileData {
 	/*
 	 * Returns the Shp file representation of the file if possible. The returning file is the shp file. All other files associated to that shp file have the same name and are in the same folder.
 	 */
-	public File getShpFile() {
+	public File getShpFile() throws IOException {
 		return getAsGTVectorDataBinding().getPayloadAsShpFile();
 	}
 

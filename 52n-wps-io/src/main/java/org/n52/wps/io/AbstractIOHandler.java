@@ -28,7 +28,10 @@
  */
 package org.n52.wps.io;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.io.File;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -38,7 +41,6 @@ import org.n52.wps.commons.Format;
 import org.n52.wps.commons.FormatPermutation;
 import org.n52.wps.commons.WPSConfig;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -59,16 +61,16 @@ public abstract class AbstractIOHandler implements IOHandler {
      * Convenience mechanism to delete temporary files that had
      * to be written during the generation procedure.
      */
-    protected final List<File> finalizeFiles = Lists.newLinkedList();
+    private final List<File> finalizeFiles = Lists.newLinkedList();
 
     public AbstractIOHandler(Set<Format> formats,
                              Set<Class<?>> dataTypes) {
-        this.formats = Preconditions.checkNotNull(formats);
-        this.dataTypes = Preconditions.checkNotNull(dataTypes);
+        this.formats = checkNotNull(formats);
+        this.dataTypes = checkNotNull(dataTypes);
     }
 
     public AbstractIOHandler(Set<Class<?>> dataTypes) {
-        this.dataTypes = Preconditions.checkNotNull(dataTypes);
+        this.dataTypes = checkNotNull(dataTypes);
         this.formats = getFormatsForHandler();
     }
 
@@ -76,6 +78,7 @@ public abstract class AbstractIOHandler implements IOHandler {
         this(Sets.newHashSet(dataTypes));
     }
 
+    @Override
     public Set<Class<?>> getSupportedDataBindings() {
         return Collections.unmodifiableSet(dataTypes);
     }
@@ -95,8 +98,13 @@ public abstract class AbstractIOHandler implements IOHandler {
         return this.dataTypes.contains(clazz);
     }
 
-    protected void registerTempFile(File file) {
+    protected File registerTempFile(File file) {
         this.finalizeFiles.add(file);
+        return file;
+    }
+    protected <T extends Collection<File>> T registerTempFiles(T files) {
+        this.finalizeFiles.addAll(files);
+        return files;
     }
 
     /**

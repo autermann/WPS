@@ -66,9 +66,7 @@ public class AsciiGrassGenerator extends AbstractGenerator {
 		
 		GridCoverage2D grid = ((GTRasterDataBinding) data).getPayload();
 		String fileName = "temp" + UUID.randomUUID();
-		File outputFile = File.createTempFile(fileName, ".tmp");
-		outputFile.deleteOnExit();
-		this.finalizeFiles.add(outputFile); // mark file for final delete
+		File outputFile = registerTempFile(File.createTempFile(fileName, ".tmp"));
 		GridCoverageWriter writer;
 		try {
 			writer = new ArcGridWriter(outputFile);

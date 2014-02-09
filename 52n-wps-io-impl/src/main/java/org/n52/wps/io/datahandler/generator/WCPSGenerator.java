@@ -59,8 +59,7 @@ public class WCPSGenerator extends AbstractGenerator {
 //		}
 		
 		List<byte[]> wcpsoutput = ((ArrayDataBinding)data).getPayload();
-		File tempFile = File.createTempFile("wcps", ".bin");
-		this.finalizeFiles.add(tempFile);
+		File tempFile = registerTempFile(File.createTempFile("wcps", ".bin"));
         try (FileOutputStream fos = new FileOutputStream(tempFile)) {
             for (byte[] currentArray : wcpsoutput){
                 fos.write(currentArray);

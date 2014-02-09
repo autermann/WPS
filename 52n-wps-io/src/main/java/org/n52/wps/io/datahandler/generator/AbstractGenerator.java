@@ -38,6 +38,7 @@ import org.n52.wps.io.AbstractIOHandler;
 import org.n52.wps.io.IGenerator;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.server.ExceptionReport;
+import org.n52.wps.server.NoApplicableCodeException;
 
 /**
  * @author Matthias Mueller, TU Dresden
@@ -46,8 +47,7 @@ import org.n52.wps.server.ExceptionReport;
 public abstract class AbstractGenerator extends AbstractIOHandler
         implements IGenerator {
 
-    public AbstractGenerator(Set<Format> formats,
-                             Set<Class<?>> dataTypes) {
+    public AbstractGenerator(Set<Format> formats, Set<Class<?>> dataTypes) {
         super(formats, dataTypes);
     }
 
@@ -65,10 +65,9 @@ public abstract class AbstractGenerator extends AbstractIOHandler
         if (!format.hasEncoding()|| format.hasEncoding(DEFAULT_ENCODING)) {
             return generateStream(data, format);
         } else if (format.hasEncoding(ENCODING_BASE64)) {
-            return new Base64InputStream(generate(data, format.withoutEncoding()), true);
+            return new Base64InputStream(generate(data, format.withEncoding(DEFAULT_ENCODING)), true);
         } else {
-            throw new ExceptionReport("Unable to generate encoding " + format
-                    .getEncoding().orNull(), ExceptionReport.NO_APPLICABLE_CODE);
+            throw new NoApplicableCodeException("Unable to generate encoding %s", format.getEncoding().orNull());
         }
     }
 

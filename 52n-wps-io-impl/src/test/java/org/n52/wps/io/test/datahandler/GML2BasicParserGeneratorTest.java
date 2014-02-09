@@ -49,7 +49,7 @@ import org.n52.wps.io.datahandler.parser.GML2BasicParser;
  */
 public class GML2BasicParserGeneratorTest extends AbstractTestCase<GML2BasicGenerator> {
 
-	public void testParser() {
+	public void testParser() throws IOException {
 		
 		if(!isDataHandlerActive()){
 			return;

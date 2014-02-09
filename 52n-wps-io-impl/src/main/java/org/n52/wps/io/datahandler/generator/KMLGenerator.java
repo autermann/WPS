@@ -64,8 +64,7 @@ public class KMLGenerator extends AbstractGenerator {
 		File tempFile = null;
 		InputStream stream = null;
 		try {
-			tempFile = File.createTempFile("kml", "xml");
-			this.finalizeFiles.add(tempFile);
+            tempFile = registerTempFile(File.createTempFile("kml", "xml"));
             try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
                 this.writeToStream(data, outputStream);
                 outputStream.flush();

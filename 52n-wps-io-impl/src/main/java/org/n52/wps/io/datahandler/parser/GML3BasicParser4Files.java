@@ -59,8 +59,7 @@ public class GML3BasicParser4Files extends AbstractParser {
 	public GenericFileDataBinding parse(InputStream stream, Format format) {
 		FileOutputStream fos = null;
 		try{
-			File tempFile = File.createTempFile(UUID.randomUUID().toString(), ".gml3");
-			finalizeFiles.add(tempFile); // mark for final delete
+			File tempFile = registerTempFile(File.createTempFile(UUID.randomUUID().toString(), ".gml3"));
 			fos = new FileOutputStream(tempFile);
 			int i = stream.read();
 			while(i != -1){

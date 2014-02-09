@@ -59,8 +59,7 @@ public class GeotiffParser extends AbstractParser {
 		File tempFile;
 		
 		try {
-            tempFile = File.createTempFile("tempfile" + UUID.randomUUID(),"tmp");
-            finalizeFiles.add(tempFile); // mark for final delete
+            tempFile = registerTempFile(File.createTempFile("tempfile" + UUID.randomUUID(),"tmp"));
             try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
                 byte buf[] = new byte[4096];
                 int len;

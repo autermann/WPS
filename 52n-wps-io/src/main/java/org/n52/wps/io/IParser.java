@@ -28,10 +28,12 @@
  */
 package org.n52.wps.io;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
+import org.n52.wps.server.ExceptionReport;
 
 /**
  * @author Matthias Mueller, TU Dresden
@@ -39,8 +41,10 @@ import org.n52.wps.io.data.IData;
  */
 public interface IParser extends IOHandler {
 
-    IData parse(InputStream input, Format format);
+    IData parse(InputStream input, Format format)
+            throws IOException, ExceptionReport;
 
-    IData parseBase64(InputStream input, Format format);
+    IData parseBase64(InputStream input, Format format)
+            throws IOException, ExceptionReport;
 
 }
