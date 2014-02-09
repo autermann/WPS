@@ -32,8 +32,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,8 +42,6 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import net.opengis.ows.x11.DomainMetadataType;
-import net.opengis.ows.x11.RangeType;
-import net.opengis.ows.x11.ValueType;
 import net.opengis.wps.x100.ComplexDataType;
 import net.opengis.wps.x100.InputDescriptionType;
 import net.opengis.wps.x100.InputType;
@@ -54,23 +50,19 @@ import net.opengis.wps.x100.ProcessDescriptionType;
 import org.apache.commons.io.FileUtils;
 import org.n52.wps.commons.Format;
 import org.n52.wps.commons.XMLUtil;
-import org.n52.wps.io.BasicXMLTypeFactory;
 import org.n52.wps.io.IOHandler;
 import org.n52.wps.io.IParser;
+import org.n52.wps.io.LiteralDataFactory;
 import org.n52.wps.io.ParserFactory;
 import org.n52.wps.io.data.IData;
-import org.n52.wps.io.data.binding.bbox.GTReferenceEnvelope;
+import org.n52.wps.io.data.ILiteralData;
 import org.n52.wps.io.data.binding.literal.AbstractLiteralDataBinding;
-import org.n52.wps.io.data.binding.literal.LiteralByteBinding;
-import org.n52.wps.io.data.binding.literal.LiteralDoubleBinding;
-import org.n52.wps.io.data.binding.literal.LiteralFloatBinding;
-import org.n52.wps.io.data.binding.literal.LiteralIntBinding;
-import org.n52.wps.io.data.binding.literal.LiteralLongBinding;
-import org.n52.wps.io.data.binding.literal.LiteralShortBinding;
 import org.n52.wps.io.datahandler.parser.GML2BasicParser;
 import org.n52.wps.io.datahandler.parser.GML3BasicParser;
 import org.n52.wps.io.datahandler.parser.SimpleGMLParser;
 import org.n52.wps.server.ExceptionReport;
+import org.n52.wps.server.InvalidParameterValueException;
+import org.n52.wps.server.NoApplicableCodeException;
 import org.n52.wps.server.RepositoryManager;
 import org.n52.wps.server.handler.DataInputInterceptors;
 import org.n52.wps.server.handler.DataInputInterceptors.DataInputInterceptorImplementations;
@@ -87,11 +79,9 @@ import com.google.common.annotations.VisibleForTesting;
  * Handles the input of the client and stores it into a Map.
  */
 public class InputHandler {
-
-    private static final Logger LOGGER = LoggerFactory
-            .getLogger(InputHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(InputHandler.class);
     private Map<String, List<IData>> inputData = new HashMap<>();
-    private ProcessDescriptionType processDesc;
+    private ProcessDescriptionType processDescription;
     private String algorithmIdentifier = null; // Needed to take care of handling a conflict between different parsers.
 
     /**
@@ -108,17 +98,13 @@ public class InputHandler {
      */
     private InputHandler(Builder builder) throws ExceptionReport {
         this.algorithmIdentifier = builder.algorithmIdentifier;
-        this.processDesc = RepositoryManager.getInstance()
-                .getProcessDescription(algorithmIdentifier);
+        this.processDescription = RepositoryManager.getInstance().getProcessDescription(algorithmIdentifier);
 
-        if (processDesc == null) {
-            throw new ExceptionReport("Error while accessing the process description for " +
-                                      algorithmIdentifier,
-                                      ExceptionReport.INVALID_PARAMETER_VALUE);
+        if (processDescription == null) {
+            throw new InvalidParameterValueException("Error while accessing the process description for %s", algorithmIdentifier);
         }
 
-        Map<String, InterceptorInstance> inputInterceptors
-                = resolveInputInterceptors(algorithmIdentifier);
+        Map<String, InterceptorInstance> inputInterceptors = resolveInputInterceptors(algorithmIdentifier);
 
         for (InputType input : builder.inputs) {
             String inputId = input.getIdentifier().getStringValue().trim();
@@ -143,9 +129,7 @@ public class InputHandler {
             } else if (input.getReference() != null) {
                 handleComplexValueReference(input);
             } else {
-                throw new ExceptionReport("Error while accessing the inputValue: " +
-                                          inputId,
-                                          ExceptionReport.INVALID_PARAMETER_VALUE);
+                throw new InvalidParameterValueException("Error while accessing the inputValue: %s",inputId);
             }
         }
     }
@@ -206,32 +190,25 @@ public class InputHandler {
     }
 
     @VisibleForTesting
-    InputDescriptionType getInputDescription(String inputId) throws
-            ExceptionReport {
-        for (InputDescriptionType tempDesc : this.processDesc.getDataInputs()
-                .getInputArray()) {
+    InputDescriptionType getInputDescription(String inputId) throws ExceptionReport {
+        for (InputDescriptionType tempDesc : this.processDescription.getDataInputs().getInputArray()) {
             if (inputId.equals(tempDesc.getIdentifier().getStringValue())) {
                 return tempDesc;
             }
         }
-        throw new ExceptionReport(
-                "Input cannot be found in description for " + processDesc
-                .getIdentifier().getStringValue() + "," + inputId,
-                ExceptionReport.NO_APPLICABLE_CODE);
+        throw new NoApplicableCodeException("Input %s cannot be found in description for process %s", inputId, algorithmIdentifier);
     }
 
-    protected String getComplexValueNodeString(Node complexValueNode) {
-        String complexValue;
+    protected String getComplexValueNodeString(Node complexValueNode) 
+            throws ExceptionReport {
         try {
-            complexValue = XMLUtil.nodeToString(complexValueNode);
-            complexValue = complexValue
-                    .substring(complexValue.indexOf('>') + 1, complexValue
-                            .lastIndexOf("</"));
-        } catch (TransformerFactoryConfigurationError | TransformerException e1) {
-            throw new TransformerFactoryConfigurationError("Could not parse inline data. Reason " +
-                                                           e1);
+            String complexValue = XMLUtil.nodeToString(complexValueNode);
+            int begin = complexValue.indexOf('>') + 1;
+            int end = complexValue.lastIndexOf("</");
+            return complexValue.substring(begin, end);
+        } catch (TransformerFactoryConfigurationError | TransformerException e) {
+            throw new NoApplicableCodeException("Could not parse inline data.").causedBy(e);
         }
-        return complexValue;
     }
 
     /**
@@ -254,37 +231,25 @@ public class InputHandler {
         Format format = formatHandler.select(dataFormat);
         IParser parser = getParser(format, inputId);
         IData complexData = parseComplexValue(complexValue, format, parser);
-
-        //enable maxoccurs of parameters with the same name.
-        List<IData> list = inputData.get(inputId);
-        if (list == null) {
-            inputData.put(inputId, list = new ArrayList<>());
-        }
-        list.add(complexData);
+        addInput(inputId, complexData);
     }
 
     private IParser getParser(Format format, String inputId)
             throws ExceptionReport {
         if (format == null) {
-            throw new ExceptionReport("Can not determine input format",
-                                      ExceptionReport.INVALID_PARAMETER_VALUE);
+            throw new InvalidParameterValueException("Can not determine input format");
         }
         IParser parser = null;
         try {
             LOGGER.debug("Looking for matching Parser ... {}", format);
-
             Class<?> algorithmInput = RepositoryManager.getInstance()
                     .getInputDataTypeForAlgorithm(this.algorithmIdentifier, inputId);
-
-            parser = ParserFactory.getInstance()
-                    .getParser(format, algorithmInput);
+            parser = ParserFactory.getInstance().getParser(format, algorithmInput);
         } catch (RuntimeException e) {
-            throw new ExceptionReport("Error obtaining input data",
-                                      ExceptionReport.NO_APPLICABLE_CODE, e);
+            throw new NoApplicableCodeException("Error obtaining input data").causedBy(e);
         }
         if (parser == null) {
-            throw new ExceptionReport("Error. No applicable parser found for " +
-                                      format, ExceptionReport.NO_APPLICABLE_CODE);
+            throw new NoApplicableCodeException("Error. No applicable parser found for %s", format);
         }
         return parser;
     }
@@ -295,17 +260,15 @@ public class InputHandler {
         String complexValueCopy = complexValue.toString();
         // encoding is UTF-8 (or nothing and we default to UTF-8)
         // everything that goes to this condition should be inline xml data
-        if (!format.hasEncoding() || format
-                .hasEncoding(IOHandler.DEFAULT_ENCODING)) {
+        if (!format.hasEncoding() || format.hasEncoding(IOHandler.DEFAULT_ENCODING)) {
             try {
                 if (!complexValueCopy
                         .contains("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"")) {
                     complexValueCopy = complexValueCopy
                             .replace("xsi:schemaLocation", "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation");
                 }
-                idata = parser.parse(new ByteArrayInputStream(complexValueCopy
-                        .getBytes()), format);
-            } catch (RuntimeException e) {
+                idata = parser.parse(new ByteArrayInputStream(complexValueCopy.getBytes()), format);
+            } catch (IOException | RuntimeException e) {
                 throw new ExceptionReport("Error occured, while XML parsing", ExceptionReport.NO_APPLICABLE_CODE, e);
             }
         } else if (format.hasEncoding(IOHandler.ENCODING_BASE64)) {
@@ -358,148 +321,45 @@ public class InputHandler {
     private void handleLiteralData(InputType input) throws ExceptionReport {
         String inputID = input.getIdentifier().getStringValue();
         String parameter = input.getData().getLiteralData().getStringValue();
-        String xmlDataType = input.getData().getLiteralData().getDataType();
+        
         String uom = input.getData().getLiteralData().getUom();
 
         InputDescriptionType inputDesc = getInputDescription(inputID);
+        String dataType = getDataType(input, inputDesc);
 
-        if (xmlDataType == null) {
-            DomainMetadataType dataType = inputDesc.getLiteralData()
-                    .getDataType();
-            xmlDataType = dataType != null ? dataType.getReference() : null;
-        }
-        //still null, assume string as default
-        if (xmlDataType == null) {
-            xmlDataType = BasicXMLTypeFactory.STRING_URI;
-        } else if (xmlDataType.contains("http://www.w3.org/TR/xmlschema-2#")) {
-            xmlDataType = xmlDataType
-                    .replace("http://www.w3.org/TR/xmlschema-2#", "xs:");
-        }
-        xmlDataType = xmlDataType.toLowerCase();
-
-        IData parameterObj = null;
+        ILiteralData parameterObj = null;
         try {
-            parameterObj = BasicXMLTypeFactory
-                    .getBasicJavaObject(xmlDataType, parameter);
-        } catch (RuntimeException e) {
-            throw new ExceptionReport("The passed parameterValue: " + parameter +
-                                      ", but should be of type: " + xmlDataType, ExceptionReport.INVALID_PARAMETER_VALUE);
+            parameterObj = LiteralDataFactory.create(dataType, parameter);
+        } catch (ExceptionReport e) {
+            throw e.locatedAt(parameter);
         }
 
-        //validate allowed values.
-        if (inputDesc.getLiteralData().isSetAllowedValues()) {
-            if ((!inputDesc.getLiteralData().isSetAnyValue())) {
-                ValueType[] allowedValues = inputDesc.getLiteralData()
-                        .getAllowedValues().getValueArray();
-                boolean foundAllowedValue = false;
-                for (ValueType allowedValue : allowedValues) {
-                    if (input.getData().getLiteralData().getStringValue()
-                            .equals(allowedValue.getStringValue())) {
-                        foundAllowedValue = true;
-
-                    }
-                }
-                RangeType[] allowedRanges = {};
-                if (parameterObj instanceof LiteralIntBinding ||
-                    parameterObj instanceof LiteralDoubleBinding ||
-                    parameterObj instanceof LiteralShortBinding ||
-                    parameterObj instanceof LiteralFloatBinding ||
-                    parameterObj instanceof LiteralLongBinding ||
-                    parameterObj instanceof LiteralByteBinding) {
-
-                    allowedRanges = inputDesc.getLiteralData()
-                            .getAllowedValues().getRangeArray();
-                    for (RangeType allowedRange : allowedRanges) {
-                        foundAllowedValue
-                                = checkRange(parameterObj, allowedRange);
-                    }
-                }
-
-                if (!foundAllowedValue && (allowedValues.length != 0 ||
-                                           allowedRanges.length != 0)) {
-                    throw new ExceptionReport("Input with ID " + inputID +
-                                              " does not contain an allowed value. See ProcessDescription.", ExceptionReport.INVALID_PARAMETER_VALUE);
-                }
-
-            }
-        }
-
-        if (parameterObj == null) {
-            throw new ExceptionReport("XML datatype as LiteralParameter is not supported by the server: dataType " +
-                                      xmlDataType, ExceptionReport.INVALID_PARAMETER_VALUE);
+        LiteralDataChecker checker = new LiteralDataChecker(inputDesc);
+        if (!checker.apply(parameterObj)) {
+            throw new InvalidParameterValueException("Input %s does not match %s", inputID, checker);
         }
 
         if (uom != null && !uom.isEmpty() &&
             parameterObj instanceof AbstractLiteralDataBinding) {
-            ((AbstractLiteralDataBinding) parameterObj)
-                    .setUnitOfMeasurement(uom);
+            ((AbstractLiteralDataBinding) parameterObj).setUnitOfMeasurement(uom);
         }
-
-        //enable maxxoccurs of parameters with the same name.
-        List<IData> list = inputData.get(inputID);
-        if (list == null) {
-            inputData.put(inputID, list = new ArrayList<>());
-        }
-        list.add(parameterObj);
-
+        addInput(inputID, parameterObj);
     }
 
-    @SuppressWarnings("unchecked")
-    private boolean checkRange(IData parameterObj, RangeType allowedRange) {
-
-        List<?> l = allowedRange.getRangeClosure();
-
-        if (l != null && !l.isEmpty() && !l.get(0).equals("closed")) {
-            return false;
+    private String getDataType(InputType input, InputDescriptionType inputDesc) {
+        String dataType = input.getData().getLiteralData().getDataType();
+        if (dataType == null) {
+            DomainMetadataType dataTypeDefinition = inputDesc.getLiteralData().getDataType();
+            dataType = dataTypeDefinition != null ? dataTypeDefinition.getReference() : null;
         }
-        String minString = allowedRange.getMinimumValue().getStringValue();
-        String maxString = allowedRange.getMaximumValue().getStringValue();
-        Object payload = parameterObj.getPayload();
-
-        if (payload instanceof Integer) {
-            int value = (Integer) payload;
-            int min = Integer.parseInt(minString);
-            int max = Integer.parseInt(maxString);
-            return value >= min && value <= max;
-        } else if (payload instanceof Double) {
-            double value = (Double) payload;
-            double min = Double.parseDouble(minString);
-            double max = Double.parseDouble(maxString);
-            return value >= min && value <= max;
-        } else if (payload instanceof Short) {
-            short value = (Short) payload;
-            short min = Short.parseShort(minString);
-            short max = Short.parseShort(maxString);
-            return value >= min && value <= max;
-        } else if (payload instanceof Float) {
-            float value = (Float) payload;
-            float min = Float.parseFloat(minString);
-            float max = Float.parseFloat(maxString);
-            return value >= min && value <= max;
-        } else if (payload instanceof Long) {
-            long value = (Long) payload;
-            long min = Long.parseLong(minString);
-            long max = Long.parseLong(maxString);
-            return value >= min && value <= max;
-        } else if (payload instanceof Byte) {
-            byte value = (Byte) payload;
-            byte min = Byte.parseByte(minString);
-            byte max = Byte.parseByte(maxString);
-            return value >= min && value <= max;
-        } else if (payload instanceof BigInteger) {
-            BigInteger value = (BigInteger) payload;
-            BigInteger min = new BigInteger(minString);
-            BigInteger max = new BigInteger(maxString);
-            return value.compareTo(min) >= 0 &&
-                   value.compareTo(max) <= 0;
-        } else if (payload instanceof BigDecimal) {
-            BigDecimal value = (BigDecimal) payload;
-            BigDecimal min = new BigDecimal(minString);
-            BigDecimal max = new BigDecimal(maxString);
-            return value.compareTo(min) >= 0 &&
-                   value.compareTo(max) <= 0;
+        //still null, assume string as default
+        if (dataType == null) {
+            dataType = LiteralDataFactory.XS_STRING;
+        } else if (dataType.contains("http://www.w3.org/TR/xmlschema-2#")) {
+            dataType = dataType.replace("http://www.w3.org/TR/xmlschema-2#", "xs:");
         }
-        return false;
+        dataType = dataType.toLowerCase();
+        return dataType;
     }
 
     /**
@@ -510,8 +370,8 @@ public class InputHandler {
      * @throws ExceptionReport If the input (as url) is invalid, or there is an
      *                         error while parsing the XML.
      */
-    private void handleComplexValueReference(InputType input) throws
-            ExceptionReport {
+    private void handleComplexValueReference(InputType input) 
+            throws ExceptionReport {
         String inputID = input.getIdentifier().getStringValue();
 
         ReferenceStrategyRegister register = ReferenceStrategyRegister
@@ -560,8 +420,14 @@ public class InputHandler {
                 dataURLString += "&outputFormat=GML3";
             }
         }
-        IData parsedInputData = parser.parse(stream, format);
+        try {
+            addInput(inputID, parser.parse(stream, format));
+        } catch (IOException ex) {
+            throw new NoApplicableCodeException("Error parsing reference input %s", inputID).causedBy(ex);
+        }
+    }
 
+    private void addInput(String inputID, IData parsedInputData) {
         //enable maxxoccurs of parameters with the same name.
         List<IData> list = inputData.get(inputID);
         if (list == null) {
@@ -576,22 +442,9 @@ public class InputHandler {
      * @param input The client input
      */
     private void handleBBoxValue(InputType input) throws ExceptionReport {
-        String crs = input.getData().getBoundingBoxData().getCrs();
-        List<?> lowerCorner = input.getData().getBoundingBoxData()
-                .getLowerCorner();
-        List<?> upperCorner = input.getData().getBoundingBoxData()
-                .getUpperCorner();
-
-        if (lowerCorner.size() != 2 || upperCorner.size() != 2) {
-            throw new ExceptionReport("Error while parsing the BBOX data", ExceptionReport.INVALID_PARAMETER_VALUE);
-        }
-        IData envelope = new GTReferenceEnvelope(
-                lowerCorner.get(0), lowerCorner
-                .get(1), upperCorner.get(0), upperCorner.get(1), crs);
-
-        List<IData> resultList = new ArrayList<>();
-        resultList.add(envelope);
-        inputData.put(input.getIdentifier().getStringValue(), resultList);
+        BoundingBoxParser parser = new GeotoolsBoundingBoxParser();
+        IData envelope = parser.parse(input.getData().getBoundingBoxData());
+        addInput(input.getIdentifier().getStringValue(), envelope);
     }
 
     /**
