@@ -35,7 +35,6 @@ import org.n52.wps.algorithm.annotation.AlgorithmAnnotationException;
 import org.n52.wps.io.data.IData;
 
 /**
- * TODO JavaDoc
  * @author Christian Autermann
  */
 public class OutputFieldBinding extends OutputBinding<Field> {

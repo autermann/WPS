@@ -35,8 +35,6 @@ import java.util.List;
 import com.google.common.base.Preconditions;
 
 /**
- * TODO JavaDoc
- *
  * @author Christian Autermann
  */
 public abstract class AlgorithmDescriptorBuilder<B extends AlgorithmDescriptorBuilder<B>>

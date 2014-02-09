@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.n52.wps.io.BasicXMLTypeFactory;
+import org.n52.wps.io.LiteralDataFactory;
 import org.n52.wps.io.data.ILiteralData;
 
 /**
@@ -50,7 +50,7 @@ public abstract class LiteralDataInputDescriptorBuilder<B extends LiteralDataInp
 
     protected LiteralDataInputDescriptorBuilder(String identifier, Class<? extends ILiteralData> binding) {
         super(identifier, binding);
-        this.dataType = checkNotNull(BasicXMLTypeFactory.getXMLDataTypeforBinding(binding),
+        this.dataType = checkNotNull(LiteralDataFactory.getTypeforBindingType(binding),
                                      "Unable to resolve XML DataType for binding class %s", binding);
     }
 

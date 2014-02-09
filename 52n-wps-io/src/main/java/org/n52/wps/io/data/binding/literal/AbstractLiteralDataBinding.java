@@ -30,21 +30,38 @@ package org.n52.wps.io.data.binding.literal;
 
 import org.n52.wps.io.data.ILiteralData;
 
+import com.google.common.base.Objects;
+
 public abstract class AbstractLiteralDataBinding implements ILiteralData {
+    private String unitOfMeasurement;
 
-	private String unitOfMeasurement;
-	
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -7088293056427203440L;
+    public String getUnitOfMeasurement() {
+        return unitOfMeasurement;
+    }
 
-	public String getUnitOfMeasurement() {
-		return unitOfMeasurement;
-	}
+    public void setUnitOfMeasurement(String unitOfMeasurement) {
+        this.unitOfMeasurement = unitOfMeasurement;
+    }
 
-	public void setUnitOfMeasurement(String unitOfMeasurement) {
-		this.unitOfMeasurement = unitOfMeasurement;
-	}	
-	
+    @Override
+    public String toString() {
+        return getPayload().toString();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getPayload(), getUnitOfMeasurement());
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj != null && obj.getClass() == getClass()) {
+            AbstractLiteralDataBinding that = (AbstractLiteralDataBinding) obj;
+            return Objects.equal(this.getPayload(), that.getPayload()) &&
+                   Objects.equal(this.getUnitOfMeasurement(), that
+                    .getUnitOfMeasurement());
+        }
+        return false;
+    }
+
 }

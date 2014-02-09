@@ -52,7 +52,7 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.n52.wps.commons.Format;
-import org.n52.wps.io.BasicXMLTypeFactory;
+import org.n52.wps.io.LiteralDataFactory;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.literal.AbstractLiteralDataBinding;
 import org.n52.wps.server.ExceptionReport;
@@ -140,7 +140,7 @@ public class OutputDataItem extends ResponseData {
 	
 	public void updateResponseForLiteralData(ExecuteResponseDocument res, String dataTypeReference){
 		OutputDataType output = prepareOutput(res);
-		String processValue = BasicXMLTypeFactory.getStringRepresentation(dataTypeReference, getPayload());
+		String processValue = LiteralDataFactory.getStringRepresentation(dataTypeReference, getPayload());
 		LiteralDataType literalData = output.addNewData().addNewLiteralData();
 		if (dataTypeReference != null) {
 			literalData.setDataType(dataTypeReference);

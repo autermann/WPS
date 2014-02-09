@@ -878,21 +878,24 @@ public class GenericRProcess extends AbstractObservableAlgorithm {
     private String parseLiteralInput(Class< ? extends IData> iClass, Object value) {
         String result = null;
 
-        List<Class< ? extends AbstractLiteralDataBinding>> easyLiterals = Arrays.asList(LiteralByteBinding.class,
-                                                                                        LiteralDoubleBinding.class,
-                                                                                        LiteralFloatBinding.class,
-                                                                                        LiteralIntBinding.class,
-                                                                                        LiteralLongBinding.class,
-                                                                                        LiteralShortBinding.class);
+        List<Class< ? extends AbstractLiteralDataBinding>> easyLiterals
+                = Arrays.<Class< ? extends AbstractLiteralDataBinding>>asList(
+                        LiteralByteBinding.class,
+                        LiteralDoubleBinding.class,
+                        LiteralFloatBinding.class,
+                        LiteralIntBinding.class,
+                        LiteralLongBinding.class,
+                        LiteralShortBinding.class);
 
         if (easyLiterals.contains(iClass)) {
             result = value.toString();
         }
         else if (iClass.equals(LiteralBooleanBinding.class)) {
-            if ((Boolean) value)
+            if ((Boolean) value) {
                 result = "TRUE";
-            else
+            } else {
                 result = "FALSE";
+            }
         }
         else {
             if ( !iClass.equals(LiteralStringBinding.class)) {

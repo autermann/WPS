@@ -40,8 +40,6 @@ import org.n52.wps.algorithm.annotation.binding.InputMethodBinding;
 import org.n52.wps.algorithm.descriptor.ComplexDataInputDescriptor;
 
 /**
- * TODO JavaDoc
- *
  * @author Christian Autermann
  * @param <M>
  * @param <B>

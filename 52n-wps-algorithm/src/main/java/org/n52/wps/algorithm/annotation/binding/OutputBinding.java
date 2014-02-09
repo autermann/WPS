@@ -38,7 +38,6 @@ import org.n52.wps.algorithm.descriptor.OutputDescriptor;
 import org.n52.wps.io.data.IData;
 
 /**
- * TODO JavaDoc
  * @author Christian Autermann
  */
 public abstract class OutputBinding<M extends AccessibleObject & Member> extends DataBinding<M, OutputDescriptor> {

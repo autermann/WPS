@@ -28,9 +28,7 @@
  */
 package org.n52.wps.io.data;
 
-import java.io.Serializable;
-
-public interface IData extends Serializable {
+public interface IData {
 	public Object getPayload();
 	
 	/*

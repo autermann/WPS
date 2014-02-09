@@ -35,18 +35,18 @@ import net.opengis.wps.x100.OutputDescriptionType;
 import net.opengis.wps.x100.ProcessDescriptionType;
 
 import org.n52.wps.commons.Format;
-import org.n52.wps.io.BasicXMLTypeFactory;
 import org.n52.wps.io.IOHandler;
 import org.n52.wps.io.IParser;
 import org.n52.wps.io.ParserFactory;
 import org.n52.wps.io.data.IData;
+import org.n52.wps.io.data.ILiteralData;
 import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
-import org.n52.wps.io.data.binding.literal.LiteralBooleanBinding;
-import org.n52.wps.io.data.binding.literal.LiteralDoubleBinding;
-import org.n52.wps.io.data.binding.literal.LiteralIntBinding;
-import org.n52.wps.io.data.binding.literal.LiteralStringBinding;
+import org.n52.wps.io.LiteralDataFactory;
 import org.n52.wps.server.ExceptionReport;
+import org.n52.wps.server.InvalidParameterValueException;
+import org.n52.wps.server.NoApplicableCodeException;
+import org.n52.wps.server.OperationNotSupportedException;
 
 
 public class OutputParser {
@@ -126,24 +126,16 @@ public class OutputParser {
 		return collection;
 	}
 	
-	
-
-	private static Class<?> determineOutputDataType(String outputID, OutputDescriptionType output) {
-			
-		if(output.isSetLiteralOutput()){
-			String datatype = output.getLiteralOutput().getDataType().getStringValue();
-			if(datatype.contains("tring")){
-				return LiteralStringBinding.class;
-			}
-			if(datatype.contains("ollean")){
-				return LiteralBooleanBinding.class;
-			}
-			if(datatype.contains("loat") || datatype.contains("ouble")){
-				return LiteralDoubleBinding.class;
-			}
-			if(datatype.contains("nt")){
-				return LiteralIntBinding.class;
-			}
+    private static Class<?> determineOutputDataType(String outputID,
+                                                    OutputDescriptionType output) {
+        if (output.isSetLiteralOutput()) {
+            String datatype = output.getLiteralOutput().getDataType()
+                    .getStringValue();
+            Class<? extends ILiteralData> t
+                    = LiteralDataFactory.getBindingForType(datatype);
+            if (t != null) {
+                return t;
+            }
 		}
 		if(output.isSetComplexOutput()){
 			String mimeType = output.getComplexOutput().getDefault().getFormat().getMimeType();
@@ -163,14 +155,12 @@ public class OutputParser {
 		String xmlDataType = output.getData().getLiteralData().getDataType();
 		IData parameterObj = null;
 		try {
-			parameterObj = BasicXMLTypeFactory.getBasicJavaObject(xmlDataType, parameter);
-		}
-		catch(RuntimeException e) {
-			throw new ExceptionReport("The passed parameterValue: " + parameter + ", but should be of type: " + xmlDataType, ExceptionReport.INVALID_PARAMETER_VALUE);
+			parameterObj = LiteralDataFactory.create(xmlDataType, parameter);
+		} catch(RuntimeException e) {
+			throw new InvalidParameterValueException("The passed parameterValue: %s, but should be of type: %s", parameter, xmlDataType);
 		}
 		if(parameterObj == null) {
-			throw new ExceptionReport("XML datatype as LiteralParameter is not supported by the server: dataType " + xmlDataType, 
-					ExceptionReport.INVALID_PARAMETER_VALUE);
+			throw new InvalidParameterValueException("XML datatype as LiteralParameter is not supported by the server: dataType %s",xmlDataType);
 		}
 		return parameterObj;
 		
@@ -183,7 +173,7 @@ public class OutputParser {
 	 */
 	protected static IData handleBBoxValue(OutputDataType input) throws ExceptionReport{
 		//String inputID = input.getIdentifier().getStringValue();
-		throw new ExceptionReport("BBox is not supported", ExceptionReport.OPERATION_NOT_SUPPORTED);
+		throw new OperationNotSupportedException("BBox is not supported");
 	}
 
 }

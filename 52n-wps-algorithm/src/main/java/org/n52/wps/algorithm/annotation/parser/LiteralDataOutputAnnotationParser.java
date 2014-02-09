@@ -40,7 +40,7 @@ import org.n52.wps.algorithm.annotation.binding.OutputBinding;
 import org.n52.wps.algorithm.annotation.binding.OutputFieldBinding;
 import org.n52.wps.algorithm.annotation.binding.OutputMethodBinding;
 import org.n52.wps.algorithm.descriptor.LiteralDataOutputDescriptor;
-import org.n52.wps.io.BasicXMLTypeFactory;
+import org.n52.wps.io.LiteralDataFactory;
 import org.n52.wps.io.data.ILiteralData;
 
 /**
@@ -75,7 +75,7 @@ public abstract class LiteralDataOutputAnnotationParser<M extends AccessibleObje
         Class<? extends ILiteralData> binding = annotation.binding();
         if (binding == null || ILiteralData.class.equals(binding)) {
             if (payloadType instanceof Class<?>) {
-                binding = BasicXMLTypeFactory.getBindingForPayloadType((Class<?>) payloadType);
+                binding = LiteralDataFactory.getBindingForPayloadType((Class<?>) payloadType);
                 if (binding == null) {
                     throw new AlgorithmAnnotationException("Unable to locate binding class for %s; binding not found.", payloadType);
                 }

@@ -29,7 +29,8 @@
 package org.n52.wps.algorithm.descriptor;
 
 import junit.framework.TestCase;
-import org.n52.wps.io.BasicXMLTypeFactory;
+
+import org.n52.wps.io.LiteralDataFactory;
 import org.n52.wps.io.data.binding.literal.LiteralAnyURIBinding;
 import org.n52.wps.io.data.binding.literal.LiteralBooleanBinding;
 import org.n52.wps.io.data.binding.literal.LiteralByteBinding;
@@ -90,77 +91,77 @@ public class LiteralDataOutputDescriptorTest extends TestCase {
         LiteralDataOutputDescriptor descriptor = LiteralDataOutputDescriptor.anyURIBuilder("mock_identifier").build();
         assertEquals("mock_identifier", descriptor.getIdentifier());
         assertEquals(LiteralAnyURIBinding.class, descriptor.getBinding());
-        assertEquals(BasicXMLTypeFactory.ANYURI_URI, descriptor.getDataType());
+        assertEquals(LiteralDataFactory.XS_ANY_URI, descriptor.getDataType());
     }
 
     public void testBase64BinaryBuilder() {
         LiteralDataOutputDescriptor descriptor = LiteralDataOutputDescriptor.anyURIBuilder("mock_identifier").build();
         assertEquals("mock_identifier", descriptor.getIdentifier());
         assertEquals(LiteralAnyURIBinding.class, descriptor.getBinding());
-        assertEquals(BasicXMLTypeFactory.ANYURI_URI, descriptor.getDataType());
+        assertEquals(LiteralDataFactory.XS_ANY_URI, descriptor.getDataType());
     }
 
     public void testBooleanBuilder() {
         LiteralDataOutputDescriptor descriptor = LiteralDataOutputDescriptor.booleanBuilder("mock_identifier").build();
         assertEquals("mock_identifier", descriptor.getIdentifier());
         assertEquals(LiteralBooleanBinding.class, descriptor.getBinding());
-        assertEquals(BasicXMLTypeFactory.BOOLEAN_URI, descriptor.getDataType());
+        assertEquals(LiteralDataFactory.XS_BOOLEAN, descriptor.getDataType());
     }
 
     public void testByteBuilder() {
         LiteralDataOutputDescriptor descriptor = LiteralDataOutputDescriptor.byteBuilder("mock_identifier").build();
         assertEquals("mock_identifier", descriptor.getIdentifier());
         assertEquals(LiteralByteBinding.class, descriptor.getBinding());
-        assertEquals(BasicXMLTypeFactory.BYTE_URI, descriptor.getDataType());
+        assertEquals(LiteralDataFactory.XS_BYTE, descriptor.getDataType());
     }
 
     public void testDateTimeBuilder() {
         LiteralDataOutputDescriptor descriptor = LiteralDataOutputDescriptor.dateTimeBuilder("mock_identifier").build();
         assertEquals("mock_identifier", descriptor.getIdentifier());
         assertEquals(LiteralDateTimeBinding.class, descriptor.getBinding());
-        assertEquals(BasicXMLTypeFactory.DATETIME_URI, descriptor.getDataType());
+        assertEquals(LiteralDataFactory.XS_DATE_TIME, descriptor.getDataType());
     }
 
     public void testDoubleBuilder() {
         LiteralDataOutputDescriptor descriptor = LiteralDataOutputDescriptor.doubleBuilder("mock_identifier").build();
         assertEquals("mock_identifier", descriptor.getIdentifier());
         assertEquals(LiteralDoubleBinding.class, descriptor.getBinding());
-        assertEquals(BasicXMLTypeFactory.DOUBLE_URI, descriptor.getDataType());
+        assertEquals(LiteralDataFactory.XS_DOUBLE, descriptor.getDataType());
     }
 
     public void testFloatBuilder() {
         LiteralDataOutputDescriptor descriptor = LiteralDataOutputDescriptor.floatBuilder("mock_identifier").build();
         assertEquals("mock_identifier", descriptor.getIdentifier());
         assertEquals(LiteralFloatBinding.class, descriptor.getBinding());
-        assertEquals(BasicXMLTypeFactory.FLOAT_URI, descriptor.getDataType());
+        assertEquals(LiteralDataFactory.XS_FLOAT, descriptor.getDataType());
     }
 
     public void testIntBuilder() {
         LiteralDataOutputDescriptor descriptor = LiteralDataOutputDescriptor.intBuilder("mock_identifier").build();
         assertEquals("mock_identifier", descriptor.getIdentifier());
         assertEquals(LiteralIntBinding.class, descriptor.getBinding());
-        assertEquals(BasicXMLTypeFactory.INT_URI, descriptor.getDataType());
+        assertEquals(LiteralDataFactory.XS_INT, descriptor.getDataType());
     }
 
     public void testLongBuilder() {
         LiteralDataOutputDescriptor descriptor = LiteralDataOutputDescriptor.longBuilder("mock_identifier").build();
         assertEquals("mock_identifier", descriptor.getIdentifier());
         assertEquals(LiteralLongBinding.class, descriptor.getBinding());
-        assertEquals(BasicXMLTypeFactory.LONG_URI, descriptor.getDataType());
+        assertEquals(LiteralDataFactory.XS_LONG, descriptor.getDataType());
     }
 
     public void testShortBuilder() {
         LiteralDataOutputDescriptor descriptor = LiteralDataOutputDescriptor.shortBuilder("mock_identifier").build();
         assertEquals("mock_identifier", descriptor.getIdentifier());
         assertEquals(LiteralShortBinding.class, descriptor.getBinding());
-        assertEquals(BasicXMLTypeFactory.SHORT_URI, descriptor.getDataType());
+        assertEquals(LiteralDataFactory.XS_SHORT, descriptor.getDataType());
     }
 
     public void testStringBuilder() {
         LiteralDataOutputDescriptor descriptor = LiteralDataOutputDescriptor.stringBuilder("mock_identifier").build();
         assertEquals("mock_identifier", descriptor.getIdentifier());
         assertEquals(LiteralStringBinding.class, descriptor.getBinding());
-        assertEquals(BasicXMLTypeFactory.STRING_URI, descriptor.getDataType());
+        assertEquals(LiteralDataFactory.XS_STRING, descriptor.getDataType());
     }
     
 }

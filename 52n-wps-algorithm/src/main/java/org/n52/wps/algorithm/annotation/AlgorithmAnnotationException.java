@@ -29,8 +29,6 @@
 package org.n52.wps.algorithm.annotation;
 
 /**
- * TODO JavaDoc
- *
  * @author Christian Autermann
  */
 public class AlgorithmAnnotationException extends Exception {

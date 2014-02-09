@@ -30,7 +30,7 @@ package org.n52.wps.algorithm.descriptor;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import org.n52.wps.io.BasicXMLTypeFactory;
+import org.n52.wps.io.LiteralDataFactory;
 import org.n52.wps.io.data.ILiteralData;
 
 
@@ -46,7 +46,7 @@ public abstract class LiteralDataOutputDescriptorBuilder<B extends LiteralDataOu
     protected LiteralDataOutputDescriptorBuilder(String identifier,
                                        Class<? extends ILiteralData> binding) {
         super(identifier, binding);
-        this.dataType = checkNotNull(BasicXMLTypeFactory.getXMLDataTypeforBinding(binding),
+        this.dataType = checkNotNull(LiteralDataFactory.getTypeforBindingType(binding),
                                      "Unable to resolve XML DataType for binding class %s", binding);
     }
 

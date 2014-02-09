@@ -52,7 +52,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlValidationError;
 import org.junit.Before;
 import org.junit.Test;
-import org.n52.wps.io.BasicXMLTypeFactory;
+import org.n52.wps.io.LiteralDataFactory;
 import org.n52.wps.io.data.ILiteralData;
 import org.n52.wps.io.data.binding.literal.LiteralAnyURIBinding;
 import org.n52.wps.io.data.binding.literal.LiteralBase64BinaryBinding;
@@ -198,8 +198,8 @@ public class OutputDataItemTest {
 		outputDescType.addNewIdentifier().setStringValue("output");
 		LiteralOutputType outputType = outputDescType.addNewLiteralOutput();
 
-		String dataTypeAsString = BasicXMLTypeFactory
-				.getXMLDataTypeforBinding(literalDataBinding.getClass());
+		String dataTypeAsString = LiteralDataFactory
+				.getTypeforBindingType(literalDataBinding.getClass());
 
 		outputType.addNewDataType().setStringValue(dataTypeAsString);
 

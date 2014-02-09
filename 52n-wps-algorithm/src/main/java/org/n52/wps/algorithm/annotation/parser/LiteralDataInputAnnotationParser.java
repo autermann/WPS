@@ -44,13 +44,12 @@ import org.n52.wps.algorithm.annotation.binding.InputFieldBinding;
 import org.n52.wps.algorithm.annotation.binding.InputMethodBinding;
 import org.n52.wps.algorithm.descriptor.LiteralDataInputDescriptor;
 import org.n52.wps.algorithm.util.ClassUtil;
-import org.n52.wps.io.BasicXMLTypeFactory;
+import org.n52.wps.io.LiteralDataFactory;
 import org.n52.wps.io.data.ILiteralData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * TODO JavaDoc
  * @author Christian Autermann
  */
 public abstract class LiteralDataInputAnnotationParser<M extends AccessibleObject & Member, B extends InputBinding<M>> extends InputAnnotationParser<LiteralDataInput, M, B> {
@@ -84,7 +83,7 @@ public abstract class LiteralDataInputAnnotationParser<M extends AccessibleObjec
         Class<? extends ILiteralData> binding = annotation.binding();
         if (binding == null || ILiteralData.class.equals(binding)) {
             if (payloadType instanceof Class<?>) {
-                binding = BasicXMLTypeFactory.getBindingForPayloadType((Class<?>) payloadType);
+                binding = LiteralDataFactory.getBindingForPayloadType((Class<?>) payloadType);
                 if (binding == null) {
                     throw new AlgorithmAnnotationException("Unable to locate binding class for %s; binding not found.", payloadType);
                 }

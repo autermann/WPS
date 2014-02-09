@@ -40,8 +40,6 @@ import org.n52.wps.algorithm.annotation.binding.OutputMethodBinding;
 import org.n52.wps.algorithm.descriptor.ComplexDataOutputDescriptor;
 
 /**
- * TODO JavaDoc
- *
  * @author Christian Autermann
  */
 public abstract class ComplexDataOutputAnnotationParser<M extends AccessibleObject & Member, B extends OutputBinding<M>>

@@ -29,8 +29,6 @@
 package org.n52.wps.commons;
 
 /**
- * TODO JavaDoc
- *
  * @author Christian Autermann
  */
 public interface XmlConstants {

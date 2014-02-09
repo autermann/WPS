@@ -75,7 +75,7 @@ public class RawData extends ResponseData {
             }
             
 		} catch (IOException e) {
-			throw new NoApplicableCodeException(e, "Error while generating raw data out of the process result");
+			throw new NoApplicableCodeException("Error while generating raw data out of the process result").causedBy(e);
 		}
 	}
 
