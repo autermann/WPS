@@ -34,7 +34,6 @@ package org.n52.wps.server;
  * @author Christian Autermann
  */
 public class InvalidParameterValueException extends ExceptionReport {
-    private static final long serialVersionUID = 1L;
 
     public InvalidParameterValueException(String message) {
         super(message, INVALID_PARAMETER_VALUE);
@@ -44,19 +43,13 @@ public class InvalidParameterValueException extends ExceptionReport {
         super(String.format(message, messageParam), INVALID_PARAMETER_VALUE);
     }
 
-    public InvalidParameterValueException(String locator, String message,
-                                          Object... messageParam) {
-        super(String.format(message, messageParam), INVALID_PARAMETER_VALUE, locator);
+    @Override
+    public InvalidParameterValueException causedBy(Throwable t) {
+        return (InvalidParameterValueException) super.causedBy(t);
     }
 
-    public InvalidParameterValueException(Throwable e, String message,
-                                          Object... messageParam) {
-        super(String.format(message, messageParam), INVALID_PARAMETER_VALUE, e);
+    @Override
+    public InvalidParameterValueException locatedAt(String locator) {
+        return (InvalidParameterValueException) super.locatedAt(locator);
     }
-
-    public InvalidParameterValueException(Throwable e, String locator,
-                                          String message, Object... messageParam) {
-        super(String.format(message, messageParam), INVALID_PARAMETER_VALUE, locator, e);
-    }
-
 }

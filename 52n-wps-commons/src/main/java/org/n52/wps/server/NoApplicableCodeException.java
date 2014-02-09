@@ -29,8 +29,6 @@
 package org.n52.wps.server;
 
 /**
- * TODO JavaDoc
- *
  * @author Christian Autermann
  */
 public class NoApplicableCodeException extends ExceptionReport {
@@ -43,19 +41,14 @@ public class NoApplicableCodeException extends ExceptionReport {
         super(String.format(message, messageParam), NO_APPLICABLE_CODE);
     }
 
-    public NoApplicableCodeException(String locator, String message,
-                                     Object... messageParam) {
-        super(String.format(message, messageParam), NO_APPLICABLE_CODE, locator);
+    @Override
+    public NoApplicableCodeException causedBy(Throwable t) {
+        return (NoApplicableCodeException) super.causedBy(t);
     }
 
-    public NoApplicableCodeException(Throwable e, String message,
-                                     Object... messageParam) {
-        super(String.format(message, messageParam), NO_APPLICABLE_CODE, e);
-    }
-
-    public NoApplicableCodeException(Throwable e, String locator, String message,
-                                     Object... messageParam) {
-        super(String.format(message, messageParam), NO_APPLICABLE_CODE, locator, e);
+    @Override
+    public NoApplicableCodeException locatedAt(String locator) {
+        return (NoApplicableCodeException) super.locatedAt(locator);
     }
 
 }
