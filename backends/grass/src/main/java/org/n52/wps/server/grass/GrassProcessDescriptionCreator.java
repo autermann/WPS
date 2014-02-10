@@ -46,6 +46,9 @@ import net.opengis.wps.x100.SupportedComplexDataInputType;
 import net.opengis.wps.x100.SupportedComplexDataType;
 
 import org.apache.xmlbeans.XmlException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.n52.wps.commons.Format;
 import org.n52.wps.commons.XmlConstants;
 import org.n52.wps.io.IOHandler;
@@ -53,8 +56,6 @@ import org.n52.wps.io.data.GenericFileDataConstants;
 import org.n52.wps.io.datahandler.parser.GenericFileParser;
 import org.n52.wps.server.grass.io.GrassIOHandler;
 import org.n52.wps.server.grass.util.JavaProcessStreamReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Benjamin Pross (bpross-52n)
@@ -94,7 +95,7 @@ public class GrassProcessDescriptionCreator {
 		//addons have their own directory and are python scripts
 		if(addon){
 
-			if (!GrassIOHandler.OS_Name.startsWith("Windows")) {
+			if (!GrassIOHandler.OS_NAME.startsWith("Windows")) {
 				proc = rt.exec(addonPath + fileSeparator +
 						identifier + wpsProcessDescCmd,
 						getEnvp());
@@ -106,7 +107,7 @@ public class GrassProcessDescriptionCreator {
 			
 		} else {
 
-			if (!GrassIOHandler.OS_Name.startsWith("Windows")) {
+			if (!GrassIOHandler.OS_NAME.startsWith("Windows")) {
 				proc = rt.exec(grassHome + fileSeparator + "bin"
 						+ fileSeparator + identifier + wpsProcessDescCmd,
 						getEnvp());
@@ -126,12 +127,10 @@ public class GrassProcessDescriptionCreator {
 		PipedInputStream pipedInError = new PipedInputStream(pipedOutError);
 		
 		// attach error stream reader
-		JavaProcessStreamReader errorGobbler = new JavaProcessStreamReader(proc.getErrorStream(),
-				"ERROR", pipedOutError);
+		JavaProcessStreamReader errorGobbler = new JavaProcessStreamReader(proc.getErrorStream(), pipedOutError);
 
 		// attach output stream reader
-		JavaProcessStreamReader outputGobbler = new JavaProcessStreamReader(proc.getInputStream(),
-				"OUTPUT", pipedOut);
+		JavaProcessStreamReader outputGobbler = new JavaProcessStreamReader(proc.getInputStream(), pipedOut);
 
 		// start them
 		executor.execute(errorGobbler);
@@ -346,7 +345,7 @@ public class GrassProcessDescriptionCreator {
 		if (envp == null) {
 
 			
-			if (GrassIOHandler.OS_Name.startsWith("Windows")) {
+			if (GrassIOHandler.OS_NAME.startsWith("Windows")) {
 
 				envp = new String[] {
 						"GISRC=" + gisrcDir,

@@ -29,6 +29,8 @@
 package org.n52.wps.server.grass.util;
 
 import java.io.BufferedReader;
+import java.io.Closeable;
+import java.io.Flushable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -51,66 +53,59 @@ public class JavaProcessStreamReader extends Thread {
 	private static Logger LOGGER = LoggerFactory
 			.getLogger(JavaProcessStreamReader.class);
 
-	InputStream inputStream;
-	String type;
-	OutputStream outputStream;
+	private final InputStream inputStream;
+	private final Output outputStream;
 
-	public JavaProcessStreamReader(InputStream is, String type) {
-		this(is, type, null);
+    public JavaProcessStreamReader(InputStream is, String type) {
+        this(is, new LogOutput(type));
+    }
+
+    public JavaProcessStreamReader(InputStream is, OutputStream os) {
+        this(is, new PrintOutput(os));
+    }
+
+    private JavaProcessStreamReader(InputStream is, Output redirect) {
+        this.inputStream = is;
+        this.outputStream = redirect;
+    }
+
+    @Override
+    public void run() {
+        try {
+            try (InputStream is = this.inputStream;
+                 InputStreamReader reader = new InputStreamReader(is);
+                 BufferedReader bufReader = new BufferedReader(reader);) {
+                try (Output os = this.outputStream) {
+                    String line;
+                    while ((line = bufReader.readLine()) != null) {
+                        os.println(line);
+                    }
+                    os.flush();
+                }
+            }
+        } catch (IOException ex) {
+            LOGGER.error("Something went wrong while parsing the Java process stream.", ex);
+        }
 	}
 
-	public JavaProcessStreamReader(InputStream is, String type,
-			OutputStream redirect) {
-		this.inputStream = is;
-		this.type = type;
-		this.outputStream = redirect;
-	}
+    private static class LogOutput implements Output {
+        private final String type;
+        LogOutput(String type) { this.type = type; }
+        @Override public void println(String line) throws IOException { LOGGER.debug("{}>{}", type, line); }
+        @Override public void close() throws IOException { /* do nothing */ }
+        @Override public void flush() throws IOException { /* do nothing */ }
+    }
 
-	public void run() {
+    private static class PrintOutput implements Output {
+        private final PrintWriter writer;
+        PrintOutput(OutputStream out) { this.writer = new PrintWriter(out); }
+        @Override public void println(String p) throws IOException { writer.println(p); }
+        @Override public void close() throws IOException { writer.close(); }
+        @Override public void flush() throws IOException { writer.flush(); }
+    }
 
-		InputStreamReader inputStreamReader = null;
-		PrintWriter printWriter = null;
-		BufferedReader bufferedReader = null;
-		try {
-			if (outputStream != null)
-				printWriter = new PrintWriter(outputStream);
-
-			inputStreamReader = new InputStreamReader(inputStream);
-			bufferedReader = new BufferedReader(inputStreamReader);
-			String line = null;
-			while ((line = bufferedReader.readLine()) != null) {
-				if (printWriter != null) {
-					printWriter.println(line);
-				} else {
-					LOGGER.debug(type + ">" + line);
-				}
-			}
-			if (printWriter != null) {
-				printWriter.flush();
-			}
-		} catch (IOException ioe) {
-			LOGGER.error("Something went wrong while parsing the Java process stream.",
-					ioe);
-		} finally {
-			try {
-				if (printWriter != null) {
-					printWriter.close();
-				}
-				if (inputStream != null) {
-					inputStream.close();
-				}
-				if (inputStreamReader != null) {
-					inputStreamReader.close();
-				}
-				if (bufferedReader != null) {
-					bufferedReader.close();
-				}
-			} catch (Exception e) {
-				LOGGER.error(
-						"Something went wrong while trying to close the streams.",
-						e);
-			}
-		}
-	}
+    private interface Output extends Closeable, Flushable {
+        void println(String p) throws IOException;
+    }
 
 }
