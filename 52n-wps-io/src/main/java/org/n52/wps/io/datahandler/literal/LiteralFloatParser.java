@@ -1,7 +1,6 @@
 package org.n52.wps.io.datahandler.literal;
 
 import org.n52.wps.io.data.ILiteralData;
-import org.n52.wps.io.data.binding.literal.LiteralDoubleBinding;
 import org.n52.wps.io.data.binding.literal.LiteralFloatBinding;
 
 /**
@@ -10,7 +9,7 @@ import org.n52.wps.io.data.binding.literal.LiteralFloatBinding;
 public class LiteralFloatParser extends AbstractLiteralNumberDataParser {
 
     public LiteralFloatParser(String uri) {
-        super(Float.class, LiteralDoubleBinding.class, uri);
+        super(Float.class, LiteralFloatBinding.class, uri);
     }
 
     @Override
