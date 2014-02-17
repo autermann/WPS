@@ -67,9 +67,9 @@ import com.vividsolutions.jts.io.ParseException;
  *
  */
 public class GTBinZippedWKT64Parser extends AbstractParser {
-	
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(GTBinZippedWKT64Parser.class);
-	
+
 	public GTBinZippedWKT64Parser() {
 		super(GTVectorDataBinding.class);
 	}
@@ -83,7 +83,7 @@ public class GTBinZippedWKT64Parser extends AbstractParser {
 	@Override
 	public GTVectorDataBinding parse(InputStream stream, Format format) {
 		try {
-			
+
 			String fileName = "tempfile" + UUID.randomUUID() + ".zip";
 			String tmpDirPath = System.getProperty("java.io.tmpdir");
 			File tempFile = registerTempFile(new File(tmpDirPath + File.separatorChar + fileName));
@@ -105,8 +105,8 @@ public class GTBinZippedWKT64Parser extends AbstractParser {
 				LOGGER.error(e.getMessage(), e);
 				System.gc();
 				throw new RuntimeException(e);
-			}			
-			
+			}
+
 			stream.close();
 			List<File> wktFiles = registerTempFiles(IOUtils.unzip(tempFile, "wkt"));
 			if (wktFiles == null || wktFiles.isEmpty()) {
@@ -116,19 +116,19 @@ public class GTBinZippedWKT64Parser extends AbstractParser {
 
 			//set namespace namespace
 			List<Geometry> geometries = new ArrayList<>();
-		
+
 			//read wkt file
 			//please not that only 1 geometry is returned. If multiple geometries are included, perhaps use the read(String wktstring) method
 			for(int i = 0; i<wktFiles.size();i++){
 				File wktFile = wktFiles.get(i);
 				Reader fileReader = new FileReader(wktFile);
-				
+
 				WKTReader2 wktReader = new WKTReader2();
 				com.vividsolutions.jts.geom.Geometry geometry = wktReader.read(fileReader);
 				geometries.add(geometry);
 			}
 
-			CoordinateReferenceSystem coordinateReferenceSystem = CRS.decode("EPSG:4326");			
+			CoordinateReferenceSystem coordinateReferenceSystem = CRS.decode("EPSG:4326");
 			SimpleFeatureCollection inputFeatureCollection = createFeatureCollection(geometries, coordinateReferenceSystem);
 
 			return new GTVectorDataBinding(inputFeatureCollection);
@@ -139,18 +139,18 @@ public class GTBinZippedWKT64Parser extends AbstractParser {
 		} catch (ParseException e) {
 			LOGGER.error(e.getMessage(), e);
 			throw new RuntimeException(
-					"An error has occurred while accessing provided data", e);		
+					"An error has occurred while accessing provided data", e);
 		} catch (NoSuchAuthorityCodeException e) {
 			LOGGER.error(e.getMessage(), e);
 			throw new RuntimeException(
-					"An error has occurred while accessing provided data", e);		
+					"An error has occurred while accessing provided data", e);
 		} catch (FactoryException e) {
 			LOGGER.error(e.getMessage(), e);
 				throw new RuntimeException(
-						"An error has occurred while accessing provided data", e);			
+						"An error has occurred while accessing provided data", e);
 		}
 	}
-	
+
 	private SimpleFeatureCollection createFeatureCollection(List<com.vividsolutions.jts.geom.Geometry> geometries, CoordinateReferenceSystem coordinateReferenceSystem){
 
 		SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
@@ -160,7 +160,7 @@ public class GTBinZippedWKT64Parser extends AbstractParser {
 			} catch (NoSuchAuthorityCodeException e) {
 			LOGGER.error(e.getMessage(), e);
 				throw new RuntimeException(
-						"An error has occurred while trying to decode CRS EPSG:4326", e);				
+						"An error has occurred while trying to decode CRS EPSG:4326", e);
 			} catch (FactoryException e) {
 			LOGGER.error(e.getMessage());
 				throw new RuntimeException(
@@ -168,13 +168,13 @@ public class GTBinZippedWKT64Parser extends AbstractParser {
 			}
 			typeBuilder.setCRS(coordinateReferenceSystem);
 		}
-	
+
 		String namespace = "http://www.opengis.net/gml";
 		typeBuilder.setNamespaceURI(namespace);
 		Name nameType = new NameImpl(namespace, "Feature");
 		typeBuilder.setName(nameType);
 		typeBuilder.add("GEOMETRY", geometries.get(0).getClass());
-	
+
         List<SimpleFeature> simpleFeatureList = new ArrayList<>();
 
         SimpleFeatureType featureType = typeBuilder.buildFeatureType();

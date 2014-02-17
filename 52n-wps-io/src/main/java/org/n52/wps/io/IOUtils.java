@@ -28,6 +28,7 @@
  */
 package org.n52.wps.io;
 
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -49,273 +50,271 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
-import org.apache.commons.codec.binary.Base64InputStream;
+import org.apache.xpath.XPathAPI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.xpath.XPathAPI;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import static org.apache.commons.io.IOUtils.*;
-
 public class IOUtils {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(IOUtils.class);
+    public static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
+    public static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
+
+    private IOUtils() {
+    }
+
 	/**
-	 * Reads the given input stream as a string and decodes that base64 string
-	 * into a file with the specified extension
-	 * 
-	 * @param input
-	 *            the stream with the base64 string
-	 * @param extension
-	 *            the extension of the result file (without the '.' at the
-	 *            beginning)
-	 * @return the decoded base64 file written to disk
-	 * @throws IOException
-	 *             if an error occurs while writing the contents to disk
-	 */
-	
-	private static Logger LOGGER = LoggerFactory.getLogger(IOUtils.class);
-	
-	public static File writeBase64ToFile(InputStream input, String extension)
-			throws IOException {
+     * Reads the given input stream as a string and decodes that base64 string
+     * into a file with the specified extension
+     *
+     * @param input
+     *            the stream with the base64 string
+     * @param extension
+     *            the extension of the result file (without the '.' at the
+     *            beginning)
+     * @return the decoded base64 file written to disk
+     * @throws IOException if an error occurs while writing the contents to disk
+     */
+    public static File writeBase64ToFile(InputStream input, String extension) throws IOException {
 
         File file = File.createTempFile(
                 "file" + UUID.randomUUID(),
                 "." + extension,
-                new File(System.getProperty("java.io.tmpdir")));
-        OutputStream outputStream = null;
-        try {
-            outputStream = new FileOutputStream(file);
-            copyLarge(new Base64InputStream(input), outputStream);
-        } finally {
-            closeQuietly(outputStream);
+                new File(TEMP_DIR));
+
+        try (OutputStream out = new FileOutputStream(file)) {
+            byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+            int n = 0;
+            while (-1 != (n = input.read(buffer))) {
+                out.write(buffer, 0, n);
+            }
+            out.flush();
         }
 
-		return file;
-	}
-	
+        return file;
+    }
+
 	public static File writeStreamToFile(InputStream inputStream, String extension)
-	throws IOException {
-		File file = File.createTempFile("file" + UUID.randomUUID(), "." + extension);
-		return writeStreamToFile(inputStream, extension, file);
-	}
+			throws IOException {
+        File file = File.createTempFile("file" + UUID.randomUUID(), "." + extension);
+        return writeStreamToFile(inputStream, file);
+    }
 
-	public static File writeStreamToFile(InputStream inputStream,
-			String extension, File file) throws IOException {
-		FileOutputStream output = new FileOutputStream(file);
-		
-		byte buf[]=new byte[1024];
-		int len;
-		while((len=inputStream.read(buf))>0){
-			output.write(buf,0,len);
-		}
-		output.close();
-		inputStream.close();
+    @Deprecated
+    public static File writeStreamToFile(InputStream inputStream, String extension, File file)
+            throws IOException {
+        return writeStreamToFile(inputStream, file);
+    }
 
-		return file;		
-	}
-
-	public static File writeBase64XMLToFile(InputStream stream, String extension)
-			throws SAXException, IOException, ParserConfigurationException,
-			DOMException, TransformerException {
-        
-		// ToDo:  look at StAX to stream XML parsing instead of in memory DOM
-		Document document = DocumentBuilderFactory.newInstance()
-				.newDocumentBuilder().parse(stream);
-		String binaryContent = XPathAPI.selectSingleNode(
-				document.getFirstChild(), "text()").getTextContent();
-
-		InputStream byteStream = null;
-        try {
-            byteStream = new ByteArrayInputStream(binaryContent.getBytes());
-            return writeBase64ToFile(byteStream, extension);
-        } finally {
-            closeQuietly(byteStream);
+    public static File writeStreamToFile(InputStream inputStream, File file)
+            throws IOException {
+        try (FileOutputStream out = new FileOutputStream(file);
+             InputStream in = inputStream) {
+            byte buf[] = new byte[DEFAULT_BUFFER_SIZE];
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+            out.flush();
         }
-	}
+        return file;
+    }
+
+	public static File writeBase64XMLToFile(InputStream stream, String extension) throws SAXException, IOException, ParserConfigurationException, DOMException, TransformerException {
+        
+        // ToDo:  look at StAX to stream XML parsing instead of in memory DOM
+        Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(stream);
+        String binary = XPathAPI.selectSingleNode(document.getFirstChild(), "text()").getTextContent();
+
+        try (InputStream byteStream = new ByteArrayInputStream(binary.getBytes())){
+            return writeBase64ToFile(byteStream, extension);
+        }
+    }
 
 	/**
-	 * Zip the files. Returns a zipped file and delete the specified files
-	 * 
-	 * @param files
-	 *            files to zipped
-	 * @return the zipped file
-	 * @throws IOException
-	 *             if the zipping process fails.
-	 */
-	public static File zip(File... files) throws IOException {
-		File zip = File.createTempFile("zip" + UUID.randomUUID(), ".zip");
+     * Zip the files. Returns a zipped file and delete the specified files
+     *
+     * @param files
+     *            files to zipped
+     * @return the zipped file
+     * @throws IOException
+     *             if the zipping process fails.
+     */
+    public static File zip(File... files)
+            throws IOException {
+        File zip = File.createTempFile("zip" + UUID.randomUUID(), ".zip");
 
-		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zip));
+        try (FileOutputStream fout = new FileOutputStream(zip);
+                ZipOutputStream zout = new ZipOutputStream(fout)) {
+            byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+            for (File file : files) {
+                if (!file.exists()) {
+                    LOGGER.debug("Could not zip {}", file.getAbsolutePath());
+                    continue;
+                }
+                
+                zout.putNextEntry(new ZipEntry(file.getName()));
+                try (FileInputStream in = new FileInputStream(file)) {
+                    int len;
+                    while ((len = in.read(buffer)) > 0) {
+                        zout.write(buffer, 0, len);
+                    }
+                    zout.closeEntry();
+                }
+            }
+            
+            deleteResources(files);
+        }
 
-		byte[] buffer = new byte[4096];
-		for (File file : files) {
-			if (!file.exists()) {
-				LOGGER.debug("Could not zip " + file.getAbsolutePath());
-				continue;
-			}
+        return zip;
+    }
 
-			out.putNextEntry(new ZipEntry(file.getName()));
-			FileInputStream in = new FileInputStream(file);
+    /**
+     * Unzip the file. Returns the unzipped file with the specified extension
+     * and deletes the zipped file
+     *
+     * @param file
+     *            the file to unzip
+     * @param extension
+     *            the extension to search in the content files
+     * @return the file with the specified extension
+     * @throws IOException
+     *             if the unzipping process fails
+     */
+    public static List<File> unzip(File file, String extension)
+            throws IOException {
+        return unzip(file, extension, null);
+    }
 
-			int len;
-			while ((len = in.read(buffer)) > 0) {
-				out.write(buffer, 0, len);
-			}
-
-			out.closeEntry();
-			in.close();
-		}
-
-		deleteResources(files);
-
-		out.close();
-
-		return zip;
-	}
-
-	/**
-	 * Unzip the file. Returns the unzipped file with the specified extension
-	 * and deletes the zipped file
-	 * 
-	 * @param file
-	 *            the file to unzip
-	 * @param extension
-	 *            the extension to search in the content files
-	 * @return the file with the specified extension
-	 * @throws IOException
-	 *             if the unzipping process fails
-	 */
-	public static List<File> unzip(File file, String extension) throws IOException {
-		return unzip(file, extension, null);
-	}
-	
 	public static List<File> unzip(File file, String extension, File directory) throws IOException {
-		int bufferLength = 2048;
-		byte buffer[] = new byte[bufferLength];
-		List<File> foundFiles = new ArrayList<File>();
-		ZipInputStream zipInputStream = new ZipInputStream(
-				new BufferedInputStream(new FileInputStream(file)));
-		ZipEntry entry;
-		File tempDir = directory;
-		if (tempDir == null || !directory.isDirectory()) {
-			tempDir = File.createTempFile("unzipped" + UUID.randomUUID(), "", new File(System
-					.getProperty("java.io.tmpdir")));
-			tempDir.delete();
-			tempDir.mkdir();
-		}
-		while ((entry = zipInputStream.getNextEntry()) != null) {
-			int count;
-			File entryFile = new File(tempDir, entry.getName());
-			entryFile.createNewFile();
-			FileOutputStream fos = new FileOutputStream(entryFile);
-			BufferedOutputStream dest = new BufferedOutputStream(fos,
-					bufferLength);
-			while ((count = zipInputStream.read(buffer, 0, bufferLength)) != -1) {
-				dest.write(buffer, 0, count);
-			}
-			dest.flush();
-			dest.close();
+        byte buffer[] = new byte[DEFAULT_BUFFER_SIZE];
+        List<File> foundFiles = new ArrayList<>();
+        try (FileInputStream fin = new FileInputStream(file);
+                BufferedInputStream bin = new BufferedInputStream(fin);
+                ZipInputStream zipInputStream = new ZipInputStream(bin)) {
+            ZipEntry entry;
+            File tempDir = directory;
+            if (tempDir == null || !directory.isDirectory()) {
+                tempDir = File.createTempFile("unzipped" + UUID.randomUUID(), "", new File(TEMP_DIR));
+                tempDir.delete();
+                tempDir.mkdir();
+            }
+            while ((entry = zipInputStream.getNextEntry()) != null) {
+                int count;
+                File entryFile = new File(tempDir, entry.getName());
+                entryFile.createNewFile();
+                FileOutputStream fos = new FileOutputStream(entryFile);
+                try (BufferedOutputStream dest = new BufferedOutputStream(fos, DEFAULT_BUFFER_SIZE)) {
+                    while ((count = zipInputStream.read(buffer, 0, DEFAULT_BUFFER_SIZE)) != -1) {
+                        dest.write(buffer, 0, count);
+                    }
+                    dest.flush();
+                }
 
-			if (entry.getName().endsWith("." + extension)) {
-				foundFiles.add(entryFile);
-				
-			}
-		}
+                if (entry.getName().endsWith("." + extension)) {
+                    foundFiles.add(entryFile);
+                }
+            }
+        }
 
-		zipInputStream.close();
+        deleteResources(file);
 
-		deleteResources(file);
+        return foundFiles;
+    }
 
-		return foundFiles;
-	}
-	
-	public static List<File> unzipAll(File file) throws IOException {
-		int bufferLength = 2048;
-		byte buffer[] = new byte[bufferLength];
-		List<File> foundFiles = new ArrayList<File>();
-		ZipInputStream zipInputStream = new ZipInputStream(
-				new BufferedInputStream(new FileInputStream(file)));
-		ZipEntry entry;
-		File tempDir = File.createTempFile("unzipped" + UUID.randomUUID(), "", new File(System
-				.getProperty("java.io.tmpdir")));
-		tempDir.delete();
-		tempDir.mkdir();
-		while ((entry = zipInputStream.getNextEntry()) != null) {
-			int count;
-			File entryFile = new File(tempDir, entry.getName());
-			entryFile.createNewFile();
-			FileOutputStream fos = new FileOutputStream(entryFile);
-			BufferedOutputStream dest = new BufferedOutputStream(fos,
-					bufferLength);
-			while ((count = zipInputStream.read(buffer, 0, bufferLength)) != -1) {
-				dest.write(buffer, 0, count);
-			}
-			dest.flush();
-			dest.close();
+    public static List<File> unzipAll(File file) throws IOException {
+        byte buffer[] = new byte[DEFAULT_BUFFER_SIZE];
+        List<File> foundFiles = new ArrayList<>();
+        try (FileInputStream fin = new FileInputStream(file);
+                BufferedInputStream bin = new BufferedInputStream(fin);
+                ZipInputStream zin = new ZipInputStream(bin)) {
+            ZipEntry entry;
+            File tempDir = File.createTempFile("unzipped" + UUID.randomUUID(), "", new File(TEMP_DIR));
+            tempDir.delete();
+            tempDir.mkdir();
+            while ((entry = zin.getNextEntry()) != null) {
+                int count;
+                File entryFile = new File(tempDir, entry.getName());
+                entryFile.createNewFile();
+                FileOutputStream fos = new FileOutputStream(entryFile);
+                try (BufferedOutputStream dest
+                        = new BufferedOutputStream(fos, DEFAULT_BUFFER_SIZE)) {
+                    while ((count = zin.read(buffer, 0, DEFAULT_BUFFER_SIZE)) != -1) {
+                        dest.write(buffer, 0, count);
+                    }
+                    dest.flush();
+                }
+                foundFiles.add(entryFile);
+            }
+        }
+        deleteResources(file);
+        return foundFiles;
+    }
 
-			foundFiles.add(entryFile);
-			
-		}
+    /**
+     * Delete the given files and all the files with the same name but different
+     * extension. If some file is <code>null</code> just doesn't process it and
+     * continue to the next element of the array
+     *
+     * @param files
+     *            the files to delete
+     */
+    public static void deleteResources(File... files) {
+        //FIXME this will delete the files if the JVM exists. Is this the expected behaviour?
+        for (File file : files) {
+            if (file != null) {
+                if (file.getAbsolutePath().startsWith(TEMP_DIR)) {
+                    delete(file);
+                    File parent = file.getAbsoluteFile().getParentFile();
+                    if (parent != null && !(parent.getAbsolutePath().equals(TEMP_DIR))) {
+                        parent.deleteOnExit();
+                    }
+                }
+            }
+        }
+    }
 
-		zipInputStream.close();
+    /**
+     * Delete the given files and all the files with the same name but different
+     * extension. If some file is <code>null</code> just doesn't process it and
+     * continue to the next element of the array
+     *
+     * @param files
+     *              the files to delete
+     */
+    private static void delete(File... files) {
+        //FIXME this will delete the files if the JVM exists. Is this the expected behaviour?
+        for (File file : files) {
+            if (file == null) {
+                continue;
+            }
+            final String baseName = getBaseName(file);
+            File[] list = file.getAbsoluteFile().getParentFile().listFiles(new PrefixFileFilter(baseName));
+            for (File f : list) {
+                f.deleteOnExit();
+            }
 
-		deleteResources(file);
+            file.deleteOnExit();
+        }
+    }
 
-		return foundFiles;
-	}
+    private static String getBaseName(File file) {
+        return file.getName().substring(0, file.getName().lastIndexOf('.'));
+    }
 
-	/**
-	 * Delete the given files and all the files with the same name but different
-	 * extension. If some file is <code>null</code> just doesn't process it and
-	 * continue to the next element of the array
-	 * 
-	 * @param files
-	 *            the files to delete
-	 */
-	public static void deleteResources(File... files) {
-		for (File file : files) {
-			if (file != null) {
-				if (file.getAbsolutePath().startsWith(
-						System.getProperty("java.io.tmpdir"))) {
-					delete(file);
-					File parent = file.getAbsoluteFile().getParentFile();
-					if (parent != null
-							&& !(parent.getAbsolutePath().equals(System
-									.getProperty("java.io.tmpdir")))) {
-						parent.deleteOnExit();
-					}
-				}
-			}
-		}
-	}
+    private static class PrefixFileFilter implements FileFilter {
+        private final String baseName;
 
-	/**
-	 * Delete the given files and all the files with the same name but different
-	 * extension. If some file is <code>null</code> just doesn't process it and
-	 * continue to the next element of the array
-	 * 
-	 * @param files
-	 *            the files to delete
-	 */
-	private static void delete(File... files) {
-		for (File file : files) {
-			if (file != null) {
-				final String baseName = file.getName().substring(0,
-						file.getName().lastIndexOf("."));
-				File[] list = file.getAbsoluteFile().getParentFile().listFiles(
-						new FileFilter() {
-							@Override
-							public boolean accept(File pathname) {
-								return pathname.getName().startsWith(baseName);
-							}
-						});
-				for (File f : list) {
-					f.deleteOnExit();
-				}
+        PrefixFileFilter(String baseName) {
+            this.baseName = baseName;
+        }
 
-				file.deleteOnExit();
-			}
-		}
-	}
+        @Override
+        public boolean accept(File pathname) {
+            return pathname.getName().startsWith(baseName);
+        }
+    }
 }

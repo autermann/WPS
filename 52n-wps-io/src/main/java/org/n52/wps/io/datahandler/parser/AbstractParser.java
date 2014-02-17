@@ -33,11 +33,13 @@ import java.io.InputStream;
 import java.util.Set;
 
 import org.apache.commons.codec.binary.Base64InputStream;
+
 import org.n52.wps.commons.Format;
 import org.n52.wps.io.AbstractIOHandler;
 import org.n52.wps.io.IParser;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.server.ExceptionReport;
+
 
 /**
  * @author Matthias Mueller, TU Dresden
@@ -59,9 +61,8 @@ public abstract class AbstractParser extends AbstractIOHandler
     }
 
     @Override
-    public IData parseBase64(InputStream input, Format format) 
+    public IData parseBase64(InputStream input, Format format)
             throws IOException, ExceptionReport {
         return parse(new Base64InputStream(input), format);
     }
-
 }

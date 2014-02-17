@@ -44,15 +44,17 @@ import java.util.ArrayList;
 import javax.servlet.ServletConfig;
 
 import org.apache.xmlbeans.XmlException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.n52.wps.FormatDocument.Format;
 import org.n52.wps.GeneratorDocument.Generator;
 import org.n52.wps.ParserDocument.Parser;
 import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.RepositoryDocument.Repository;
 import org.n52.wps.WPSConfigurationDocument;
+import org.n52.wps.WPSConfigurationDocument.WPSConfiguration;
 import org.n52.wps.impl.WPSConfigurationDocumentImpl.WPSConfigurationImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class WPSConfig implements Serializable {
     private static final long serialVersionUID = 3198223084611936675L;
@@ -423,7 +425,7 @@ public class WPSConfig implements Serializable {
         return path;
     }
 
-    public WPSConfigurationImpl getWPSConfig() {
+    public WPSConfiguration getWPSConfig() {
         return wpsConfigXMLBeans;
     }
 

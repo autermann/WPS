@@ -34,15 +34,16 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Properties;
 
-import org.n52.wps.io.IOHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.n52.wps.io.IOHandler;
+
 
 public final class GenericFileDataConstants {
-	
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(GenericFileDataConstants.class);
-	
+
 	public static final String MIME_TYPE_ZIPPED_SHP = IOHandler.MIME_TYPE_ZIPPED_SHP;
 	public static final String MIME_TYPE_SHP = "application/shp";
 	public static final String MIME_TYPE_HDF = "application/img";
@@ -60,8 +61,8 @@ public final class GenericFileDataConstants {
 	public static final String MIME_TYPE_X_ERDAS_HFA = "application/x-erdas-hfa";
 	public static final String MIME_TYPE_NETCDF = "application/netcdf";
 	public static final String MIME_TYPE_X_NETCDF = "application/x-netcdf";
-	public static final String MIME_TYPE_DGN = "application/dgn";	
-	public static final String MIME_TYPE_KML = "application/vnd.google-earth.kml+xml";	
+	public static final String MIME_TYPE_DGN = "application/dgn";
+	public static final String MIME_TYPE_KML = "application/vnd.google-earth.kml+xml";
 	public static final String MIME_TYPE_HDF4EOS = "application/hdf4-eos";
 	public static final String MIME_TYPE_GML200 = "text/xml; subtype=gml/2.0.0";
 	public static final String MIME_TYPE_GML211 = "text/xml; subtype=gml/2.1.1";
@@ -72,14 +73,15 @@ public final class GenericFileDataConstants {
 	public static final String MIME_TYPE_GML310 = "text/xml; subtype=gml/3.1.0";
 	public static final String MIME_TYPE_GML311 = "text/xml; subtype=gml/3.1.1";
 	public static final String MIME_TYPE_GML321 = "text/xml; subtype=gml/3.2.1";
-	
+    public static final String MIME_TYPE_IMAGE_TIFF = "image/tiff";
+
 	private static final String[] additionalSHPFileItems = {"shx", "dbf", "prj", "sbn", "sbx", "shp.xml"};
 	private static final String[] additionalDBFFileItems = {"dbf.xml"}; // e.g. ArcGIS backend returns shape and a metadata xml file (e.g. process pointdistance)
-	
-	private static HashMap<String, String> lut;	
-	
+
+	private static HashMap<String, String> lut;
+
 	public static final HashMap<String, String> mimeTypeFileTypeLUT(){
-		
+
 		if (lut == null) {
 
 			lut = new HashMap<>();
@@ -99,28 +101,25 @@ public final class GenericFileDataConstants {
 
 			} catch (IOException e) {
 				LOGGER.error("Exception while setting up Look up table.", e);
-			} 
+			}
 		}
-		
+
 		return lut;
 	}
-	
-	public static final String[] getMimeTypes (){
-		return mimeTypeFileTypeLUT().keySet().toArray(new String[mimeTypeFileTypeLUT().size()]);
-	}
-	
-	public static final String[] getIncludeFilesByMimeType(String mimeType){
-		
-		String[] returnValue = null;
-		
+
+    public static final String[] getMimeTypes() {
+        return mimeTypeFileTypeLUT().keySet()
+                .toArray(new String[mimeTypeFileTypeLUT().size()]);
+    }
+
+	public static String[] getIncludeFilesByMimeType(String mimeType){
 		if (mimeType != null && mimeType.equalsIgnoreCase("application/x-zipped-shp")){
-			returnValue = additionalSHPFileItems;
+			return additionalSHPFileItems;
 		} if (mimeType != null && mimeType.equalsIgnoreCase("application/dbase")){
-			returnValue = additionalDBFFileItems;
-		}
-		
-		return returnValue;
-		
+			return additionalDBFFileItems;
+		} else {
+            return null;
+        }
 	}
-	
+
 }

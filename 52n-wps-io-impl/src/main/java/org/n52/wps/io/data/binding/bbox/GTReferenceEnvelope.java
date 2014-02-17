@@ -30,30 +30,32 @@ package org.n52.wps.io.data.binding.bbox;
 
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
-import org.n52.wps.io.data.IBBOXData;
 import org.opengis.geometry.Envelope;
+import org.opengis.geometry.MismatchedDimensionException;
+import org.opengis.referencing.FactoryException;
 
+import org.n52.wps.io.data.IBBOXData;
+import org.n52.wps.server.ExceptionReport;
+import org.n52.wps.server.NoApplicableCodeException;
+
+import com.google.common.base.Preconditions;
 import com.vividsolutions.jts.geom.Coordinate;
 
 public class GTReferenceEnvelope implements IBBOXData {
-    private static final long serialVersionUID = 1L;
     private final Envelope gtEnvelope;
     private final String crs;
 
-    public GTReferenceEnvelope(Object llx,
-                               Object lly,
-                               Object upx,
-                               Object upy,
-                               String crs) {
+    public GTReferenceEnvelope(Object llx, Object lly,
+                               Object upx, Object upy,
+                               String crs) throws ExceptionReport {
 
         try {
-            double llx_double = Double.parseDouble(llx.toString());
-            double lly_double = Double.parseDouble(lly.toString());
-            double upx_double = Double.parseDouble(upx.toString());
-            double upy_double = Double.parseDouble(upy.toString());
-
-            Coordinate ll = new Coordinate(llx_double, lly_double);
-            Coordinate ur = new Coordinate(upx_double, upy_double);
+            double minx = Double.parseDouble(llx.toString());
+            double miny = Double.parseDouble(lly.toString());
+            double maxx = Double.parseDouble(upx.toString());
+            double maxy = Double.parseDouble(upy.toString());
+            Coordinate ll = new Coordinate(minx, miny);
+            Coordinate ur = new Coordinate(maxx, maxy);
             com.vividsolutions.jts.geom.Envelope jtsEnvelope = new com.vividsolutions.jts.geom.Envelope(ll, ur);
             this.crs = crs;
             if (crs == null) {
@@ -62,13 +64,13 @@ public class GTReferenceEnvelope implements IBBOXData {
                 this.gtEnvelope = new ReferencedEnvelope(jtsEnvelope, CRS.decode(crs));
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error while creating BoundingBox");
+        } catch (NumberFormatException | MismatchedDimensionException | FactoryException e) {
+            throw new NoApplicableCodeException("Error while creating BoundingBox").causedBy(e);
         }
     }
 
     public GTReferenceEnvelope(Envelope envelope) {
-        this.gtEnvelope = envelope;
+        this.gtEnvelope = Preconditions.checkNotNull(envelope);
         if (envelope.getCoordinateReferenceSystem() != null &&
             !envelope.getCoordinateReferenceSystem().getIdentifiers().isEmpty()) {
             this.crs = envelope.getCoordinateReferenceSystem().getIdentifiers().iterator().next().toString();
@@ -77,11 +79,13 @@ public class GTReferenceEnvelope implements IBBOXData {
         }
     }
 
+    @Override
     public Envelope getPayload() {
         return gtEnvelope;
     }
 
-    public Class<?> getSupportedClass() {
+    @Override
+    public Class<ReferencedEnvelope> getSupportedClass() {
         return ReferencedEnvelope.class;
     }
 

@@ -44,12 +44,13 @@ public class DescribeProcessResponse extends Response{
 	}
 	
     @Override
-	public InputStream getAsStream() throws ExceptionReport{
-		try {
-			return ((ProcessDescriptionsDocument)request.getAttachedResult()).newInputStream(XMLBeansHelper.getXmlOptions());
-		}
-		catch(Exception e) {
-			throw new ExceptionReport("Exception occured while writing response document", ExceptionReport.NO_APPLICABLE_CODE, e);
-		}
+    public InputStream getAsStream() throws ExceptionReport {
+        try {
+            return ((ProcessDescriptionsDocument) getRequest()
+                    .getAttachedResult()).newInputStream(XMLBeansHelper
+                            .getXmlOptions());
+        } catch (Exception e) {
+            throw new ExceptionReport("Exception occured while writing response document", ExceptionReport.NO_APPLICABLE_CODE, e);
+        }
 	}
 }

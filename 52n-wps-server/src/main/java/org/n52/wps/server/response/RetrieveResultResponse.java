@@ -39,8 +39,9 @@ public class RetrieveResultResponse extends Response {
         super(request);
     }
 
+    @Override
     public InputStream getAsStream() throws ExceptionReport {
-        return (InputStream) request.getAttachedResult();
+        return (InputStream) getRequest().getAttachedResult();
     }
 
 }

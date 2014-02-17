@@ -39,33 +39,36 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.apache.commons.httpclient.HttpException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
 import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfig;
 import org.n52.wps.commons.XMLUtil;
 import org.n52.wps.io.data.GenericFileData;
 import org.n52.wps.io.data.IData;
-import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
 import org.n52.wps.io.data.binding.complex.GeotiffBinding;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.n52.wps.io.geotools.data.GTRasterDataBinding;
+import org.n52.wps.server.ExceptionReport;
+import org.n52.wps.server.NoApplicableCodeException;
 
 
 //TODO: compact the 3 OWS Generators into a single one
 
 public class GeoserverWCSGenerator extends AbstractGenerator {
-	
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(GeoserverWCSGenerator.class);
 	private String username;
 	private String password;
 	private String host;
 	private String port;
-	
+
 	public GeoserverWCSGenerator() {
 		super(GTRasterDataBinding.class, GeotiffBinding.class);
-		
+
 		for(Property property : WPSConfig.getInstance().getPropertiesForGeneratorClass(this.getClass().getName())){
 			if(property.getName().equalsIgnoreCase("Geoserver_username")){
 				username = property.getStringValue();
@@ -84,66 +87,59 @@ public class GeoserverWCSGenerator extends AbstractGenerator {
 			port = WPSConfig.getInstance().getWPSConfig().getServer().getHostport();
 		}
 	}
-	
-	@Override
-	public InputStream generateStream(IData data, Format format) throws IOException {
 
-		InputStream stream = null;	
+    @Override
+	public InputStream generateStream(IData data, Format format) throws IOException, ExceptionReport {
 		try {
 			Document doc = storeLayer(data);
-			String xmlString = XMLUtil.nodeToString(doc);			
-			stream = new ByteArrayInputStream(xmlString.getBytes("UTF-8"));			
+			String xmlString = XMLUtil.nodeToString(doc);
+			return new ByteArrayInputStream(xmlString.getBytes("UTF-8"));
 	    } catch( TransformerException | IOException | ParserConfigurationException e){
-	    	LOGGER.error("Error generating WCS output. Reason: ", e);
-	    	throw new RuntimeException("Error generating WCS output. Reason: " + e);
-	    }	
-		return stream;
+	    	throw new NoApplicableCodeException("Error generating WCS output.", e);
+	    }
 	}
-	
-	private Document storeLayer(IData coll) throws HttpException, IOException, ParserConfigurationException{
+
+	private Document storeLayer(IData coll) throws HttpException, IOException, ParserConfigurationException, ExceptionReport{
 		File file = null;
 		String storeName = "";
-		
+
 		if(coll instanceof GTRasterDataBinding){
 			GTRasterDataBinding gtData = (GTRasterDataBinding) coll;
 			GenericFileData fileData = new GenericFileData(gtData.getPayload(), null);
-			file = fileData.getBaseFile(true);			
-		}
-		if(coll instanceof GeotiffBinding){
+			file = fileData.getBaseFile(true);
+		} else if(coll instanceof GeotiffBinding){
 			GeotiffBinding data = (GeotiffBinding) coll;
 			file = data.getPayload();
 		}
-		
-		storeName = file.getName();			
-	
+
+		storeName = file.getName();
+
 		storeName = storeName +"_" + UUID.randomUUID();
 		GeoServerUploader geoserverUploader = new GeoServerUploader(username, password, host, port);
-		
+
 		String result = geoserverUploader.createWorkspace();
 		LOGGER.debug(result);
 		if(coll instanceof GTRasterDataBinding){
 			result = geoserverUploader.uploadGeotiff(file, storeName);
-		}		
+		}
 		LOGGER.debug(result);
-				
+
 		String capabilitiesLink = "http://"+host+":"+port+"/geoserver/wcs?Service=WCS&Request=GetCapabilities&Version=1.1.1";
-				
-		Document doc = createXML(storeName, capabilitiesLink);
-		return doc;
-	
+
+		return createXML(storeName, capabilitiesLink);
 	}
-	
+
 	private Document createXML(String layerName, String getCapabilitiesLink) throws ParserConfigurationException{
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		Document doc = factory.newDocumentBuilder().newDocument();
-		
+
 		Element root = doc.createElement("OWSResponse");
 		root.setAttribute("type", "WMS");
-		
+
 		Element resourceIDElement = doc.createElement("ResourceID");
 		resourceIDElement.appendChild(doc.createTextNode(layerName));
 		root.appendChild(resourceIDElement);
-		
+
 		Element getCapabilitiesLinkElement = doc.createElement("GetCapabilitiesLink");
 		getCapabilitiesLinkElement.appendChild(doc.createTextNode(getCapabilitiesLink));
 		root.appendChild(getCapabilitiesLinkElement);
@@ -153,8 +149,8 @@ public class GeoserverWCSGenerator extends AbstractGenerator {
 		root.appendChild(directResourceLinkElement);
 		*/
 		doc.appendChild(root);
-		
+
 		return doc;
 	}
-	
+
 }

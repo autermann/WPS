@@ -102,6 +102,12 @@ public abstract class AbstractIOHandler implements IOHandler {
         this.finalizeFiles.add(file);
         return file;
     }
+
+    protected File registerTempFile() throws IOException {
+        Path path = Files.createTempFile(getClass().getName(), ".tmp");
+        return path.toFile();
+    }
+
     protected <T extends Collection<File>> T registerTempFiles(T files) {
         this.finalizeFiles.addAll(files);
         return files;

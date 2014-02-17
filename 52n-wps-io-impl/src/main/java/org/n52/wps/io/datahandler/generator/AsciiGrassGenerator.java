@@ -32,67 +32,49 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.UUID;
 
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.data.DataSourceException;
 import org.geotools.gce.arcgrid.ArcGridWriter;
-import org.n52.wps.commons.Format;
-import org.n52.wps.io.data.IData;
-import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
 import org.opengis.coverage.grid.GridCoverageWriter;
 import org.opengis.parameter.GeneralParameterValue;
 import org.opengis.parameter.ParameterValueGroup;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import org.n52.wps.commons.Format;
+import org.n52.wps.io.data.IData;
+import org.n52.wps.io.geotools.data.GTRasterDataBinding;
+import org.n52.wps.server.ExceptionReport;
+import org.n52.wps.server.NoApplicableCodeException;
 
 public class AsciiGrassGenerator extends AbstractGenerator {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(AsciiGrassGenerator.class);
-	
 	public AsciiGrassGenerator() {
 		super(GTRasterDataBinding.class);
 	}
-	
-    @Override
-	public InputStream generateStream(IData data, Format format) throws IOException {
 
-//		// check for correct request before returning the stream
-//		if (!(this.isSupportedGenerate(data.getSupportedClass(), mimeType, schema))){
-//			throw new IOException("I don't support the incoming datatype");
-//		}
-		
-		InputStream stream = null;
-		
-		GridCoverage2D grid = ((GTRasterDataBinding) data).getPayload();
-		String fileName = "temp" + UUID.randomUUID();
-		File outputFile = registerTempFile(File.createTempFile(fileName, ".tmp"));
-		GridCoverageWriter writer;
+    @Override
+	public InputStream generateStream(IData data, Format format) throws IOException, ExceptionReport {
 		try {
-			writer = new ArcGridWriter(outputFile);
-		
+            GridCoverage2D grid = ((GTRasterDataBinding) data).getPayload();
+            File outputFile = registerTempFile();
+            GridCoverageWriter writer = new ArcGridWriter(outputFile);
+
 			// setting write parameters
 			ParameterValueGroup params = writer.getFormat().getWriteParameters();
 			params.parameter("GRASS").setValue(true);
 			GeneralParameterValue[] gpv = { params.parameter("GRASS") };
-			
+
 			writer.write(grid, gpv);
 			writer.dispose();
-			
-			stream = new FileInputStream(outputFile);
-			
+
+            return new FileInputStream(outputFile);
 		} catch (DataSourceException e) {
-			LOGGER.error(e.getMessage());
-			throw new IOException("AsciiGRID cannot be read from source");
+			throw new NoApplicableCodeException("AsciiGRID cannot be read from source").causedBy(e);
 		} catch (IllegalArgumentException e) {
-			LOGGER.error(e.getMessage());
-			throw new IOException("Illegal configuration of AsciiGRID writer");
+			throw new NoApplicableCodeException("Illegal configuration of AsciiGRID writer").causedBy(e);
 		} catch (IOException e) {
-			LOGGER.error(e.getMessage());
-			throw new IOException("AsciiGrassGenerator could not create output due to an IO error");
+			throw new NoApplicableCodeException("AsciiGrassGenerator could not create output due to an IO error").causedBy(e);
 		}
-		
-		return stream;
 	}
 
 }

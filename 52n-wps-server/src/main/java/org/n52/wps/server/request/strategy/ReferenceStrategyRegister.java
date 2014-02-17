@@ -28,44 +28,56 @@
  */
 package org.n52.wps.server.request.strategy;
 
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.n52.wps.server.ExceptionReport;
+import java.util.LinkedList;
 
 import net.opengis.wps.x100.InputType;
 
-public class ReferenceStrategyRegister {
+import org.n52.wps.server.ExceptionReport;
+import org.n52.wps.server.NoApplicableCodeException;
 
-	protected List<IReferenceStrategy> registeredStrategies;
-	private static ReferenceStrategyRegister instance;
+public class ReferenceStrategyRegister {
+	protected final LinkedList<IReferenceStrategy> registeredStrategies = new LinkedList<>();
+
+    private ReferenceStrategyRegister(){
+    }
 	
-	
-	public synchronized static ReferenceStrategyRegister getInstance(){
-		if(instance==null){
-			instance = new ReferenceStrategyRegister();
-		}
-		return instance;
-	}
-	
-	private ReferenceStrategyRegister(){
-		registeredStrategies = new ArrayList<IReferenceStrategy>();
-		registeredStrategies.add(new WCS111XMLEmbeddedBase64OutputReferenceStrategy());
-	}
-	
-	protected void registerStrategy(IReferenceStrategy strategy){
-		registeredStrategies.add(strategy);
-	}
-	
-	public ReferenceInputStream resolveReference(InputType input) throws ExceptionReport{
-		IReferenceStrategy foundStrategy = new DefaultReferenceStrategy();
-		for(IReferenceStrategy strategy : registeredStrategies){
-			if(strategy.isApplicable(input)){
-				foundStrategy = strategy;
-				break;
-			}
-		}
-		return foundStrategy.fetchData(input);
-	}
+	public void registerStrategy(IReferenceStrategy strategy){
+        registeredStrategies.addFirst(strategy);
+    }
+
+    public ReferenceInputStream resolveReference(InputType input)
+            throws ExceptionReport {
+        IReferenceStrategy strategy = findStrategy(input);
+        if (strategy == null) {
+            throw new NoApplicableCodeException("No ReferenceStrategy found to fetch %s",
+                                                input.getIdentifier().getStringValue());
+        }
+        return strategy.fetchData(input);
+    }
+
+    private IReferenceStrategy findStrategy(InputType input) {
+        for (IReferenceStrategy strategy : registeredStrategies) {
+            if (strategy.isApplicable(input)) {
+                return strategy;
+            }
+        }
+        return null;
+    }
+
+    public static ReferenceStrategyRegister getInstance() {
+        return ReferenceStrategyRegisterHolder.INSTANCE;
+    }
+
+    private static class ReferenceStrategyRegisterHolder {
+        private static final ReferenceStrategyRegister INSTANCE;
+
+        static {
+            INSTANCE = new ReferenceStrategyRegister();
+            INSTANCE.registerStrategy(new DefaultReferenceStrategy());
+            INSTANCE.registerStrategy(new WCS111XMLEmbeddedBase64OutputReferenceStrategy());
+        }
+
+        private ReferenceStrategyRegisterHolder() {
+        }
+    }
 }

@@ -365,7 +365,7 @@ public class WebProcessingService extends HttpServlet {
 
     @Override
     public void destroy() {
-        super.destroy();
         DatabaseFactory.getDatabase().shutdown();
+        super.destroy();
     }
 }

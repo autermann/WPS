@@ -102,27 +102,27 @@ public class MapserverWMSGenerator extends AbstractGenerator {
 	public InputStream generateStream(IData data, Format format)
 			throws IOException {
 
-		InputStream stream = null;	
+		InputStream stream = null;
 		try {
-			Document doc = storeLayer(data);			
-			String xmlString = XMLUtil.nodeToString(doc);			
-			stream = new ByteArrayInputStream(xmlString.getBytes("UTF-8"));			
+			Document doc = storeLayer(data);
+			String xmlString = XMLUtil.nodeToString(doc);
+			stream = new ByteArrayInputStream(xmlString.getBytes("UTF-8"));
 	    } catch( TransformerException | IOException | ParserConfigurationException ex){
 	    	LOGGER.error("Error generating MapServer WMS output. Reason: " + ex);
 	    	throw new RuntimeException("Error generating MapServer WMS output. Reason: " + ex);
-	    }	
+	    }
 		return stream;
 	}
 
 	/**
 	 * Stores the input data as an layer in the mapserver and creates an
 	 * response document.
-	 * 
+	 *
 	 * @param coll
 	 *            IData has to be instanceof GTVectorDataBinding
-	 * 
+	 *
 	 * @return Document XML response document.
-	 * 
+	 *
 	 * @throws HttpException
 	 * @throws IOException
 	 * @throws ParserConfigurationException
@@ -137,8 +137,8 @@ public class MapserverWMSGenerator extends AbstractGenerator {
 		} catch (Exception e){
 			LOGGER.warn("Mapscript isn't running correctly", e);
 			return null;
-		} 
-		
+		}
+
 		// adds the IData to the mapserver.
 		String wmsLayerName = "";
 		if (coll instanceof GTVectorDataBinding) {
@@ -154,7 +154,7 @@ public class MapserverWMSGenerator extends AbstractGenerator {
 		String capabilitiesLink = wmsUrl + "?Service=WMS&Request=GetCapabilities";
 		Document doc = createXML(wmsLayerName, capabilitiesLink);
 		LOGGER.info("Capabilities document was generated.");
-		
+
 		return doc;
 
 	}
@@ -162,16 +162,14 @@ public class MapserverWMSGenerator extends AbstractGenerator {
 	/**
 	 * Creates an response xml, which contains the layer name, the resource link
 	 * and a getCapabilities request for the publishing service.
-	 * 
+	 *
 	 * @param layerName
 	 *            Name of the layer which was added to the mapserver.
-	 * @param resourceLink
-	 *            Link to the resource (layer) which was added to the mapserver.
 	 * @param getCapabilitiesLink
 	 *            GetCapabilties request to the publishing service.
-	 * 
+	 *
 	 * @return Document XML response document.
-	 * 
+	 *
 	 * @throws ParserConfigurationException
 	 */
 	private Document createXML(String layerName, String getCapabilitiesLink)

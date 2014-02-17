@@ -85,7 +85,7 @@ public class MCProcessDelegator implements IAlgorithm {
 		// assign inputs
 		for (String inputID : inputData.keySet()) {
 			List<IData> iDataList = inputData.get(inputID);
-			if (iDataList == null || iDataList.isEmpty() || iDataList.size() == 0) {
+			if (iDataList == null || iDataList.isEmpty()) {
 				// do nothing
 			}
 			else {
@@ -186,22 +186,13 @@ public class MCProcessDelegator implements IAlgorithm {
 
 		try {
 			processor.execute(0); // execute without any timeout
-		}
-		catch (IllegalArgumentException e) {
-			errors.add(e.getMessage());
-			throw new RuntimeException("Execution terminated with an error.");
-		}
-		catch (RuntimeException e) {
-			errors.add(e.getMessage());
-			throw new RuntimeException("Execution terminated with an error.");
-		}
-		catch (IOException e) {
+		} catch (RuntimeException | IOException e) {
 			errors.add(e.getMessage());
 			throw new RuntimeException("Execution terminated with an error.");
 		}
 
 		// create the output
-		HashMap<String, IData> result = new HashMap<String, IData>();
+		HashMap<String, IData> result = new HashMap<>();
 
 		// iterate through all values
 		for (IIOParameter param : processor.values()) {

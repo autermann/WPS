@@ -54,8 +54,8 @@ public class WKTGenerator extends AbstractGenerator {
     @Override
     public InputStream generateStream(IData data, Format format)
             throws IOException {
-        if (data instanceof JTSGeometryBinding) {
-            Geometry g = ((JTSGeometryBinding) data).getPayload();
+        if (data.getPayload() instanceof Geometry) {
+            Geometry g = (Geometry) data.getPayload();
             String wktString = new WKTWriter().write(g);
             return new ByteArrayInputStream(wktString.getBytes());
         }

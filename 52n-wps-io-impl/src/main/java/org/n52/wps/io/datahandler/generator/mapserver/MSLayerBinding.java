@@ -184,10 +184,10 @@ public class MSLayerBinding {
 	/**
 	 * Opens the shapefile as a GeoTools FeatureSource for further use in the
 	 * MSLayerBinding class.
-	 * 
+	 *
 	 * @param shapePath
 	 *            Path to the shapefile
-	 * 
+	 *
 	 * @return <tt>true</tt> if the shapefile could be opened successful.
 	 */
 	private boolean openShapefile(String shapePath) {
@@ -197,8 +197,7 @@ public class MSLayerBinding {
 					shapePath));
 			ftSource = store.getFeatureSource();
 		} catch (IOException e) {
-			LOGGER.error("Error while opening the shapefile.");
-			e.printStackTrace();
+			LOGGER.error("Error while opening the shapefile.", e);
 		}
 
 		// tests if the featureSource is empty
@@ -218,35 +217,28 @@ public class MSLayerBinding {
 	 * Parse the GeometryType from the FeatureSource and creates an mapscript
 	 * MS_LAYER_TYPE object. Right know this class supports the geometryType
 	 * POINT, MULTIPOINT, LINE, MULTILINESTRING, POLYGON, MULTIPOLYGON
-	 * 
+	 *
 	 * @return <tt>true</tt> if the GeometryType could be parsed
 	 */
 	private boolean parseGeometryDescription() {
-		GeometryDescriptor geomDescription = ftSource.getSchema()
-				.getGeometryDescriptor();
+		GeometryDescriptor geomDescription = ftSource.getSchema().getGeometryDescriptor();
 
-		if (geomDescription.getType().getName().toString()
-				.equalsIgnoreCase("POINT")) {
+		if (geomDescription.getType().getName().toString().equalsIgnoreCase("POINT")) {
 			geometryType = MS_LAYER_TYPE.MS_LAYER_POINT;
 			return true;
-		} else if (geomDescription.getType().getName().toString()
-				.equalsIgnoreCase("MULTIPOINT")) {
+		} else if (geomDescription.getType().getName().toString().equalsIgnoreCase("MULTIPOINT")) {
 			geometryType = MS_LAYER_TYPE.MS_LAYER_POINT;
 			return true;
-		} else if (geomDescription.getType().getName().toString()
-				.equalsIgnoreCase("LINE")) {
+		} else if (geomDescription.getType().getName().toString().equalsIgnoreCase("LINE")) {
 			geometryType = MS_LAYER_TYPE.MS_LAYER_LINE;
 			return true;
-		} else if (geomDescription.getType().getName().toString()
-				.equalsIgnoreCase("MULTILINESTRING")) {
+		} else if (geomDescription.getType().getName().toString().equalsIgnoreCase("MULTILINESTRING")) {
 			geometryType = MS_LAYER_TYPE.MS_LAYER_LINE;
 			return true;
-		} else if (geomDescription.getType().getName().toString()
-				.equalsIgnoreCase("POLYGON")) {
+		} else if (geomDescription.getType().getName().toString().equalsIgnoreCase("POLYGON")) {
 			geometryType = MS_LAYER_TYPE.MS_LAYER_POLYGON;
 			return true;
-		} else if (geomDescription.getType().getName().toString()
-				.equalsIgnoreCase("MULTIPOLYGON")) {
+		} else if (geomDescription.getType().getName().toString().equalsIgnoreCase("MULTIPOLYGON")) {
 			geometryType = MS_LAYER_TYPE.MS_LAYER_POLYGON;
 			return true;
 		}
@@ -254,7 +246,7 @@ public class MSLayerBinding {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return CoordinateReferenceSystem
 	 */
 	public CoordinateReferenceSystem getCRS() {
@@ -262,7 +254,7 @@ public class MSLayerBinding {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return String EPSG Code for the SRS of the layer
 	 */
 	public String getMdCRS() {
@@ -270,7 +262,7 @@ public class MSLayerBinding {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return String Title of the layer
 	 */
 	public String getMdTitle() {
@@ -278,7 +270,7 @@ public class MSLayerBinding {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return String Timestamp of the layer
 	 */
 	public String getMdTimestamp() {
@@ -286,7 +278,7 @@ public class MSLayerBinding {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return GeomtryType Right now the class supports POINT, MULTIPOINT, LINE,
 	 *         MULTILINESTRING, POLYGON and MULTIPOLYGON
 	 */
@@ -295,7 +287,7 @@ public class MSLayerBinding {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return String Path to the shapefile data source of the layer
 	 */
 	public String getDataSourcePath() {
@@ -303,7 +295,7 @@ public class MSLayerBinding {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return rectObj BoundingBox of the layer
 	 */
 	public rectObj getBBox() {
@@ -311,7 +303,7 @@ public class MSLayerBinding {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return String BoundingBox as a String
 	 */
 	public String getMdBBox() {

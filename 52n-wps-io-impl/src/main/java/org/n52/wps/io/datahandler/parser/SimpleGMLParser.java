@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.opengis.examples.packet.GMLPacketDocument;
+import net.opengis.examples.packet.PacketMemberType;
 import net.opengis.examples.packet.PropertyType;
 import net.opengis.examples.packet.PropertyType.Value;
 import net.opengis.examples.packet.StaticFeatureType;
@@ -66,111 +67,102 @@ import com.vividsolutions.jts.geom.Polygon;
 
 
 /**
- * This parser handles xml files compliant to gmlpacket.xsd 
+ * This parser handles xml files compliant to gmlpacket.xsd
  * @author foerster
  *
  */
 public class SimpleGMLParser extends AbstractParser {
-	
 	private static final Logger LOGGER = LoggerFactory.getLogger(SimpleGMLParser.class);
 	private SimpleFeatureType type;
 	private SimpleFeatureBuilder featureBuilder;
 	private final GeometryFactory geomFactory;
-	
+
 	public SimpleGMLParser() {
 		super(GTVectorDataBinding.class);
 		geomFactory = new GeometryFactory();
 	}
-	
-	public GTVectorDataBinding parse(InputStream stream, Format format) {
-		GMLPacketDocument doc;
+
+    @Override
+	public GTVectorDataBinding parse(InputStream stream, Format format)
+            throws ExceptionReport {
 		try {
-			doc = GMLPacketDocument.Factory.parse(stream);
+            return parseXML(GMLPacketDocument.Factory.parse(stream));
+		} catch(XmlException e) {
+			throw new NoApplicableCodeException("Error while parsing XML").causedBy(e);
+		} catch(IOException e) {
+			throw new NoApplicableCodeException("Error transfering XML").causedBy(e);
 		}
-		catch(XmlException e) {
-			throw new IllegalArgumentException("Error while parsing XML", e);
-		}
-		catch(IOException e) {
-			throw new IllegalArgumentException("Error transfering XML", e);
-		}
-		if(doc != null) {
-			return parseXML(doc);
-		}
-		return null;
 	}
-	
+
 	private GTVectorDataBinding parseXML(GMLPacketDocument doc) {
-		
 		int numberOfMembers = doc.getGMLPacket().getPacketMemberArray().length;
-		List<SimpleFeature> simpleFeatureList = new ArrayList<>();
+		List<SimpleFeature> simpleFeatureList = new ArrayList<>(numberOfMembers);
 		for(int i = 0; i< numberOfMembers; i++) {
-			StaticFeatureType feature = doc.getGMLPacket().getPacketMemberArray(i).getStaticFeature();
+            PacketMemberType packetMember = doc.getGMLPacket().getPacketMemberArray(i);
+			StaticFeatureType feature = packetMember.getStaticFeature();
 			//at the start create the featureType and the featureBuilder
 			if(i==0) {
 				type = createFeatureType(feature);
 				featureBuilder = new SimpleFeatureBuilder(type);
 			}
-				
+
 			SimpleFeature newFeature = convertStaticFeature(feature);
 			if (newFeature != null) {
 				simpleFeatureList.add(newFeature);
-			}
-			else {
+			} else {
 				LOGGER.debug("feature has no geometry, feature will not be included in featureCollection");
 			}
 		}
-		
+
 		SimpleFeatureCollection collection = new ListFeatureCollection(type, simpleFeatureList);
-		
-		return new GTVectorDataBinding(collection); 
+
+		return new GTVectorDataBinding(collection);
 	}
-	
+
 	private SimpleFeature convertStaticFeature(StaticFeatureType staticFeature) {
-		
+
 		SimpleFeature feature = null;
 		Geometry geom = null;
 		if(staticFeature.isSetLineStringProperty()) {
 			geom = convertToJTSGeometry(staticFeature.getLineStringProperty());
-		}
-		else if(staticFeature.isSetPointProperty()) {
+		} else if(staticFeature.isSetPointProperty()) {
 			geom = convertToJTSGeometry(staticFeature.getPointProperty());
-		}
-		else if(staticFeature.isSetPolygonProperty()) {
+		} else if(staticFeature.isSetPolygonProperty()) {
 			geom = convertToJTSGeometry(staticFeature.getPolygonProperty());
 		}
 		if(geom == null) {
 			return null;
 		}
-		
+
 		if(type.getAttributeCount()>1){
 			if(staticFeature.sizeOfPropertyArray() > 0){
 				ArrayList<Object> properties = new ArrayList<>(staticFeature.sizeOfPropertyArray());
 				properties.add(geom);
-				for (int i = 0; i < staticFeature.sizeOfPropertyArray(); i++) {						
+				for (int i = 0; i < staticFeature.sizeOfPropertyArray(); i++) {
 					PropertyType ptype = staticFeature.getPropertyArray(i);
 					if(!ptype.getPropertyName().contains("geom")){
 					Value v = ptype.getValue();
-					properties.add(v.getStringValue());	
+					properties.add(v.getStringValue());
 					}
 				}
 				feature = featureBuilder.buildFeature(staticFeature.getFid(), properties.toArray());
-			}				
-		
+			}
+
 		}
 		else {
 		 feature = featureBuilder.buildFeature(staticFeature.getFid(), new Object[]{geom});
 			}
-		
+
 		return feature;
 	}
-	
+
 	private SimpleFeatureType createFeatureType(StaticFeatureType staticFeature) {
 		SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
 		typeBuilder.setName("gmlPacketFeatures");
-		
+
 		if(staticFeature.isSetLineStringProperty()) {
 			typeBuilder.add( "LineString", LineString.class);
-			
+
 		}
 		else if(staticFeature.isSetPointProperty()) {
 			typeBuilder.add( "Point", Point.class);
@@ -178,20 +170,20 @@ public class SimpleGMLParser extends AbstractParser {
 		else if(staticFeature.isSetPolygonProperty()) {
 			typeBuilder.add( "Polygon", Polygon.class);
 		}
-		
+
 		if(staticFeature.sizeOfPropertyArray() > 0){
 			for (int i = 0; i < staticFeature.sizeOfPropertyArray(); i++) {
-				
-				PropertyType type = staticFeature.getPropertyArray(i);
-				if(!type.getPropertyName().contains("geom")) {
-					typeBuilder.add(type.getPropertyName(),String.class);
+
+				PropertyType t = staticFeature.getPropertyArray(i);
+				if(!t.getPropertyName().contains("geom")) {
+					typeBuilder.add(t.getPropertyName(),String.class);
 				}
 			}
-			
+
 		}
 		return typeBuilder.buildFeatureType();
 	}
-	
+
 	private Geometry convertToJTSGeometry(LineStringPropertyType lineString) {
 		Geometry geom;
 		if(lineString.getLineString().getCoordArray().length != 0) {
@@ -212,7 +204,7 @@ public class SimpleGMLParser extends AbstractParser {
 		}
 		return geom;
 	}
-	
+
 	private Geometry convertToJTSGeometry(PointPropertyType point) {
 		Coordinate coord = convertToJTSCoordinate(point.getPoint().getCoord());
 		return geomFactory.createPoint(coord);
@@ -222,7 +214,7 @@ public class SimpleGMLParser extends AbstractParser {
 		LinearRingType outerRing = polygon.getPolygon().getOuterBoundaryIs().getLinearRing();
 		LinearRing jtsOuterRing = convertToJTSLinearRing(outerRing);
 		LinearRingMemberType[] innerRings = polygon.getPolygon().getInnerBoundaryIsArray();
-		List<LinearRing> jtsInnerRings = new ArrayList<>();
+		List<LinearRing> jtsInnerRings = new ArrayList<>(innerRings.length);
 		for(LinearRingMemberType ring : innerRings) {
 			if(ring.getLinearRing() != null) {
 				jtsInnerRings.add(convertToJTSLinearRing(ring.getLinearRing()));
@@ -230,35 +222,35 @@ public class SimpleGMLParser extends AbstractParser {
 		}
 		return geomFactory.createPolygon(jtsOuterRing, jtsInnerRings.toArray(new LinearRing[jtsInnerRings.size()]));
 	}
-	
+
 	private LinearRing convertToJTSLinearRing(LinearRingType linearRing) {
 		Coordinate[] coords = convertToJTSCoordinates(linearRing.getCoordArray());
 		return geomFactory.createLinearRing(coords);
 	}
-	
+
 	/**
 	 * expects Coordinates with X & Y or X & Y & Z
 	 * @param coords
 	 * @return
 	 */
 	private Coordinate[] convertToJTSCoordinates(CoordType[] coords) {
-		List<Coordinate> coordList = new ArrayList<>();
+		List<Coordinate> coordList = new ArrayList<>(coords.length);
 		for(CoordType coord : coords) {
 			Coordinate coordinate = convertToJTSCoordinate(coord);
 			coordList.add(coordinate);
 		}
 		return coordList.toArray(new Coordinate[coordList.size()]);
 	}
-	
+
 	private Coordinate convertToJTSCoordinate(CoordType coord) {
 		if(!coord.isSetZ()) {
 			return new Coordinate(coord.getX().doubleValue(), coord.getY().doubleValue());
 		}
 		else {
-			return new Coordinate(coord.getX().doubleValue(), 
-										coord.getY().doubleValue(), 
+			return new Coordinate(coord.getX().doubleValue(),
+										coord.getY().doubleValue(),
 										coord.getZ().doubleValue());
 		}
 	}
-	
+
 }

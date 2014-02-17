@@ -33,9 +33,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
 
-import javanet.staxutils.IndentingXMLStreamWriter;
-import javanet.staxutils.XMLStreamUtils;
-
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamConstants;
@@ -57,8 +54,11 @@ import org.w3c.dom.Node;
 import com.ctc.wstx.stax.WstxInputFactory;
 import com.ctc.wstx.stax.WstxOutputFactory;
 
+import javanet.staxutils.IndentingXMLStreamWriter;
+import javanet.staxutils.XMLStreamUtils;
+
 /**
- * 
+ *
  * @author tkunicki
  */
 public class XMLUtil {
@@ -69,6 +69,9 @@ public class XMLUtil {
     static {
         xmlInputFactory = new WstxInputFactory();
         xmlOutputFactory = new WstxOutputFactory();
+    }
+
+    private XMLUtil() {
     }
 
     public static XMLInputFactory getInputFactory() {
@@ -84,8 +87,7 @@ public class XMLUtil {
             copyXML(xmlInputFactory.createXMLStreamReader(input, "UTF-8"),
                     xmlOutputFactory.createXMLStreamWriter(output, "UTF-8"),
                     indent);
-        }
-        catch (XMLStreamException e) {
+        } catch (XMLStreamException e) {
             throw new IOException("Error copying XML", e);
         }
     }
@@ -95,8 +97,7 @@ public class XMLUtil {
             copyXML(xmlInputFactory.createXMLStreamReader(input),
                     xmlOutputFactory.createXMLStreamWriter(output, "UTF-8"),
                     indent);
-        }
-        catch (XMLStreamException e) {
+        } catch (XMLStreamException e) {
             throw new IOException("Error copying XML", e);
         }
 
@@ -104,32 +105,39 @@ public class XMLUtil {
 
     private static void copyXML(XMLStreamReader xmlStreamReader, XMLStreamWriter xmlStreamWriter, boolean indent) throws XMLStreamException {
         try {
-            WhiteSpaceRemovingDelegate xmlStreamReader2 = new XMLUtil.WhiteSpaceRemovingDelegate(xmlStreamReader);
+            XMLStreamReader xmlStreamReader2 = new WhiteSpaceRemovingDelegate(xmlStreamReader);
             XMLStreamWriter xmlStreamWriter2 = xmlStreamWriter;
             if (indent) {
                 xmlStreamWriter2 = new IndentingXMLStreamWriter(xmlStreamWriter);
             }
             XMLStreamUtils.copy(xmlStreamReader2, xmlStreamWriter2);
-        }
-        finally {
+        } finally {
             if (xmlStreamReader != null) {
                 try {
                     xmlStreamReader.close();
-                }
-                catch (XMLStreamException e) { /* ignore */
+                } catch (XMLStreamException e) {
+                    /* ignore */
                 }
             }
             if (xmlStreamWriter != null) {
                 try {
                     xmlStreamWriter.close();
-                }
-                catch (XMLStreamException e) { /* ignore */
+                } catch (XMLStreamException e) {
+                    /* ignore */
                 }
             }
         }
     }
 
-    public static class WhiteSpaceRemovingDelegate extends StreamReaderDelegate {
+    public static String nodeToString(Node node) throws TransformerFactoryConfigurationError, TransformerException {
+        StringWriter stringWriter = new StringWriter();
+        Transformer transformer = TransformerFactory.newInstance().newTransformer();
+        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+        transformer.transform(new DOMSource(node), new StreamResult(stringWriter));
+        return stringWriter.toString();
+    }
+
+    private static class WhiteSpaceRemovingDelegate extends StreamReaderDelegate {
         WhiteSpaceRemovingDelegate(XMLStreamReader reader) {
             super(reader);
         }
@@ -139,19 +147,11 @@ public class XMLUtil {
             int eventType;
             do {
                 eventType = super.next();
-            } while ( (eventType == XMLStreamConstants.CHARACTERS && isWhiteSpace())
-                    || (eventType == XMLStreamConstants.CDATA && isWhiteSpace())
-                    || eventType == XMLStreamConstants.SPACE);
+            } while ((eventType == XMLStreamConstants.CHARACTERS && isWhiteSpace()) ||
+                     (eventType == XMLStreamConstants.CDATA && isWhiteSpace()) ||
+                     eventType == XMLStreamConstants.SPACE);
             return eventType;
         }
     }
 
-    public static String nodeToString(Node node) throws TransformerFactoryConfigurationError, TransformerException {
-        StringWriter stringWriter = new StringWriter();
-        Transformer transformer = TransformerFactory.newInstance().newTransformer();
-        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-        transformer.transform(new DOMSource(node), new StreamResult(stringWriter));
-
-        return stringWriter.toString();
-    }
 }

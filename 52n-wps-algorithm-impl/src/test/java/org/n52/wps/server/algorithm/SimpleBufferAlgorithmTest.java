@@ -45,19 +45,20 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
+
 import org.n52.wps.commons.WPSConfig;
 import org.n52.wps.server.IAlgorithm;
-import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author tkunicki
  */
 public class SimpleBufferAlgorithmTest {
-    
+
     public SimpleBufferAlgorithmTest() {
     }
-    
+
     @BeforeClass
     public static void setUpClass() {
         try {
@@ -66,15 +67,15 @@ public class SimpleBufferAlgorithmTest {
             LoggerFactory.getLogger(SimpleBufferAlgorithmTest.class.getName()).error(ex.getMessage());
         }
     }
-    
+
     @AfterClass
     public static void tearDownClass() {
     }
-    
+
     @Before
     public void setUp() {
     }
-    
+
     @After
     public void tearDown() {
     }
@@ -85,14 +86,14 @@ public class SimpleBufferAlgorithmTest {
         printAlgorithmProcessDescription(a);
         assertTrue(validateAlgorithmProcessDescription(a));
     }
-    
+
     private void printAlgorithmProcessDescription(IAlgorithm algorithm) {
         System.out.println();
         System.out.println(" ### DescribeProcess for " + algorithm.getClass().getName() + " ###");
         System.out.println(getXMLAsStringFromDescription(algorithm.getDescription()));
         System.out.println();
     }
-    
+
     private boolean validateAlgorithmProcessDescription(IAlgorithm algorithm) {
         XmlOptions xmlOptions = new XmlOptions();
         List<XmlValidationError> xmlValidationErrorList = new LinkedList<>();

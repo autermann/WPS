@@ -33,6 +33,7 @@ import java.util.HashMap;
 import net.opengis.wps.x100.ProcessDescriptionType;
 
 import org.apache.xmlbeans.XmlOptions;
+
 import org.n52.test.mock.MockUtil;
 
 import junit.framework.TestCase;
@@ -42,7 +43,7 @@ import junit.framework.TestCase;
  * @author tkunicki
  */
 public class AbstractSelfDescribingAlgorithmTest extends TestCase {
-    
+
     public AbstractSelfDescribingAlgorithmTest(String testName) {
         super(testName);
     }

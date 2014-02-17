@@ -45,14 +45,12 @@ public interface WPSConstants {
     QName QN_SCHEMA_LOCATION = new QName(NS_XSI, AN_SCHEMA_LOCATION);
     String DEFAULT_LANGUAGE = "en-US";
 
-
     String EN_ACCEPT_VERSIONS = "AcceptVersions";
     String EN_DESCRIBE_PROCESS = "DescribeProcess";
     String EN_EXECUTE = "Execute";
     String EN_GET_CAPABILITIES = "GetCapabilities";
     String EN_IDENTIFIER = "identifier";
-    
-    
+
     String MIME_TYPE_TEXT_PLAIN = "text/plain";
     String MIME_TYPE_TEXT_XML = "text/xml";
 
@@ -73,4 +71,7 @@ public interface WPSConstants {
     String GET_CAPABILITIES_REQUEST = "GetCapabilities";
     String DESCRIBE_PROCESS_REQUEST = "DescribeProcess";
     String EXECUTE_REQUEST = "Execute";
+
+    String SCHEMA_LOCATION_WPS_EXECUTE_RESPONSE
+            = "http://schemas.opengis.net/wps/1.0.0/wpsExecute_response.xsd";
 }

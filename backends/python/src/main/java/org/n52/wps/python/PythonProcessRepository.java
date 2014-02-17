@@ -40,14 +40,14 @@ import java.util.UUID;
 
 import net.opengis.wps.x100.ProcessDescriptionType;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.commons.WPSConfig;
 import org.n52.wps.server.IAlgorithm;
 import org.n52.wps.server.IAlgorithmRepository;
 import org.n52.wps.server.feed.FeedRepository;
 import org.n52.wps.server.feed.movingcode.MovingCodeObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Matthias Mueller, TU Dresden
@@ -55,13 +55,12 @@ import org.n52.wps.server.feed.movingcode.MovingCodeObject;
  */
 public class PythonProcessRepository implements IAlgorithmRepository {
 	
-	private static Logger LOGGER = LoggerFactory.getLogger(PythonProcessRepository.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(PythonProcessRepository.class);
 	
 	private static final String PROPERTY_PROCESS_INVENTORY_DIR = "PROCESS_INVENTORY_DIR";
 	private static final String PROPERTY_CONTAINER_URN = "CONTAINER_URN";
 	private static final String PROPERTY_BACKEND_URN = "BACKEND_URN";
 	private static final String PROPERTY_WORKSPACEBASE = "WORKSPACEBASE";
-	
 	
 	private HashMap<String, MovingCodeObject> registeredAlgorithms;
 	private URI[] supportedContainers;
@@ -74,7 +73,7 @@ public class PythonProcessRepository implements IAlgorithmRepository {
 		LOGGER.info("Initializing Python Process Repository ...");
 		
 		//initialize local variables
-		registeredAlgorithms = new HashMap<String, MovingCodeObject>();
+		registeredAlgorithms = new HashMap<>();
 		try{
 			loadConfiguration();
 			loadLocalProcesses();
@@ -87,7 +86,7 @@ public class PythonProcessRepository implements IAlgorithmRepository {
 		// check if workspaceBase is specified
 		if (workspaceBase == null){
 			LOGGER.error("Workspace base is missing: Clearing my Process Inventory");
-			registeredAlgorithms = new HashMap<String, MovingCodeObject>();
+			registeredAlgorithms = new HashMap<>();
 		}
 		
 		// log active Processes ...
@@ -97,7 +96,7 @@ public class PythonProcessRepository implements IAlgorithmRepository {
 		}
 		
 		// ... or state that there arent't any
-		if (registeredAlgorithms.size()==0){
+		if (registeredAlgorithms.isEmpty()){
 			LOGGER.info("No applicable algorithms fond");
 		}
 		
@@ -105,8 +104,8 @@ public class PythonProcessRepository implements IAlgorithmRepository {
 	
 	private void loadConfiguration() throws Exception{
 		Property[] props = WPSConfig.getInstance().getPropertiesForRepositoryClass(this.getClass().getCanonicalName());
-		ArrayList<URI> containerList = new ArrayList<URI>();
-		ArrayList<URI> backendList = new ArrayList<URI>();
+		ArrayList<URI> containerList = new ArrayList<>();
+		ArrayList<URI> backendList = new ArrayList<>();
 		
 		for(Property currentProp : props){
 			try{
@@ -126,15 +125,12 @@ public class PythonProcessRepository implements IAlgorithmRepository {
 					}
 				}
 			} catch (URISyntaxException e){
-				LOGGER.error("Invalid container or backend URN - offending item is " + currentProp.getStringValue());
+				LOGGER.error("Invalid container or backend URN - offending item is  {}", currentProp.getStringValue());
 			}
 		}
 		
-		supportedContainers = containerList.toArray(new URI[0]);
-		supportedBackends = backendList.toArray(new URI[0]);
-		containerList = null;
-		backendList = null;
-		
+		supportedContainers = containerList.toArray(new URI[containerList.size()]);
+		supportedBackends = backendList.toArray(new URI[backendList.size()]);
 	}
 	
 	private void loadLocalProcesses(){
@@ -153,8 +149,7 @@ public class PythonProcessRepository implements IAlgorithmRepository {
 			if (isSupportedScript(currentMCO)){
 				registeredAlgorithms.put(currentMCO.getProcessID(), currentMCO);
 			} else {
-				LOGGER.info(currentMCO.getProcessID() + " is not supported by this repository. - Dropping algorithm.");
-				currentMCO = null;
+				LOGGER.info("{} is not supported by this repository. - Dropping algorithm.", currentMCO.getProcessID());
 			}
 		}
 	}
@@ -170,73 +165,60 @@ public class PythonProcessRepository implements IAlgorithmRepository {
 	
 	private boolean isSupportedScript(MovingCodeObject mco){
 		boolean rightContainer = false;
-		boolean rightBackends = false;
 		for (URI currentContainer : supportedContainers){
 			if (mco.isContainer(currentContainer)){
 				rightContainer = true;
 			}
 		}
-		
-		if (mco.isSufficientRuntimeEnvironment(supportedBackends)){
-			rightBackends = true;
-		}
-		
-		return (rightContainer && rightBackends);
+		boolean rightBackends = mco.isSufficientRuntimeEnvironment(supportedBackends);
+		return rightContainer && rightBackends;
 	}
 	
-	private static String[] retrieveProcessDescriptions(File directory){
-		String[] describeProcessFiles = directory.list(new FilenameFilter() {
-		    public boolean accept(File d, String name) {
-		       return name.endsWith(".xml");
-		    }
-		});
-		return describeProcessFiles;
-	}
+    @Override
+	public boolean containsAlgorithm(String processID){
+        if(registeredAlgorithms.containsKey(processID)){
+            return true;
+        }
+        return false;
+    }
 	
-	/**
-	 * Checks if a given processID exists 
-	 * @param processID
-	 * @return
-	*/
-	public boolean containsAlgorithm(String processID) {
-		if(registeredAlgorithms.containsKey(processID)){
-			return true;
-		}
-		return false;
-	}
-	
-	/**
-	 * Returns an IAlgorithm through GenericAGSProcessDelegator
-	 * @param processID
-	 * @return
-	*/
+    @Override
 	public IAlgorithm getAlgorithm(String processID) {
-		if(!containsAlgorithm(processID)){
-			throw new RuntimeException("Could not allocate Process " + processID);
-		}
-		try {
-			// create a unique directory for each instance
-			String randomDirName = workspaceBase + File.separator + UUID.randomUUID();
-			return new PythonScriptDelegator(registeredAlgorithms.get(processID), new File (randomDirName));
-		} catch (IOException e) {
-			LOGGER.error(processID + ": Instantiation failed!");
-			e.printStackTrace();
-			return null;
-		}
-	}
-	
-	public Collection<String> getAlgorithmNames() {
-		return registeredAlgorithms.keySet();
-	}
-	
-	public ProcessDescriptionType getProcessDescription(String processID) {
-		return registeredAlgorithms.get(processID).getProcessDescription();
-	}
+        if(!containsAlgorithm(processID)){
+            throw new RuntimeException("Could not allocate Process " + processID);
+        }
+        try {
+            // create a unique directory for each instance
+            String randomDirName = workspaceBase + File.separator + UUID.randomUUID();
+            return new PythonScriptDelegator(registeredAlgorithms.get(processID), new File (randomDirName));
+        } catch (IOException e) {
+            LOGGER.error(processID + ": Instantiation failed!", e);
+            return null;
+        }
+    }
 
-	@Override
-	public void shutdown() {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+	public Collection<String> getAlgorithmNames() {
+        return registeredAlgorithms.keySet();
+    }
 	
+    @Override
+	public ProcessDescriptionType getProcessDescription(String processID) {
+        return registeredAlgorithms.get(processID).getProcessDescription();
+    }
+
+    @Override
+	public void shutdown() {
+        // do nothing
+    }
+
+    private static String[] retrieveProcessDescriptions(File directory) {
+        String[] describeProcessFiles = directory.list(new FilenameFilter() {
+            public boolean accept(File d, String name) {
+                return name.endsWith(".xml");
+            }
+        });
+        return describeProcessFiles;
+    }
+
 }

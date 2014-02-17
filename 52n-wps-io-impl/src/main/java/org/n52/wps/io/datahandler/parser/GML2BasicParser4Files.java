@@ -35,11 +35,12 @@ import java.io.InputStream;
 import java.util.UUID;
 
 import org.geotools.data.simple.SimpleFeatureCollection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.GenericFileData;
 import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This parser handles xml files compliant to GML2.
@@ -49,13 +50,14 @@ import org.slf4j.LoggerFactory;
 public class GML2BasicParser4Files extends AbstractParser {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GML2BasicParser4Files.class);
 
-	
+
 	public GML2BasicParser4Files() {
 		super(GenericFileDataBinding.class);
 	}
-	
+
+    @Override
 	public GenericFileDataBinding parse(InputStream stream, Format format) {
-		
+
 		FileOutputStream fos = null;
 		try{
 			File tempFile = registerTempFile(File.createTempFile(UUID.randomUUID().toString(), ".gml2"));
@@ -68,7 +70,7 @@ public class GML2BasicParser4Files extends AbstractParser {
 			fos.flush();
 			fos.close();
 			GenericFileDataBinding data = parseXML(tempFile);
-			
+
 			return data;
 		}
 		catch(IOException e) {
@@ -80,16 +82,16 @@ public class GML2BasicParser4Files extends AbstractParser {
 	}
 
 	private GenericFileDataBinding parseXML(File file) {
-		
+
 		SimpleFeatureCollection fc = new GML2BasicParser().parseSimpleFeatureCollection(file);
-		
+
 		GenericFileDataBinding data = null;
 		try {
 			data = new GenericFileDataBinding(new GenericFileData(fc));
 		} catch (IOException e) {
 			LOGGER.error("Exception while trying to wrap GenericFileData around GML2 FeatureCollection.", e);
 		}
-				
+
 		return data;
 	}
 

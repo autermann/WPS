@@ -39,6 +39,11 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.apache.commons.httpclient.HttpException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
 import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfig;
@@ -46,18 +51,16 @@ import org.n52.wps.commons.XMLUtil;
 import org.n52.wps.io.IOUtils;
 import org.n52.wps.io.data.GenericFileData;
 import org.n52.wps.io.data.IData;
-import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
-import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.io.data.binding.complex.GeotiffBinding;
-import org.n52.wps.io.data.binding.complex.ShapefileBinding;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.n52.wps.io.geotools.data.GTRasterDataBinding;
+import org.n52.wps.io.geotools.data.GTVectorDataBinding;
+import org.n52.wps.io.geotools.data.ShapefileBinding;
+import org.n52.wps.server.ExceptionReport;
+import org.n52.wps.server.NoApplicableCodeException;
 
-
+//FIXME CONFIGURATION
 public class GeoserverWMSGenerator extends AbstractGenerator {
-	
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(GeoserverWMSGenerator.class);
     private static final String GEOSERVER_PORT_PROPERTY = "Geoserver_port";
     private static final String GEOSERVER_HOST_PROPERTY = "Geoserver_host";
@@ -67,14 +70,15 @@ public class GeoserverWMSGenerator extends AbstractGenerator {
 	private String password;
 	private String host;
 	private String port;
-	
+
 	public GeoserverWMSGenerator() {
-		
+
         super(GTRasterDataBinding.class,
               ShapefileBinding.class,
               GeotiffBinding.class,
               GTVectorDataBinding.class);
 
+        //FIXME CONFIGURATION
         Property[] properties = WPSConfig.getInstance()
                 .getPropertiesForGeneratorClass(this.getClass().getName());
         for (Property property : properties) {
@@ -92,20 +96,18 @@ public class GeoserverWMSGenerator extends AbstractGenerator {
             }
         }
         if (port == null) {
-            port = WPSConfig.getInstance().getWPSConfig().getServer()
-                    .getHostport();
+            port = WPSConfig.getInstance().getWPSConfig().getServer().getHostport();
         }
     }
 
     @Override
     public InputStream generateStream(IData data, Format format) throws
-            IOException {
+            IOException , ExceptionReport {
         InputStream stream = null;
         try {
             Document doc = storeLayer(data);
             String xmlString = XMLUtil.nodeToString(doc);
-            stream = new ByteArrayInputStream(xmlString.getBytes(format
-                    .getEncoding().or(DEFAULT_ENCODING)));
+            stream = new ByteArrayInputStream(xmlString.getBytes(format.getEncoding().or(DEFAULT_ENCODING)));
         } catch (TransformerException | IOException |
                 ParserConfigurationException e) {
             LOGGER.error("Error generating WMS output. Reason: ", e);
@@ -116,7 +118,7 @@ public class GeoserverWMSGenerator extends AbstractGenerator {
     }
 
     private Document storeLayer(IData coll) throws HttpException, IOException,
-                                                   ParserConfigurationException {
+                                                   ParserConfigurationException, ExceptionReport {
         File file = null;
         String storeName;
         if (coll instanceof GTVectorDataBinding) {
@@ -126,7 +128,7 @@ public class GeoserverWMSGenerator extends AbstractGenerator {
                 GenericFileData fileData = new GenericFileData(gtData.getPayload());
                 file = fileData.getBaseFile(true);
             } catch (IOException e1) {
-                throw new RuntimeException("Error generating shp file for storage in WFS.", e1);
+                throw new IOException("Error generating shp file for storage in WFS.", e1);
             }
 
             //zip shp file
@@ -148,7 +150,7 @@ public class GeoserverWMSGenerator extends AbstractGenerator {
         } else if (coll instanceof GeotiffBinding) {
             file = ((GeotiffBinding) coll).getPayload();
         } else {
-            throw new RuntimeException("Unsupported BindingClass: " + coll);
+            throw new NoApplicableCodeException("Unsupported BindingClass: %s", coll);
         }
         storeName = file.getName();
 
@@ -157,33 +159,32 @@ public class GeoserverWMSGenerator extends AbstractGenerator {
 		String result = geoserverUploader.createWorkspace();
 		LOGGER.debug(result);
 		if(coll instanceof GTVectorDataBinding){
-			result = geoserverUploader.uploadShp(file, storeName);			
+			result = geoserverUploader.uploadShp(file, storeName);
 		}
 		if(coll instanceof GTRasterDataBinding){
 			result = geoserverUploader.uploadGeotiff(file, storeName);
 		}
-		
+
 		LOGGER.debug(result);
-				
-		String capabilitiesLink = "http://"+host+":"+port+"/geoserver/wms?Service=WMS&Request=GetCapabilities&Version=1.1.1";
+
+		String capabilitiesLink = "http://" + host + ":" + port + "/geoserver/wms?Service=WMS&Request=GetCapabilities&Version=1.1.1";
 		//String directLink = geoserverBaseURL + "?Service=WMS&Request=GetMap&Version=1.1.0&Layers=N52:"+wmsLayerName+"&WIDTH=300&HEIGHT=300";;
-		
-		Document doc = createXML("N52:"+storeName, capabilitiesLink);
-		return doc;
-	
+
+        return createXML("N52:" + storeName, capabilitiesLink);
+
 	}
-	
+
 	private Document createXML(String layerName, String getCapabilitiesLink) throws ParserConfigurationException{
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		Document doc = factory.newDocumentBuilder().newDocument();
-		
+
 		Element root = doc.createElement("OWSResponse");
 		root.setAttribute("type", "WMS");
-		
+
 		Element resourceIDElement = doc.createElement("ResourceID");
 		resourceIDElement.appendChild(doc.createTextNode(layerName));
 		root.appendChild(resourceIDElement);
-		
+
 		Element getCapabilitiesLinkElement = doc.createElement("GetCapabilitiesLink");
 		getCapabilitiesLinkElement.appendChild(doc.createTextNode(getCapabilitiesLink));
 		root.appendChild(getCapabilitiesLinkElement);
@@ -193,8 +194,8 @@ public class GeoserverWMSGenerator extends AbstractGenerator {
 		root.appendChild(directResourceLinkElement);
 		*/
 		doc.appendChild(root);
-		
+
 		return doc;
 	}
-	
+
 }

@@ -135,7 +135,7 @@ public class GenericFileData {
             }
 
 			allFiles[extensions.length] = primaryFile;
-			
+
 			// Handling the case if the files don't exist
 			// (Can occur if ArcGIS backend has an error and returns no files,
 			// but only filenames).
@@ -215,19 +215,19 @@ public class GenericFileData {
 
 				/*
 				 * seems like the geometries must always be the first property..
-				 * @see also ShapeFileDataStore.java getSchema() method 
+				 * @see also ShapeFileDataStore.java getSchema() method
 				 */
-				Property geomProperty = sf.getDefaultGeometryProperty();				
+				Property geomProperty = sf.getDefaultGeometryProperty();
 
 				if(geomProperty.getType().getBinding().getSimpleName().equals("Geometry")){
 				Geometry g = (Geometry)geomProperty.getValue();
 				if(g!=null){
 					GeometryAttribute geo = null;
 					if(g instanceof MultiPolygon){
-					
+
 					GeometryAttribute oldGeometryDescriptor = sf.getDefaultGeometryProperty();
 					GeometryType type1 = new GeometryTypeImpl(geomProperty.getName(),MultiPolygon.class, oldGeometryDescriptor.getType().getCoordinateReferenceSystem(),oldGeometryDescriptor.getType().isIdentified(),oldGeometryDescriptor.getType().isAbstract(),oldGeometryDescriptor.getType().getRestrictions(),oldGeometryDescriptor.getType().getSuper(),oldGeometryDescriptor.getType().getDescription());
-														
+
 					GeometryDescriptor newGeometryDescriptor = new GeometryDescriptorImpl(type1,geomProperty.getName(),0,1,true,null);
 					Identifier identifier = new GmlObjectIdImpl(sf.getID());
 					geo = new GeometryAttributeImpl((Object)g,newGeometryDescriptor, identifier);
@@ -244,11 +244,11 @@ public class GenericFileData {
 				}else if (isSupportedShapefileType(geomProperty.getType())
 						&& (geomProperty.getValue() != null)) {
 					builder.add(geomProperty.getName().getLocalPart(), geomProperty
-							.getType().getBinding());											
+							.getType().getBinding());
 				}
-				
+
 				for (Property prop : sf.getProperties()) {
-					
+
 					if (prop.getType() instanceof GeometryType) {
 						/*
 						 * skip, was handled before
@@ -272,7 +272,7 @@ public class GenericFileData {
 						.getFeatureSource(typeName);
 
 				store.setTransaction(transaction);
-				
+
 				build = new SimpleFeatureBuilder(type);
 				modifiedFeatureCollection = new DefaultFeatureCollection("fc",
 						type);
@@ -282,7 +282,7 @@ public class GenericFileData {
 			}
 
 			SimpleFeature newSf = build.buildFeature(sf.getIdentifier().getID());
-			
+
 			modifiedFeatureCollection.add(newSf);
 		}
 
@@ -298,19 +298,20 @@ public class GenericFileData {
 		}
 	}
 
-	private static boolean isSupportedShapefileType(PropertyType type) {
-		String supported[] = { "String", "Integer", "Double", "Boolean",
-				"Date", "LineString", "MultiLineString", "Polygon",
-				"MultiPolygon", "Point", "MultiPoint", "Long"};
-		for (String iter : supported) {
-			if (type.getBinding().getSimpleName().equalsIgnoreCase(iter)) {
-				return true;
-			}
-		}
-		return false;
-	}
+    private static boolean isSupportedShapefileType(PropertyType type) {
+        for (String iter : SUPPORTED_PROPERTY_TYPES) {
+            if (type.getBinding().getSimpleName().equalsIgnoreCase(iter)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    private static final String[] SUPPORTED_PROPERTY_TYPES = {
+        "String", "Integer", "Double", "Boolean", "Date", "LineString",
+        "MultiLineString", "Polygon", "MultiPolygon", "Point", "MultiPoint",
+        "Long" };
 
-	public String writeData(File workspaceDir) {
+    public String writeData(File workspaceDir) {
 
 		String fileName = null;
 		if (GenericFileDataConstants.getIncludeFilesByMimeType(mimeType) != null) {
@@ -343,7 +344,7 @@ public class GenericFileData {
                 int beginIndex = currentExtension.lastIndexOf('.') + 1;
                 currentExtension = currentExtension.substring(beginIndex);
 
-                String fileName = baseFileName + "." + currentExtension;
+                String fileName = baseFileName + '.' + currentExtension;
                 File currentFile = new File(writeDirectory, fileName);
                 if (!writeDirectory.exists()){
                     writeDirectory.mkdir();
@@ -362,7 +363,7 @@ public class GenericFileData {
 	}
 
 	private String justWriteData(InputStream is, String extension, File writeDirectory) throws IOException {
-		
+
 		String fileName = null;
 		String baseFileName = UUID.randomUUID().toString();
 
@@ -385,21 +386,21 @@ public class GenericFileData {
 	}
 
 	public GTVectorDataBinding getAsGTVectorDataBinding() throws IOException {
-		
+
 		if(mimeType.equals(GenericFileDataConstants.MIME_TYPE_ZIPPED_SHP)){
 			String tmpDirPath = System.getProperty("java.io.tmpdir");
 			String dirName = tmpDirPath + File.separator + "tmp" + UUID.randomUUID();
 			File tempDir = null;
-	
+
 			if (new File(dirName).mkdir()) {
 				tempDir = new File(dirName);
 			}
-	
+
 			LOGGER.info("Writing temp data to: " + tempDir);
 			String fileName = writeData(tempDir);
 			LOGGER.info("Temp file is: " + fileName);
 			File shpFile = new File(fileName);
-	
+
 			try {
 				DataStore store = new ShapefileDataStore(shpFile.toURI().toURL());
 				FeatureCollection<?, ?> features = store.getFeatureSource(
@@ -431,7 +432,7 @@ public class GenericFileData {
             return parser.parse(getDataStream(), new Format(mimeType));
         }
 		throw new RuntimeException("Could not create GTVectorDataBinding for Input");
-		
+
 	}
 	/*
 	 * Returns the Shp file representation of the file if possible. The returning file is the shp file. All other files associated to that shp file have the same name and are in the same folder.
@@ -441,10 +442,10 @@ public class GenericFileData {
 	}
 
 	public File getBaseFile(boolean unzipIfPossible) {
-		String extension = fileExtension;	
+		String extension = fileExtension;
 		if(primaryFile==null && dataStream!=null){
 			try{
-			
+
 			if(fileExtension.equals("shp")){
 				extension = "zip";
 			}
@@ -462,7 +463,7 @@ public class GenericFileData {
 						"Something went wrong while writing the input stream to the file system",
 						e);
 			}
-			
+
         }
         if (unzipIfPossible && extension.contains("zip")) {
             try {
@@ -499,18 +500,22 @@ public class GenericFileData {
 		return primaryFile;
 	}
 
-	protected void finalize(){
-		try{
-			primaryFile.delete();
-		}catch(Exception e){
-			LOGGER.error(e.getMessage(), e);
-		}
-	}
-	
+    @Override
+    protected void finalize()
+            throws Throwable {
+        try {
+            primaryFile.delete();
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+        } finally {
+            super.finalize();
+        }
+    }
+
 	public String getMimeType(){
 		return mimeType;
 	}
-	
+
 	public String getFileExtension(){
 		return fileExtension;
 	}

@@ -34,34 +34,31 @@ import com.vividsolutions.jts.geom.Geometry;
 
 /**
  * This class wraps a JTS Geometry.
+ *
  * @author Benjamin Pross
  *
  */
 public class JTSGeometryBinding implements IComplexData {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 3415522592135759594L;
-	private Geometry geom;
-	
-	public JTSGeometryBinding(Geometry geom){
-		this.geom = geom;
-	}
-	
-	@Override
-	public Geometry getPayload() {		
-		return this.geom;
-	}
+    private final Geometry geom;
 
-	@Override
-	public Class<?> getSupportedClass() {		
-		return Geometry.class;
-	}
+    public JTSGeometryBinding(Geometry geom) {
+        this.geom = geom;
+    }
 
-	@Override
-	public void dispose() {
+    @Override
+    public Geometry getPayload() {
+        return this.geom;
+    }
 
-	}
+    @Override
+    public Class<Geometry> getSupportedClass() {
+        return Geometry.class;
+    }
+
+    @Override
+    public void dispose() {
+
+    }
 
 }

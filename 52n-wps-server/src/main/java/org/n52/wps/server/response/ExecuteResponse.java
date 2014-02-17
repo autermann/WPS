@@ -29,16 +29,17 @@
 package org.n52.wps.server.response;
 
 import java.io.InputStream;
+
 import org.n52.wps.server.ExceptionReport;
 import org.n52.wps.server.request.ExecuteRequest;
 
 public class ExecuteResponse extends Response {
 
-	private ExecuteResponseBuilder builder;
+	private final ExecuteResponseBuilder builder;
 	
 	public ExecuteResponse(ExecuteRequest request) throws ExceptionReport{
 		super(request);
-		this.builder = ((ExecuteRequest)this.request).getExecuteResponseBuilder();
+		this.builder = request.getExecuteResponseBuilder();
 	}
 	
     @Override
@@ -47,10 +48,10 @@ public class ExecuteResponse extends Response {
 	}
 	
 	public ExecuteResponseBuilder getExecuteResponseBuilder(){
-		return builder;
+		return this.builder;
 	}
 	
-	public String getMimeType(){
-		return builder.getMimeType();
+	public String getMimeType() throws ExceptionReport{
+		return this.builder.getMimeType();
 	}
 }

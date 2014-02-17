@@ -42,26 +42,22 @@ import net.opengis.wps.x100.InputType;
 
 import org.apache.commons.codec.binary.Base64InputStream;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
 import org.apache.xmlbeans.XmlObject;
+
 import org.n52.wps.server.ExceptionReport;
 
 public class WCS111XMLEmbeddedBase64OutputReferenceStrategy implements IReferenceStrategy{
     
-    private String fetchedMimeType;
-    private String fetchedEncoding;
-
 	@Override
 	public boolean isApplicable(InputType input) {
 
-		if(input.getReference().isSetBody()) {			
-			XmlObject xo =  input.getReference().getBody();			
-			return xo.toString().contains("http://www.opengis.net/wcs/1.1.1");
-		}else{
-			String dataURLString = input.getReference().getHref();
-			return (dataURLString.contains("=GetCoverage") && dataURLString.contains("=1.1.1"));		
-		}
+        if (input.getReference().isSetBody()) {
+            XmlObject xo = input.getReference().getBody();
+            return xo.toString().contains("http://www.opengis.net/wcs/1.1.1");
+        } else {
+            String dataURLString = input.getReference().getHref();
+            return (dataURLString.contains("=GetCoverage") && dataURLString.contains("=1.1.1"));
+        }
 	}
 
 	@Override
@@ -69,10 +65,6 @@ public class WCS111XMLEmbeddedBase64OutputReferenceStrategy implements IReferenc
 
 		String dataURLString = input.getReference().getHref();
 	
-		String schema = input.getReference().getSchema();
-		String encoding = input.getReference().getEncoding();
-		String mimeType = input.getReference().getMimeType();
-		
 		try {
 			URL dataURL = new URL(dataURLString);
 			// Do not give a direct inputstream.
@@ -99,7 +91,7 @@ public class WCS111XMLEmbeddedBase64OutputReferenceStrategy implements IReferenc
 			
 			BufferedReader bRead = new BufferedReader(new InputStreamReader(inputStream));
 			
-			String line = "";
+			
 			
 			//boundary between different content types
 			String boundary = "";
@@ -116,11 +108,12 @@ public class WCS111XMLEmbeddedBase64OutputReferenceStrategy implements IReferenc
 			String imageContentType = "";
 			
 			int boundaryCount = 0;
-			
+
+            String line;
 			while((line = bRead.readLine()) != null){
 				
 				if(line.contains("boundary")){
-					boundary = line.substring(line.indexOf("\"") + 1, line.lastIndexOf("\""));
+					boundary = line.substring(line.indexOf('"') + 1, line.lastIndexOf('"'));
 					boundaryFound = true;
 					continue;
 				}
@@ -137,9 +130,9 @@ public class WCS111XMLEmbeddedBase64OutputReferenceStrategy implements IReferenc
 				//is the image always the third part?!
 				else if(boundaryCount == 2){
 					if(line.contains("Content-Type")){
-						imageContentType = line.substring(line.indexOf(":") +1).trim();
+						imageContentType = line.substring(line.indexOf(':') +1).trim();
 					}else if(line.contains("Content-Transfer-Encoding")){
-						contentTransferEncoding = line.substring(line.indexOf(":") +1).trim();					
+						contentTransferEncoding = line.substring(line.indexOf(':') +1).trim();
 					}else if(line.contains("Content-ID")){
 						/*	just move further one line (which is hopefully empty)
 						 * 	and start parsing the encoded image 				

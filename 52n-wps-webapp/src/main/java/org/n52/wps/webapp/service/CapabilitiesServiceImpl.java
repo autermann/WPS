@@ -28,11 +28,12 @@
  */
 package org.n52.wps.webapp.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import org.n52.wps.webapp.dao.CapabilitiesDAO;
 import org.n52.wps.webapp.entities.ServiceIdentification;
 import org.n52.wps.webapp.entities.ServiceProvider;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 /**
  * An implementation for the {@link CapabilitiesService} interface. This implementation uses the {@link CapabilitiesDAO}

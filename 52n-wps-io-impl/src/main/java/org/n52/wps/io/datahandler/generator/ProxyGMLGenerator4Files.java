@@ -52,11 +52,6 @@ public class ProxyGMLGenerator4Files extends AbstractGenerator {
     @Override
     public InputStream generateStream(IData data, Format format) throws
             IOException, ExceptionReport {
-
-//		// check for correct request before returning the stream
-//		if (!(this.isSupportedGenerate(data.getSupportedClass(), mimeType, schema))){
-//			throw new IOException("I don't support the incoming datatype");
-//		}
         GTVectorDataBinding vectorBindingData = ((GenericFileDataBinding) data)
                 .getPayload().getAsGTVectorDataBinding();
         IGenerator delegate = GeneratorFactory.getInstance()

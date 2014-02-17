@@ -41,8 +41,6 @@ import java.util.UUID;
 import net.opengis.wps.x100.ProcessDescriptionType;
 
 import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.n52.wps.io.data.GenericFileData;
 import org.n52.wps.io.data.GenericFileDataConstants;
 import org.n52.wps.io.data.IData;
@@ -50,8 +48,10 @@ import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
 import org.n52.wps.server.IAlgorithm;
 import org.n52.wps.server.feed.movingcode.AlgorithmParameterType;
 import org.n52.wps.server.feed.movingcode.CommandLineParameter;
-import org.n52.wps.server.feed.movingcode.MovingCodeUtils;
 import org.n52.wps.server.feed.movingcode.MovingCodeObject;
+import org.n52.wps.server.feed.movingcode.MovingCodeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Matthias Mueller, TU Dresden
@@ -67,7 +67,7 @@ public class PythonScriptDelegator implements IAlgorithm{
 	
 	private CommandLineParameter[] scriptParameters;
 	
-	private MovingCodeObject mco;
+	private final MovingCodeObject mco;
 	protected List<String> errors;
 
 	public PythonScriptDelegator(MovingCodeObject templateMCO, File workspaceBase) throws IOException{

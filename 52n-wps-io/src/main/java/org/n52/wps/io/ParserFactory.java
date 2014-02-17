@@ -36,12 +36,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.n52.wps.ParserDocument.Parser;
 import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
@@ -55,7 +56,7 @@ import com.google.common.collect.Iterables;
 public class ParserFactory {
 
     @Deprecated
-    public static String PROPERTY_NAME_REGISTERED_PARSERS = "registeredParsers";
+    public static final String PROPERTY_NAME_REGISTERED_PARSERS = "registeredParsers";
     private static ParserFactory factory;
     private static final Logger LOGGER = LoggerFactory
             .getLogger(ParserFactory.class);
@@ -96,7 +97,7 @@ public class ParserFactory {
     }
 
     private void loadAllParsers(Parser[] parsers) {
-        registeredParsers = new ArrayList<IParser>();
+        registeredParsers = new ArrayList<>();
         for (Parser currentParser : parsers) {
 
             // remove inactive parser

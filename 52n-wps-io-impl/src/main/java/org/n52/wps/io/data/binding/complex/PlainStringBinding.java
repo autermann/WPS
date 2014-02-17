@@ -28,38 +28,29 @@
  */
 package org.n52.wps.io.data.binding.complex;
 
-import java.io.IOException;
 
 import org.n52.wps.io.data.IComplexData;
 
-public class PlainStringBinding implements IComplexData{
-	protected transient String payload;
-	
-	public PlainStringBinding(String string) {
-		payload = string;
-	}
+public class PlainStringBinding implements IComplexData {
+    private final String payload;
 
-	public Object getPayload() {
-		return payload;
-	}
+    public PlainStringBinding(String string) {
+        payload = string;
+    }
 
-	public Class getSupportedClass() {
-		return String.class;
-	}
-	
-	private synchronized void writeObject(java.io.ObjectOutputStream oos) throws IOException
-	{
-		oos.writeObject(payload);
-	}
-	
-	private synchronized void readObject(java.io.ObjectInputStream oos) throws IOException, ClassNotFoundException
-	{
-		payload = (String) oos.readObject();
-	}
-    
     @Override
-	public void dispose(){
-		
-	}
+    public String getPayload() {
+        return payload;
+    }
+
+    @Override
+    public Class<String> getSupportedClass() {
+        return String.class;
+    }
+
+    @Override
+    public void dispose() {
+
+    }
 
 }

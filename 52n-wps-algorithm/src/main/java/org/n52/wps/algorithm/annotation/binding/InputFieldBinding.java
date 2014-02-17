@@ -32,18 +32,21 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.List;
 
-import org.n52.wps.algorithm.annotation.AlgorithmAnnotationException;
-import org.n52.wps.io.data.IData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.n52.wps.algorithm.annotation.AlgorithmAnnotationException;
+import org.n52.wps.io.data.IData;
+
 /**
  * TODO JavaDoc
+ *
  * @author Christian Autermann
  */
 public class InputFieldBinding extends InputBinding<Field> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(InputFieldBinding.class);
-    
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(InputFieldBinding.class);
+
     public InputFieldBinding(Field field) {
         super(field);
     }
@@ -54,7 +57,8 @@ public class InputFieldBinding extends InputBinding<Field> {
     }
 
     @Override
-    public void validate() throws AlgorithmAnnotationException {
+    public void validate()
+            throws AlgorithmAnnotationException {
         if (!checkModifier()) {
             throw new AlgorithmAnnotationException("Field %s with input annotation can't be used, not public.", getMember());
         }
