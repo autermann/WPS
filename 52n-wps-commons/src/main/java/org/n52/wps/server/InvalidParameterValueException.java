@@ -34,6 +34,7 @@ package org.n52.wps.server;
  * @author Christian Autermann
  */
 public class InvalidParameterValueException extends ExceptionReport {
+    private static final long serialVersionUID = -2813303330083217668L;
 
     public InvalidParameterValueException(String message) {
         super(message, INVALID_PARAMETER_VALUE);

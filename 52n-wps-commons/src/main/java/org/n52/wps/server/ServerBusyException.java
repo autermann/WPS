@@ -6,6 +6,7 @@ package org.n52.wps.server;
  * @author Christian Autermann
  */
 public class ServerBusyException extends ExceptionReport {
+    private static final long serialVersionUID = -5171184694946945666L;
 
     public ServerBusyException(String message) {
         super(message, SERVER_BUSY);

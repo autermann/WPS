@@ -44,8 +44,6 @@ import com.google.common.base.Throwables;
  *
  */
 public class ExceptionReport extends Exception {
-	// Universal version identifier for a Serializable class.
-	// Should be used here, because HttpServlet implements the java.io.Serializable
 	private static final long serialVersionUID = 5784360334341938021L;
 	/*
 	 * Error Codes specified by the OGC Common Document.
@@ -65,14 +63,14 @@ public class ExceptionReport extends Exception {
 	public static final String FILE_SIZE_EXCEEDED = "FileSizeExceeded";
 	/** An error occurs during remote and distributed computation process. */
 	public static final String REMOTE_COMPUTATION_ERROR = "RemoteComputationError";
-	
+
 	private final String exceptionCode;
 	private String locator;
 
 	public ExceptionReport(String message, String exceptionCode) {
 		this(message, exceptionCode, (String) null);
 	}
-	
+
 	public ExceptionReport(String message, String exceptionCode, Throwable e) {
 		this(message, exceptionCode, (String) null);
         setCause(e);
@@ -88,7 +86,7 @@ public class ExceptionReport extends Exception {
         this(message, exceptionCode, (String) null);
         setCause(e);
     }
-	
+
 	public ExceptionReportDocument getExceptionDocument() {
 		// Printing serivce Exception
 		ExceptionReportDocument report = ExceptionReportDocument.Factory.newInstance();

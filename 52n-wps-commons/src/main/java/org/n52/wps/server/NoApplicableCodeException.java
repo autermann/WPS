@@ -32,6 +32,7 @@ package org.n52.wps.server;
  * @author Christian Autermann
  */
 public class NoApplicableCodeException extends ExceptionReport {
+    private static final long serialVersionUID = 7748321175255233997L;
 
     public NoApplicableCodeException(String message) {
         super(message, NO_APPLICABLE_CODE);

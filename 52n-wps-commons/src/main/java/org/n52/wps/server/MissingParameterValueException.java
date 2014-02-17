@@ -4,6 +4,7 @@ package org.n52.wps.server;
  * @author Christian Autermann
  */
 public class MissingParameterValueException extends ExceptionReport {
+    private static final long serialVersionUID = -1973085242173931784L;
 
     public MissingParameterValueException(String message) {
         super(message, MISSING_PARAMETER_VALUE);

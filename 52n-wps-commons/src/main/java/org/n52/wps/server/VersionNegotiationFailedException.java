@@ -6,6 +6,7 @@ package org.n52.wps.server;
  * @author Christian Autermann
  */
 public class VersionNegotiationFailedException extends ExceptionReport {
+    private static final long serialVersionUID = -5648657980448876875L;
 
     public VersionNegotiationFailedException(String message) {
         super(message, VERSION_NEGOTIATION_FAILED);

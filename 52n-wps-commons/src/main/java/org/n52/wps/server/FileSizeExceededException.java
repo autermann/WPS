@@ -6,6 +6,7 @@ package org.n52.wps.server;
  * @author Christian Autermann
  */
 public class FileSizeExceededException extends ExceptionReport {
+    private static final long serialVersionUID = -1630433934045210533L;
 
     public FileSizeExceededException(String message) {
         super(message, FILE_SIZE_EXCEEDED);
