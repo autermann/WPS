@@ -28,7 +28,6 @@
  */
 package org.n52.wps.server.database;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import org.slf4j.Logger;
@@ -82,10 +81,9 @@ public class DatabaseFactory {
 
     public void init(DatabaseConfiguration configuration)
             throws DatabaseInitializationException {
-        checkNotNull(configuration);
         synchronized (this) {
-            if (this.configuration == null || !this.configuration
-                    .equals(configuration)) {
+            if (this.configuration == null ||
+                !this.configuration.equals(configuration)) {
                 this.configuration = configuration;
                 if (this.delegate != null) {
                     this.delegate.shutdown();
