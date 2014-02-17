@@ -48,16 +48,18 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.xmlbeans.XmlException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.n52.wps.GeneratorDocument.Generator;
 import org.n52.wps.ParserDocument.Parser;
 import org.n52.wps.commons.WPSConfig;
 import org.n52.wps.io.GeneratorFactory;
 import org.n52.wps.io.ParserFactory;
 import org.n52.wps.server.database.DatabaseFactory;
+import org.n52.wps.server.database.DatabaseInitializationException;
 import org.n52.wps.server.handler.RequestHandler;
 import org.n52.wps.util.XMLBeansHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.net.HttpHeaders;
 
@@ -171,6 +173,12 @@ public class WebProcessingService extends HttpServlet {
 
         // Get an instance of the database for initialization of the database
         DatabaseFactory.getDatabase();
+        try {
+            //FIXME get the configuration from somewhere ...
+            DatabaseFactory.getInstance().init(null);
+        } catch (DatabaseInitializationException ex) {
+            LOGGER.error("Error initializing database", ex);
+        }
 
         LOGGER.info("WPS up and running!");
 

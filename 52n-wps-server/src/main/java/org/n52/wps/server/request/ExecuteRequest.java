@@ -865,8 +865,7 @@ public class ExecuteRequest extends Request implements IObserver {
                 InputStream is = null;
                 try {
                     is = executeResponse.getAsStream();
-                    DatabaseFactory.getDatabase().storeResponse(
-                            getUniqueId().toString(), is);
+                    DatabaseFactory.getDatabase().storeResponse(getUniqueId().toString(), is);
                 } finally {
                     IOUtils.closeQuietly(is);
                 }
@@ -889,36 +888,28 @@ public class ExecuteRequest extends Request implements IObserver {
             IOUtils.closeQuietly(is);
         }
     }
-    
+
     private void storeRequest(CaseInsensitiveMap map) {
-  
-        BufferedWriter w = null;
-        ByteArrayOutputStream os = null;
-        ByteArrayInputStream is = null;
-        try {
-            os = new ByteArrayOutputStream();
-            w = new BufferedWriter(new OutputStreamWriter(os));
+
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream();
+             OutputStreamWriter osw = new OutputStreamWriter(os);
+             BufferedWriter bw = new BufferedWriter(osw)) {
             for (Object key : map.keySet()) {
                 Object value = map.get(key);
-                String valueString = "";                
-                if(value instanceof String[]){
-                	valueString = ((String[])value)[0];
-                }else{
-                	valueString = value.toString();
+                String valueString;
+                if (value instanceof String[]) {
+                    valueString = ((String[]) value)[0];
+                } else {
+                    valueString = value.toString();
                 }
-                w.append(key.toString()).append('=').append(valueString);
-                w.newLine();
+                bw.append(key.toString()).append('=').append(valueString);
+                bw.newLine();
             }
-            w.flush();
-            is = new ByteArrayInputStream(os.toByteArray());
-            DatabaseFactory.getDatabase().insertRequest(
-                    getUniqueId().toString(), is, false);
+            bw.flush();
+            DatabaseFactory.getDatabase().insertRequest(getUniqueId().toString(),
+                        new ByteArrayInputStream(os.toByteArray()), false);
         } catch (Exception e) {
             LOGGER.error("Exception storing ExecuteRequest", e);
-        } finally {
-            IOUtils.closeQuietly(w);
-            IOUtils.closeQuietly(os);
-            IOUtils.closeQuietly(is);
         }
     }
 }

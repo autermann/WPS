@@ -71,7 +71,7 @@ public class ExecuteRequestTest {
     	ExecuteRequest request = new ExecuteRequest(doc);
     	String exceptionText = "TestError";
     	request.updateStatusError(exceptionText);
-    	File response = DatabaseFactory.getDatabase().lookupResponseAsFile(request.getUniqueId().toString());
+    	File response = DatabaseFactory.getDatabase().getResponseAsFile(request.getUniqueId().toString());
     	ExecuteResponseDocument responseDoc = ExecuteResponseDocument.Factory.parse(response);
     	StatusType statusType = responseDoc.getExecuteResponse().getStatus();
     	assertTrue(validateExecuteResponse(responseDoc));    	

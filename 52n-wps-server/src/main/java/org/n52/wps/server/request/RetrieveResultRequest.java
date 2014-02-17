@@ -31,9 +31,10 @@ package org.n52.wps.server.request;
 import java.io.InputStream;
 
 import org.apache.commons.collections.map.CaseInsensitiveMap;
+
 import org.n52.wps.server.ExceptionReport;
-import org.n52.wps.server.database.IDatabase;
 import org.n52.wps.server.database.DatabaseFactory;
+import org.n52.wps.server.database.IDatabase;
 import org.n52.wps.server.response.Response;
 import org.n52.wps.server.response.RetrieveResultResponse;
 
@@ -58,6 +59,7 @@ public class RetrieveResultRequest extends Request {
 	
 	/**
 	 * Actually serves the Request.
+     * @return
 	 * @throws ExceptionReport
 	 */
 	public Response call() throws ExceptionReport {
@@ -71,24 +73,24 @@ public class RetrieveResultRequest extends Request {
 	 * Validates the client input
 	 * @return True if the input is valid, False otherwise
 	 */
+    @Override
 	public boolean validate() throws ExceptionReport {
 		String req_id = getMapValue("request_id", true);
 		if(req_id.length() == 0){
 			throw new ExceptionReport("The value of parameter <request_id> is not valid.", ExceptionReport.INVALID_PARAMETER_VALUE);
 		}
-		try{
-		}catch(NumberFormatException e){
-			throw new ExceptionReport("The value of parameter <request_id> is not an integer identifier", ExceptionReport.INVALID_PARAMETER_VALUE);
-		}
 		IDatabase db = DatabaseFactory.getDatabase();
-		this.storedResponse = db.lookupResponse(req_id);
+		this.storedResponse = db.getResponse(req_id);
 		return (this.storedResponse != null);
 	}
 	
-	public Object getAttachedResult() throws NullPointerException {
-		if(this.storedResponse == null)
-			throw new NullPointerException("No stored responses were found!");
-		return this.storedResponse;
+    @Override
+    public Object getAttachedResult()
+            throws NullPointerException {
+        if (this.storedResponse == null) {
+            throw new NullPointerException("No stored responses were found!");
+        }
+        return this.storedResponse;
 	}
 
 }

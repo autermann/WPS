@@ -73,13 +73,13 @@ public class RetrieveResultServlet extends HttpServlet {
         } else {
 
             IDatabase db = DatabaseFactory.getDatabase();
-            String mimeType = db.getMimeTypeForStoreResponse(id);
-            long contentLength = db.getContentLengthForStoreResponse(id);
+            String mimeType = db.getMimeTypeForResponse(id);
+            long contentLength = db.getContentLengthForResponse(id);
 
             InputStream inputStream = null;
             OutputStream outputStream = null;
             try {
-                inputStream = db.lookupResponse(id);
+                inputStream = db.getResponse(id);
                 if (inputStream == null) {
                     errorResponse("id " + id + " is unknown to server", response);
                 } else if (mimeType == null) {
