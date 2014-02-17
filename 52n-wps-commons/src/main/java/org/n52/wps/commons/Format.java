@@ -42,6 +42,7 @@ import net.opengis.wps.x100.ComplexDataDescriptionType;
 import net.opengis.wps.x100.ComplexDataType;
 import net.opengis.wps.x100.InputDescriptionType;
 import net.opengis.wps.x100.InputReferenceType;
+import net.opengis.wps.x100.OutputDefinitionType;
 import net.opengis.wps.x100.OutputDescriptionType;
 import net.opengis.wps.x100.OutputReferenceType;
 import net.opengis.wps.x100.SupportedComplexDataType;
@@ -283,6 +284,12 @@ public class Format {
         if (hasSchema()) {
             ort.setSchema(getSchema().get());
         }
+    }
+
+    public static Format of(OutputDefinitionType odt) {
+        return new Format(odt.getMimeType(),
+                          odt.getEncoding(),
+                          odt.getSchema());
     }
 
     public static Format of(ComplexDataType cdt) {
