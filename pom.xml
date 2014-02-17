@@ -718,6 +718,12 @@
 				<groupId>org.apache.axis2</groupId>
 				<artifactId>axis2-transport-http</artifactId>
 				<version>${apache.axis2.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.axis2</groupId>

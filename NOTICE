@@ -59,6 +59,7 @@ This project includes:
   Apache Axis2 - Kernel under The Apache Software License, Version 2.0
   Apache Axis2 - Root under The Apache Software License, Version 2.0
   Apache Axis2 - SAAJ under The Apache Software License, Version 2.0
+  Apache Axis2 - Transport - HTTP under The Apache Software License, Version 2.0
   Apache Velocity under The Apache Software License, Version 2.0
   API interfaces under Lesser General Public License (LGPL)
   ArcGrid datasource module under Lesser General Public License (LGPL)
