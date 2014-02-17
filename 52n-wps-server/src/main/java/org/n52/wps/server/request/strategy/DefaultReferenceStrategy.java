@@ -29,26 +29,32 @@
 package org.n52.wps.server.request.strategy;
 
 import java.io.IOException;
-import java.io.StringWriter;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 
+import net.opengis.wps.x100.InputReferenceType;
 import net.opengis.wps.x100.InputType;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DecompressingHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.n52.wps.server.ExceptionReport;
+import org.n52.wps.server.InvalidParameterValueException;
+import org.n52.wps.server.NoApplicableCodeException;
+
+import com.google.common.base.Charsets;
+import com.google.common.io.CharStreams;
 
 /**
  * 
@@ -61,15 +67,10 @@ public class DefaultReferenceStrategy implements IReferenceStrategy{
 	
 	// TODO: follow HTTP redirects with LaxRedirectStrategy
 	
-	Logger logger = LoggerFactory.getLogger(DefaultReferenceStrategy.class);
-	
 	//TODO: get proxy from config
 	//static final HttpHost proxy = new HttpHost("127.0.0.1", 8080, "http");
-	static final HttpHost proxy = null;
-	
 	@Override
 	public boolean isApplicable(InputType input) {
-		// TODO Auto-generated method stub
 		return true;
 	}
 	
@@ -77,107 +78,64 @@ public class DefaultReferenceStrategy implements IReferenceStrategy{
 	
 	@Override
 	public ReferenceInputStream fetchData(InputType input) throws ExceptionReport {
-		
+        DefaultHttpClient c = new DefaultHttpClient();
+        DecompressingHttpClient client = new DecompressingHttpClient(c);
+
 		String href = input.getReference().getHref();
-		String mimeType = input.getReference().getMimeType();
-		
+        String inputID = input.getIdentifier().getStringValue();
 		try {
-			// Handling POST with referenced document
-			if(input.getReference().isSetBodyReference()) {
-				
-				String bodyHref = input.getReference().getBodyReference().getHref();
-				
-				// but Body reference into a String
-				StringWriter writer = new StringWriter();
-				IOUtils.copy(httpGet(bodyHref, null), writer);
-				String body = writer.toString();
-				
-				// trigger POST request
-				return httpPost(href, body, mimeType);
-				
-			}
-			
-			// Handle POST with inline message
-			else if (input.getReference().isSetBody()) {
-				String body = input.getReference().getBody().toString();
-				return httpPost(href, body, mimeType);
-			}
-			
-			// Handle get request
-			else {
-				return httpGet(href, mimeType);
-			}
-			
-			
+            HttpUriRequest request = createRequest(input, client);
+            InputReferenceType.Header[] xbHeaders = input.getReference().getHeaderArray();
+            for (InputReferenceType.Header header : xbHeaders) {
+                request.addHeader(new BasicHeader(header.getKey(), header.getValue()));
+            }
+            if (input.getReference().getMimeType() != null && request.getFirstHeader(HttpHeaders.ACCEPT) == null ) {
+                request.addHeader(new BasicHeader(HttpHeaders.ACCEPT, input.getReference().getMimeType()));
+            }
+            return processResponse(client.execute(request));
+		} catch(RuntimeException e) {
+			throw new NoApplicableCodeException("Error occured while parsing XML").causedBy(e);
+		} catch(MalformedURLException e) {
+			throw new InvalidParameterValueException("The inputURL of the execute is wrong: inputID: %s | dataURL: %s", inputID, href).causedBy(e);
+		} catch(IOException e) {
+			 throw new InvalidParameterValueException("Error occured while receiving the complexReferenceURL: inputID: %s | dataURL: %s", inputID, href).causedBy(e);
 		}
-		catch(RuntimeException e) {
-			throw new ExceptionReport("Error occured while parsing XML", 
-										ExceptionReport.NO_APPLICABLE_CODE, e);
-		}
-		catch(MalformedURLException e) {
-			String inputID = input.getIdentifier().getStringValue();
-			throw new ExceptionReport("The inputURL of the execute is wrong: inputID: " + inputID + " | dataURL: " + href, 
-										ExceptionReport.INVALID_PARAMETER_VALUE );
-		}
-		catch(IOException e) {
-			 String inputID = input.getIdentifier().getStringValue();
-			 throw new ExceptionReport("Error occured while receiving the complexReferenceURL: inputID: " + inputID + " | dataURL: " + href, 
-					 				ExceptionReport.INVALID_PARAMETER_VALUE );
-		}
-	}
-	
-	/**
-	 * Make a GET request using mimeType and href
-	 * 
-	 * TODO: add support for autoretry, proxy
-	 */
-	private ReferenceInputStream httpGet(final String dataURLString, final String mimeType) throws IOException {
-		HttpClient backend = new DefaultHttpClient();
-		DecompressingHttpClient httpclient = new DecompressingHttpClient(backend);
-		
-		HttpGet httpget = new HttpGet(dataURLString);
-		
-		if (mimeType != null){
-			httpget.addHeader(new BasicHeader("Content-type", mimeType));
-		}
-		        
-		return processResponse(httpclient.execute(httpget));
-	}
-	
-	/**
-	 * Make a POST request using mimeType and href
-	 * 
-	 * TODO: add support for autoretry, proxy
-	 */
-	private ReferenceInputStream httpPost(final String dataURLString, final String body, final String mimeType) throws IOException {
-		HttpClient backend = new DefaultHttpClient();
-		
-		DecompressingHttpClient httpclient = new DecompressingHttpClient(backend);
-		
-		HttpPost httppost = new HttpPost(dataURLString);
-		
-		if (mimeType != null){
-			httppost.addHeader(new BasicHeader("Content-type", mimeType));
-		}
-		
-		// set body entity
-		HttpEntity postEntity = new StringEntity(body);
-		httppost.setEntity(postEntity);
-		
-		return processResponse(httpclient.execute(httppost));
 	}
 
+    private HttpUriRequest createRequest(InputType input, HttpClient client)
+            throws IOException {
+        String body = getBody(input, client);
+        if (body != null) {
+            HttpPost post = new HttpPost(input.getReference().getHref());
+            post.setEntity(new StringEntity(body));
+            return post;
+        } else if (input.getReference().isSetMethod() && input.getReference().getMethod().toString().equals("POST")) {
+            return new HttpPost(input.getReference().getHref());
+        } else {
+            return new HttpGet(input.getReference().getHref());
+        }
+    }
+
+    private String getBody(InputType input, HttpClient client) throws IOException {
+        if (input.getReference().isSetBodyReference()) {
+            HttpGet get = new HttpGet(input.getReference().getBodyReference().getHref());
+            try (InputStream in = client.execute(get).getEntity().getContent();
+                  InputStreamReader reader = new InputStreamReader(in, Charsets.UTF_8);) {
+                return CharStreams.toString(reader);
+            }
+        } else if (input.getReference().isSetBody()) {
+            return input.getReference().getBody().toString();
+        } else {
+            return null;
+        }
+    }
+	
     private ReferenceInputStream processResponse(HttpResponse response) throws IOException {
-        
         HttpEntity entity = response.getEntity();
-        Header header;
-        
-        header = entity.getContentType();
-        String mimeType = header == null ? null : header.getValue();
-        
-        header = entity.getContentEncoding();
-        String encoding = header == null ? null : header.getValue();
-        
+        Header contentType = entity.getContentType();
+        String mimeType = contentType == null ? null : contentType.getValue();
+        Header contentEncoding = entity.getContentEncoding();
+        String encoding = contentEncoding == null ? null : contentEncoding.getValue();
         return new ReferenceInputStream(entity.getContent(), mimeType, encoding);
     }
 }

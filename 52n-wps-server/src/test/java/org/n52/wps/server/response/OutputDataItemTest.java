@@ -28,6 +28,7 @@
  */
 package org.n52.wps.server.response;
 
+import org.n52.wps.server.response.execute.LiteralProcessOutput;
 import static org.junit.Assert.assertTrue;
 
 import java.net.URI;
@@ -52,6 +53,9 @@ import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlValidationError;
 import org.junit.Before;
 import org.junit.Test;
+
+import org.n52.wps.commons.OwsCodeType;
+import org.n52.wps.commons.OwsLanguageString;
 import org.n52.wps.io.LiteralDataFactory;
 import org.n52.wps.io.data.ILiteralData;
 import org.n52.wps.io.data.binding.literal.LiteralAnyURIBinding;
@@ -77,18 +81,18 @@ import org.n52.wps.server.WPSConstants;
 public class OutputDataItemTest {
 	
 	private ProcessDescriptionType descriptionsType;
-	private String processID = "org.n52.wps.server.response.OutputDataItemTest";
+	private final String processID = "org.n52.wps.server.response.OutputDataItemTest";
 	private ExecuteResponseDocument mockupResponseDocument;
-	private LanguageStringType outputTitle = LanguageStringType.Factory.newInstance();
-	private LanguageStringType processTitle = LanguageStringType.Factory.newInstance();
-	private Random random = new Random();
+	private final LanguageStringType outputTitle = LanguageStringType.Factory.newInstance();
+	private final LanguageStringType processTitle = LanguageStringType.Factory.newInstance();
+	private final Random random = new Random();
 	private List<ILiteralData> literalDataList;
 
 	@Before
 	public void setUp() {
 
         String uuid = UUID.randomUUID().toString();
-		literalDataList = new ArrayList<ILiteralData>();
+		literalDataList = new ArrayList<>();
         literalDataList.add(new LiteralAnyURIBinding(URI.create("http://52north.org")));
 		literalDataList.add(new LiteralBase64BinaryBinding(uuid.getBytes()));
 		literalDataList.add(new LiteralBooleanBinding(true));
@@ -198,17 +202,11 @@ public class OutputDataItemTest {
 		outputDescType.addNewIdentifier().setStringValue("output");
 		LiteralOutputType outputType = outputDescType.addNewLiteralOutput();
 
-		String dataTypeAsString = LiteralDataFactory
-				.getTypeforBindingType(literalDataBinding.getClass());
+		String dataTypeAsString = LiteralDataFactory.getTypeforBindingType(literalDataBinding.getClass());
 
 		outputType.addNewDataType().setStringValue(dataTypeAsString);
-
-		OutputDataItem ouDI = new OutputDataItem(literalDataBinding, "output",
-				null, outputTitle, descriptionsType);
-
-		ouDI.updateResponseForLiteralData(mockupResponseDocument,
-				dataTypeAsString);
-
+        LiteralProcessOutput o = new LiteralProcessOutput(new OwsCodeType("output"), OwsLanguageString.of(this.outputTitle), null, literalDataBinding, dataTypeAsString);
+		o.encodeTo(this.mockupResponseDocument.getExecuteResponse().getProcessOutputs().addNewOutput());
 		assertTrue(validateResponseDocument(mockupResponseDocument));
 
 		System.out.println(endText);

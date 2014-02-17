@@ -32,11 +32,14 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.collections.map.CaseInsensitiveMap;
-import org.n52.wps.server.ExceptionReport;
-import org.n52.wps.server.response.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
+
+import org.n52.wps.server.ExceptionReport;
+import org.n52.wps.server.InvalidParameterValueException;
+import org.n52.wps.server.MissingParameterValueException;
+import org.n52.wps.server.response.Response;
 
 /**
  * The client requests some operation from the server.
@@ -44,7 +47,7 @@ import org.w3c.dom.Document;
  * Not secure! Upcoming references are easily guessed or altered.
  * @see java.rmi.server.UID
  */
-abstract public class Request implements Callable <Response> {
+abstract public class Request implements Callable<Response> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Request.class);
 	protected CaseInsensitiveMap map = null;
@@ -101,7 +104,7 @@ abstract public class Request implements Callable <Response> {
 			return null;
 		}else{
 			//Fix for Bug 904 https://bugzilla.52north.org/show_bug.cgi?id=904
-			throw new ExceptionReport("Parameter <" + key + "> not specified.", ExceptionReport.MISSING_PARAMETER_VALUE, key);
+			throw new MissingParameterValueException("Parameter <%s> not specified.", key).locatedAt(key);
 		}
 	}
 	
@@ -122,13 +125,13 @@ abstract public class Request implements Callable <Response> {
 					return value;
 				}
 			}
-			throw new ExceptionReport("Invalid value for parameter <" + key + ">.", ExceptionReport.INVALID_PARAMETER_VALUE, key);
+			throw new InvalidParameterValueException("Invalid value for parameter <%s>.", key);
 		}else if(!required){
-			LOGGER.warn("Parameter <> not found.", key);
+			LOGGER.warn("Parameter <{}> not found.", key);
 			return null;
 		}else{
 			//Fix for Bug 904 https://bugzilla.52north.org/show_bug.cgi?id=904
-			throw new ExceptionReport("Parameter <" + key + "> not specified.", ExceptionReport.MISSING_PARAMETER_VALUE, key);
+			throw new MissingParameterValueException("Parameter <%s> not specified.", key);
 		}
 	}
 
@@ -147,7 +150,7 @@ abstract public class Request implements Callable <Response> {
 			return null;
 		}else{
 			//Fix for Bug 904 https://bugzilla.52north.org/show_bug.cgi?id=904
-			throw new ExceptionReport("Parameter <" + key + "> not specified.", ExceptionReport.MISSING_PARAMETER_VALUE, key);
+			throw new MissingParameterValueException("Parameter <%s> not specified.", key);
 		}
 	}
 	

@@ -28,34 +28,51 @@
  */
 package org.n52.wps.server.response;
 
+import org.n52.wps.server.response.execute.RawData;
+import org.n52.wps.server.response.execute.ReferenceProcessOutput;
+import org.n52.wps.server.response.execute.ComplexProcessOutput;
+import org.n52.wps.server.response.execute.BoundingBoxProcessOutput;
+import org.n52.wps.server.response.execute.ProcessOutput;
+import org.n52.wps.server.response.execute.LiteralProcessOutput;
 import java.io.InputStream;
 import java.util.Calendar;
 
 import net.opengis.ows.x11.DomainMetadataType;
-import net.opengis.ows.x11.LanguageStringType;
 import net.opengis.wps.x100.DocumentOutputDefinitionType;
 import net.opengis.wps.x100.ExecuteResponseDocument;
+import net.opengis.wps.x100.ExecuteResponseDocument.ExecuteResponse.ProcessOutputs;
 import net.opengis.wps.x100.OutputDefinitionType;
 import net.opengis.wps.x100.OutputDescriptionType;
 import net.opengis.wps.x100.ProcessBriefType;
 import net.opengis.wps.x100.ProcessDescriptionType;
-import net.opengis.wps.x100.ResponseDocumentType;
 import net.opengis.wps.x100.ResponseFormType;
 import net.opengis.wps.x100.StatusType;
 
 import org.apache.xmlbeans.XmlCursor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.n52.wps.ServerDocument.Server;
 import org.n52.wps.commons.Format;
+import org.n52.wps.commons.OwsCodeType;
+import org.n52.wps.commons.OwsLanguageString;
+import org.n52.wps.commons.WPSConfig;
+import org.n52.wps.io.LiteralDataFactory;
+import org.n52.wps.io.data.IBBOXData;
+import org.n52.wps.io.data.IComplexData;
 import org.n52.wps.io.data.IData;
+import org.n52.wps.io.data.ILiteralData;
 import org.n52.wps.server.CapabilitiesConfiguration;
 import org.n52.wps.server.ExceptionReport;
 import org.n52.wps.server.InvalidParameterValueException;
+import org.n52.wps.server.NoApplicableCodeException;
 import org.n52.wps.server.RepositoryManager;
+import org.n52.wps.server.RetrieveResultServlet;
 import org.n52.wps.server.WPSConstants;
-import org.n52.wps.server.database.DatabaseFactory;
 import org.n52.wps.server.request.ExecuteRequest;
 import org.n52.wps.util.XMLBeansHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Strings;
 
 /**
  * WPS Execute operation response. By default, this XML document is delivered to
@@ -82,37 +99,21 @@ import org.slf4j.LoggerFactory;
  */
 public class ExecuteResponseBuilder {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecuteResponseBuilder.class);
-    private static final String SCHEMA_LOCATION_WPS_EXECUTE_RESPONSE
-            = "http://schemas.opengis.net/wps/1.0.0/wpsExecute_response.xsd";
-
 	private final String identifier;
 	private final ExecuteRequest request;
 	private final ExecuteResponseDocument document;
-	private RawData rawDataHandler = null; 
 	private final ProcessDescriptionType description;
 	private final Calendar creationTime;
     private final ResponseFormType xbResponseForm;
-    private final ResponseDocumentType xbResponseDocument;
     private final ExecuteResponseDocument.ExecuteResponse xbExecuteResponse;
-
-    private final ResponseEncoding encoding;
+    private String statusLocation;
+    private RawData rawData = null;
 	
 	public ExecuteResponseBuilder(ExecuteRequest request) throws ExceptionReport{
 		this.request = request;
         this.identifier = this.request.getExecute().getIdentifier().getStringValue().trim();
         this.xbResponseForm = this.request.getExecute().getResponseForm();
 
-        if (request.isRawData()) {
-            encoding = ResponseEncoding.RAW;
-        } else if (request.hasResponseDocument()) {
-            encoding = ResponseEncoding.INLINE;
-        } else {
-            encoding = ResponseEncoding.UNSPECIFIED;
-        }
-
-        this.xbResponseDocument = encoding == ResponseEncoding.INLINE ? null
-                                  : this.xbResponseForm.getResponseDocument();
-        
         this.description = RepositoryManager.getInstance().getProcessDescription(this.identifier);
         
         if (this.description == null) {
@@ -140,10 +141,10 @@ public class ExecuteResponseBuilder {
         if (this.description.getAbstract() != null) {
             xbProcess.setAbstract(this.description.getAbstract());
         }
-        if (this.description.getMetadataArray().length>0) {
+        if (this.description.getMetadataArray().length > 0) {
             xbProcess.setMetadataArray(this.description.getMetadataArray());
         }
-        if (this.description.getProfileArray().length>0) {
+        if (this.description.getProfileArray().length > 0) {
             xbProcess.setProfileArray(this.description.getProfileArray());
         }
         if (this.description.getWSDL() != null) {
@@ -153,7 +154,6 @@ public class ExecuteResponseBuilder {
             xbProcess.setProcessVersion(this.description.getProcessVersion());
         }
 
-        			// the response only include dataInputs, if the property is set to true;
         this.creationTime = Calendar.getInstance();
 	}
 
@@ -163,287 +163,191 @@ public class ExecuteResponseBuilder {
         c.toLastAttribute();
         c.setAttributeText(WPSConstants.QN_SCHEMA_LOCATION,
                            WPSConstants.NS_WPS + " " +
-                           SCHEMA_LOCATION_WPS_EXECUTE_RESPONSE);
+                           WPSConstants.SCHEMA_LOCATION_WPS_EXECUTE_RESPONSE);
         c.dispose();
     }
 
     private String getServiceInstanceURL() {
-        return CapabilitiesConfiguration.ENDPOINT_URL +
-               "?request=GetCapabilities&service=WPS";
+        return CapabilitiesConfiguration.ENDPOINT_URL + "?service=WPS&request=GetCapabilities";
     }
 	
 	public void update() throws ExceptionReport {
 		if (this.xbExecuteResponse.getStatus().isSetProcessSucceeded()) {
             updateStatusSucceeded();
-        } else if (request.isStoreResponse()) {
+        } else if (this.request.isStoreResponse()) {
             this.xbExecuteResponse.setStatusLocation(getStatusLocation());
         }
 	}
 
     private void updateStatusSucceeded() throws ExceptionReport {
         this.xbExecuteResponse.addNewProcessOutputs();
-        switch (encoding) {
-            case INLINE:
-                updateResponseDocument();
-                break;
-            case RAW:
-                updateRawData();
-                break;
-            case UNSPECIFIED:
-                updateNoResponseForm();
-                break;
-
-        }
-    }
-    
-    private void updateNoResponseForm() throws ExceptionReport {
-        // THIS IS A WORKAROUND AND ACTUALLY NOT COMPLIANT TO THE SPEC.
-        LOGGER.info("OutputDefinitions are not stated explicitly in request");
-        for (OutputDescriptionType xbOutputDescription :
-                description.getProcessOutputs().getOutputArray()) {
-            updateNoResponseForm(xbOutputDescription);
+        if (this.request.isRawData()) {
+            this.rawData = createRawOutput();
+        } else if (this.request.hasResponseDocument()) {
+            for (DocumentOutputDefinitionType output : getRequestedOutputs()) {
+                OutputDescriptionType desc = getOutputDescription(
+                        output.getIdentifier().getStringValue());
+                update(createProcessOutput(desc, output));
+            }
+        } else {
+            // THIS IS A WORKAROUND AND ACTUALLY NOT COMPLIANT TO THE SPEC.
+            LOGGER.info("OutputDefinitions are not stated explicitly in request");
+            for (OutputDescriptionType desc : getDefinedOutputs()) {
+                update(createProcessOutput(desc, null));
+            }
         }
     }
 
-    private void updateNoResponseForm(OutputDescriptionType description)
-            throws ExceptionReport {
-        String id = description.getIdentifier().getStringValue();
-        LanguageStringType title = description.getTitle();
-        IData data = request.getAttachedResult().get(id);
-        switch(OutputType.of(description)) {
-            case BBOX:
-                generateInlineBBOXDataOutput(data, id, title);
-                break;
+    private OutputDescriptionType[] getDefinedOutputs() {
+        return this.description.getProcessOutputs().getOutputArray();
+    }
+
+    private DocumentOutputDefinitionType[] getRequestedOutputs() {
+        return this.xbResponseForm.getResponseDocument().getOutputArray();
+    }
+
+    private OutputDefinitionType getRawDataOutput() {
+        return this.request.getExecute().getResponseForm().getRawDataOutput();
+    }
+
+    private void update(ProcessOutput processOutput) throws ExceptionReport {
+        ProcessOutputs xbProcessOutputs = this.xbExecuteResponse.getProcessOutputs();
+        if (xbProcessOutputs == null) {
+            xbProcessOutputs = this.xbExecuteResponse.addNewProcessOutputs();
+        }
+        processOutput.encodeTo(xbProcessOutputs.addNewOutput());
+    }
+
+
+    private ProcessOutput createProcessOutput(OutputDescriptionType desc,
+                                              DocumentOutputDefinitionType request) throws ExceptionReport {
+        OwsCodeType id = OwsCodeType.of(desc.getIdentifier());
+        OwsLanguageString title = OwsLanguageString.of(desc.getTitle());
+        OwsLanguageString abstrakt = OwsLanguageString.of(desc.getAbstract());
+        IData data = this.request.getAttachedResult().get(id.getValue());
+        switch (OutputType.of(desc)) {
             case COMPLEX:
-                Format format = Format.getDefault(description);
-                generateInlineComplexDataOutput(data, id, format, title);
-                break;
+                IComplexData complexData = (IComplexData) data;
+                if (request == null) {
+                     return new ComplexProcessOutput(id, title, abstrakt, complexData, Format.getDefault(desc));
+                } else if (request.getAsReference()) {
+                    return new ReferenceProcessOutput(id, title, abstrakt, complexData, getFormat(request));
+                } else {
+                    return new ComplexProcessOutput(id, title, abstrakt, complexData, getFormat(request));
+                }
             case LITERAL:
-                String type = description.getLiteralOutput().getDataType().getReference();
-                generateInlineLiteralDataOutput(data, id, title, type);
-                break;
+                ILiteralData literalData = (ILiteralData) data;
+                 DomainMetadataType dmt = desc.getLiteralOutput().getDataType();
+                String dataType = null;
+                if (dmt != null) {
+                    dataType = dmt.getReference();
+                }
+                if (dataType == null) {
+                    dataType = LiteralDataFactory.getTypeforBindingType(literalData.getClass());
+                }
+                return new LiteralProcessOutput(id, title, abstrakt, literalData, dataType);
+            case BBOX:
+                IBBOXData bboxData = (IBBOXData) data;
+                return new BoundingBoxProcessOutput(id, title, abstrakt, bboxData);
+            default:
+                throw new RuntimeException("Incomplete enum switch!");
         }
     }
 
-    private void updateResponseDocument() throws ExceptionReport {
-        for (DocumentOutputDefinitionType requestedOutput : this.xbResponseDocument.getOutputArray()) {
-            updateResponseDocument(requestedOutput);
+    private RawData createRawOutput() throws ExceptionReport {
+        OutputDefinitionType rawDataOutput = this.xbResponseForm.getRawDataOutput();
+        String id = rawDataOutput.getIdentifier().getStringValue();
+        IData data = this.request.getAttachedResult().get(id);
+        switch (OutputType.of(getOutputDescription(id))) {
+            case COMPLEX:
+                return RawData.of((IComplexData) data, getFormat(rawDataOutput));
+            case LITERAL:
+                return RawData.of((ILiteralData) data);
+            case BBOX:
+                return RawData.of((IBBOXData) data);
+            default:
+                throw new RuntimeException("Incomplete enum switch!");
         }
     }
 
-    private void updateResponseDocument(DocumentOutputDefinitionType requestedOutput)
-            throws ExceptionReport {
-        String id = requestedOutput.getIdentifier().getStringValue();
-        OutputDescriptionType desc = XMLBeansHelper.findOutputByID(id, description.getProcessOutputs().getOutputArray());
+    private OutputDescriptionType getOutputDescription(String id) throws ExceptionReport {
+        OutputDescriptionType desc = XMLBeansHelper.findOutputByID(id, getDefinedOutputs());
         if (desc == null) {
             throw new InvalidParameterValueException("Could not find the output id %s", id);
         }
-
-        IData data = request.getAttachedResult().get(id);
-        LanguageStringType title = desc.getTitle();
-        switch(OutputType.of(desc)) {
-            case COMPLEX:
-                Format format = getFormat(requestedOutput);
-                if (requestedOutput.getAsReference()) {
-                    generateReferenceComplexDataOutput(data, id, format, title);
-                } else {
-                    generateInlineComplexDataOutput(data, id, format, title);
-                }
-                break;
-            case LITERAL:
-                DomainMetadataType dataType = desc.getLiteralOutput().getDataType();
-                String reference = dataType != null ? dataType.getReference() : null;
-                generateInlineLiteralDataOutput(data, id, title, reference);
-                break;
-            case BBOX:
-                generateInlineBBOXDataOutput(data, id, title);
-                break;
-        }
-    }
-
-    private void updateRawData() throws ExceptionReport {
-        OutputDescriptionType[] outputDescs = description.getProcessOutputs().getOutputArray();
-        OutputDefinitionType rawDataOutput = xbResponseForm.getRawDataOutput();
-        String id = rawDataOutput.getIdentifier().getStringValue();
-        OutputDescriptionType desc = XMLBeansHelper.findOutputByID(id, outputDescs);
-        IData data = request.getAttachedResult().get(id);
-        switch (OutputType.of(desc)) {
-            case COMPLEX:
-                Format format = getFormat(rawDataOutput);
-                generateRawComplexDataOutput(data, id, format);
-                break;
-            case LITERAL:
-                DomainMetadataType dataType = desc.getLiteralOutput().getDataType();
-                String reference = dataType != null ? dataType.getReference(): null;
-                generateRawLiteralDataOutput(data, reference);
-                break;
-            case BBOX:
-                generateRawBBOXDataOutput(data, id);
-                break;
-        }
+        return desc;
     }
 
     private String getStatusLocation() {
-        return DatabaseFactory.getDatabase().generateRetrieveResultURL((request.getUniqueId()).toString());
+        if (this.statusLocation == null) {
+            Server server = WPSConfig.getInstance().getWPSConfig().getServer();
+            this.statusLocation = String.format("http://%s:%s/%s?id=%s",
+                                           server.getHostname(),
+                                           server.getHostport(),
+                                           RetrieveResultServlet.SERVLET_PATH,
+                                           this.request.getUniqueId().toString());
+        }
+        return this.statusLocation;
     }
 
-    private Format getFormat(OutputDefinitionType definition) {
-        String mimeType = getMimeType(definition);
-        String schema = ExecuteResponseBuilder.getSchema(definition);
-        String encoding = ExecuteResponseBuilder.getEncoding(definition);
-        return new Format(mimeType, encoding, schema);
+    private Format getFormat(OutputDefinitionType definition) throws ExceptionReport {
+        return Format.of(definition).withMimeType(getMimeType(definition));
     }
 
-	public String getMimeType() {
-        switch (encoding) {
-            case INLINE:
-                return WPSConstants.MIME_TYPE_TEXT_XML;
-            case UNSPECIFIED:
-                return WPSConstants.MIME_TYPE_TEXT_XML;
-            case RAW:
-                OutputDefinitionType raw = request.getExecute().getResponseForm().getRawDataOutput();
-                String id = raw.getIdentifier().getStringValue();
-                OutputDescriptionType outputDes = getOutputDescription(id);
-                if (raw.getMimeType() != null && !raw.getMimeType().isEmpty()) {
-                    return raw.getMimeType();
-                } 
-                switch(OutputType.of(outputDes)) {
-                    case BBOX:
-                        return WPSConstants.MIME_TYPE_TEXT_XML;
-                    case LITERAL:
-                        return WPSConstants.MIME_TYPE_TEXT_PLAIN;
-                    case COMPLEX:
-                        String mimeType = outputDes.getComplexOutput().getDefault().getFormat().getMimeType();
-                        LOGGER.warn("Using default mime type: {} for input: {}", mimeType, id);
-                        return mimeType;
-                    default:
-                        throw new RuntimeException("Unknown OutputType " + outputDes);
-                }
-            default:
-                throw new RuntimeException("Unknown Encoding " + encoding);
+	public String getMimeType() throws ExceptionReport {
+        if (this.request.isRawData()) {
+            return getMimeType(getRawDataOutput());
+        } else if (this.request.hasResponseDocument()) {
+            return WPSConstants.MIME_TYPE_TEXT_XML;
+        } else {
+            return WPSConstants.MIME_TYPE_TEXT_XML;
         }
     }
-
-	public String getMimeType(OutputDefinitionType def) {
-        if (def == null) {
+    
+	public String getMimeType(OutputDefinitionType definition) throws ExceptionReport {
+        if (definition == null) {
             return getMimeType();
         }
-
-        final String id = def.getIdentifier().getStringValue();
-        final OutputDescriptionType outputDes = getOutputDescription(id);
-        final OutputType type = OutputType.of(outputDes);
-
-        switch (type) {
+        if (Strings.emptyToNull(definition.getMimeType()) != null) {
+            return definition.getMimeType();
+        }
+        final String id = definition.getIdentifier().getStringValue();
+        final OutputDescriptionType desc = getOutputDescription(id);
+        switch (OutputType.of(desc)) {
             case BBOX:
                 return WPSConstants.MIME_TYPE_TEXT_XML;
             case LITERAL:
                 return WPSConstants.MIME_TYPE_TEXT_PLAIN;
             case COMPLEX:
-                if (def.getMimeType() != null && !def.getMimeType().isEmpty()) {
-                    return def.getMimeType();
-                }
-                String mt = outputDes.getComplexOutput().getDefault().getFormat().getMimeType();
-                LOGGER.warn("Using default mime type: {} for input: {}", mt,id);
-                return mt;
+                String mimeType = desc.getComplexOutput().getDefault().getFormat().getMimeType();
+                LOGGER.warn("Using default mime type: {} for input: {}", mimeType, id);
+                return mimeType;
             default:
-                throw new RuntimeException("Unknown OutputType " + outputDes);
+                throw new RuntimeException("Unknown OutputType " + desc);
         }
-    }
-
-    private OutputDescriptionType getOutputDescription(String id) {
-        for (OutputDescriptionType tmpOutputDes : description.getProcessOutputs().getOutputArray()) {
-            if (id.equalsIgnoreCase(tmpOutputDes.getIdentifier().getStringValue())) {
-                return tmpOutputDes;
-            }
-        }
-        return null;
-    }
-	
-    private void generateRawComplexDataOutput(IData obj, 
-                                              String id,
-                                              Format format) throws ExceptionReport {
-        rawDataHandler = new RawData(obj, id, format, description);
-    }
-
-    private void generateInlineComplexDataOutput(IData obj,
-                                                 String id,
-                                                 Format format,
-                                                 LanguageStringType title)
-            throws ExceptionReport {
-        OutputDataItem handler = new OutputDataItem(obj, id, format, title, description);
-        handler.updateResponseForInlineComplexData(document);
-    }
-
-    private void generateReferenceComplexDataOutput(IData obj,
-                                                    String id,
-                                                    Format format,
-                                                    LanguageStringType title)
-            throws ExceptionReport {
-        OutputDataItem handler = new OutputDataItem(obj, id, format, title, description);
-        handler.updateResponseAsReference(document, request.getUniqueId().toString(), format.getMimeType().orNull());
-    }
-
-    private void generateInlineLiteralDataOutput(IData obj,
-                                                 String id,
-                                                 LanguageStringType title,
-                                                 String dataTypeReference)
-            throws ExceptionReport {
-        OutputDataItem handler = new OutputDataItem(obj, id, null, title, description);
-        handler.updateResponseForLiteralData(document, dataTypeReference);
-    }
-
-    private void generateRawLiteralDataOutput(IData obj, 
-                                              String responseID)
-            throws ExceptionReport {
-        rawDataHandler = new RawData(obj, responseID, null, description);
-    }
-
-    private void generateInlineBBOXDataOutput(IData obj,
-                                              String id,
-                                              LanguageStringType title)
-            throws ExceptionReport {
-        OutputDataItem handler = new OutputDataItem(obj, id, null, title, description);
-        handler.updateResponseForBBOXData(document, obj);
-    }
-
-    private void generateRawBBOXDataOutput(IData obj,
-                                           String id)
-            throws ExceptionReport {
-        rawDataHandler = new RawData(obj, id, null, description);
     }
 
     public InputStream getAsStream() throws ExceptionReport {
-        if (encoding == ResponseEncoding.RAW.RAW && rawDataHandler != null) {
-            return rawDataHandler.getAsStream();
+        if (this.request.isRawData() && this.rawData != null) {
+            return rawData.getAsStream();
         }
-        if (request.isStoreResponse()) {
-            document.getExecuteResponse().setStatusLocation(getStatusLocation());
+        if (this.request.isStoreResponse()) {
+            this.document.getExecuteResponse().setStatusLocation(getStatusLocation());
         }
         try {
-            return document.newInputStream(XMLBeansHelper.getXmlOptions());
+            return this.document.newInputStream(XMLBeansHelper.getXmlOptions());
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new NoApplicableCodeException("Error generating XML stream").causedBy(e);
         }
     }
 	
 	public void setStatus(StatusType status) {
         //workaround, should be generated either at the creation of the document or when the process has been finished.
-        status.setCreationTime(creationTime);
-        document.getExecuteResponse().setStatus(status);
+        status.setCreationTime(this.creationTime);
+        this.document.getExecuteResponse().setStatus(status);
     }
 
-	/**
-     * Returns the schema according to the given output description and type.
-     */
-    private static String getSchema(OutputDefinitionType def){
-        return def != null ? def.getSchema() : null;
-    }
-	
-	private static String getEncoding(OutputDefinitionType def) {
-        return def != null ? def.getEncoding() : null;
-    }
-
-    enum OutputType {
+    private enum OutputType {
         LITERAL,
         COMPLEX,
         BBOX;
@@ -460,12 +364,6 @@ public class ExecuteResponseBuilder {
             }
 
         }
-    }
-
-    enum ResponseEncoding {
-        INLINE,
-        RAW,
-        UNSPECIFIED
     }
 }
 

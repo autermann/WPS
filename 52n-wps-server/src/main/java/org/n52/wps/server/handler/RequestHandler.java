@@ -41,6 +41,12 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.collections.map.CaseInsensitiveMap;
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
+
 import org.n52.wps.server.ExceptionReport;
 import org.n52.wps.server.WPSConstants;
 import org.n52.wps.server.request.CapabilitiesRequest;
@@ -50,11 +56,6 @@ import org.n52.wps.server.request.Request;
 import org.n52.wps.server.request.RetrieveResultRequest;
 import org.n52.wps.server.response.ExecuteResponse;
 import org.n52.wps.server.response.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
 
 /**
  * This class accepts client requests, determines its type and then schedules
@@ -358,15 +359,9 @@ public class RequestHandler {
 		}
 	}
 	
-	protected void setResponseMimeType(ExecuteRequest req) {
-		if(req.isRawData()){
-			responseMimeType = req.getExecuteResponseBuilder().getMimeType();
-		}else{
-			responseMimeType = WPSConstants.MIME_TYPE_TEXT_XML;
-		}
-		
-		
-	}
+    protected void setResponseMimeType(ExecuteRequest req) throws ExceptionReport {
+        responseMimeType = req.getExecuteResponseBuilder().getMimeType();
+    }
 
 	public String getResponseMimeType(){
 		if(responseMimeType == null){

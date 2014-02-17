@@ -33,39 +33,26 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.net.URLDecoder;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import net.opengis.ows.x11.BoundingBoxType;
 import net.opengis.ows.x11.ExceptionType;
-import net.opengis.wps.x100.ComplexDataType;
-import net.opengis.wps.x100.DataInputsType;
-import net.opengis.wps.x100.DocumentOutputDefinitionType;
 import net.opengis.wps.x100.ExecuteDocument;
-import net.opengis.wps.x100.ExecuteDocument.Execute;
 import net.opengis.wps.x100.InputDescriptionType;
-import net.opengis.wps.x100.InputReferenceType;
 import net.opengis.wps.x100.InputType;
-import net.opengis.wps.x100.LiteralDataType;
-import net.opengis.wps.x100.OutputDefinitionType;
-import net.opengis.wps.x100.OutputDescriptionType;
 import net.opengis.wps.x100.ProcessDescriptionType;
 import net.opengis.wps.x100.ResponseDocumentType;
-import net.opengis.wps.x100.ResponseFormType;
 import net.opengis.wps.x100.StatusType;
 
 import org.apache.commons.collections.map.CaseInsensitiveMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+
 import org.n52.wps.commons.context.ExecutionContext;
 import org.n52.wps.commons.context.ExecutionContextFactory;
 import org.n52.wps.io.data.IComplexData;
@@ -73,6 +60,9 @@ import org.n52.wps.io.data.IData;
 import org.n52.wps.server.AbstractTransactionalAlgorithm;
 import org.n52.wps.server.ExceptionReport;
 import org.n52.wps.server.IAlgorithm;
+import org.n52.wps.server.InvalidParameterValueException;
+import org.n52.wps.server.MissingParameterValueException;
+import org.n52.wps.server.NoApplicableCodeException;
 import org.n52.wps.server.RepositoryManager;
 import org.n52.wps.server.WPSConstants;
 import org.n52.wps.server.database.DatabaseFactory;
@@ -81,11 +71,6 @@ import org.n52.wps.server.observerpattern.ISubject;
 import org.n52.wps.server.response.ExecuteResponse;
 import org.n52.wps.server.response.ExecuteResponseBuilder;
 import org.n52.wps.server.response.Response;
-import org.n52.wps.util.XMLBeansHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 
 /**
  * Handles an ExecuteRequest
@@ -113,12 +98,10 @@ public class ExecuteRequest extends Request implements IObserver {
 			this.execDom = ExecuteDocument.Factory.parse(doc, option);
 			if (this.execDom == null) {
 				LOGGER.error("ExecuteDocument is null");
-				throw new ExceptionReport("Error while parsing post data",
-						ExceptionReport.MISSING_PARAMETER_VALUE);
+				throw new MissingParameterValueException("Error while parsing post data");
 			}
 		} catch (XmlException e) {
-			throw new ExceptionReport("Error while parsing post data",
-					ExceptionReport.MISSING_PARAMETER_VALUE, e);
+			throw new MissingParameterValueException("Error while parsing post data").causedBy(e);
 		}
 
 		// validate the client input
@@ -137,7 +120,7 @@ public class ExecuteRequest extends Request implements IObserver {
 	 */
 	public ExecuteRequest(CaseInsensitiveMap ciMap) throws ExceptionReport {
 		super(ciMap);
-		initForGET(ciMap);
+        this.execDom = new KVPRequestTransformer(ciMap).transformExecute();
 		// validate the client input
 		validate();
 
@@ -146,344 +129,13 @@ public class ExecuteRequest extends Request implements IObserver {
 
         storeRequest(ciMap);
 	}
-	
-	public void getKVPDataInputs(){
-		
-	}
 
-	/**
-	 * @param ciMap
-	 */
-	private void initForGET(CaseInsensitiveMap ciMap) throws ExceptionReport {
-		String version = getMapValue(WPSConstants.PARAMETER_VERSION, ciMap, true);
-		if (!version.equals(WPSConstants.WPS_SERVICE_VERSION)) {
-			throw new ExceptionReport("request version is not supported: "
-					+ version, ExceptionReport.VERSION_NEGOTIATION_FAILED);
-		}
-		this.execDom = ExecuteDocument.Factory.newInstance();
-		Execute execute = execDom.addNewExecute();
-		String processID = getMapValue(WPSConstants.PARAMETER_IDENTIFIER, true);
-		if (!RepositoryManager.getInstance().containsAlgorithm(processID)) {
-			throw new ExceptionReport("Process does not exist",
-					ExceptionReport.INVALID_PARAMETER_VALUE);
-		}
-		execute.addNewIdentifier().setStringValue(processID);
-		DataInputsType dataInputs = execute.addNewDataInputs();
-		String dataInputString = getMapValue("DataInputs", true);
-		dataInputString = dataInputString.replace("&amp;","&");
-		String[] inputs = dataInputString.split(";");
-		
-		// Handle data inputs
-		for (String inputString : inputs) {
-			int position = inputString.indexOf('=');
-			if (position == -1) {
-				throw new ExceptionReport("No \"=\" supplied for attribute: "
-						+ inputString, ExceptionReport.MISSING_PARAMETER_VALUE);
-			}
-			//get name
-			String key = inputString.substring(0, position);
-			String value = null;
-			if (key.length() + 1 < inputString.length()) {
-				// BS int valueDelimiter = inputString.indexOf("@");
-				int valueDelimiter = inputString.indexOf('@');
-				if (valueDelimiter != -1 && position + 1 < valueDelimiter) {
-					value = inputString.substring(position + 1, valueDelimiter);
-				} else {
-					value = inputString.substring(position + 1);
-				}
-			}
-			ProcessDescriptionType description = RepositoryManager.getInstance().getProcessDescription(processID);
-			
-			if (description == null) {
-				throw new ExceptionReport("Data Identifier not supported: "
-						+ key, ExceptionReport.MISSING_PARAMETER_VALUE);
-			}
-			InputDescriptionType inputDesc = XMLBeansHelper.findInputByID(key,
-					description.getDataInputs());
-			if (inputDesc == null) {
-				throw new ExceptionReport("Data Identifier not supported: "
-						+ key, ExceptionReport.MISSING_PARAMETER_VALUE);
-			}
-			InputType input = dataInputs.addNewInput();
-			input.addNewIdentifier().setStringValue(key);
-			// prepare attributes
-			String encodingAttribute = null;
-			String mimeTypeAttribute = null;
-			String schemaAttribute = null;
-			String hrefAttribute = null;
-			String uom = null;
-			String dataType = null;
-			String[] inputItemstemp = inputString.split("@");
-			String[] inputItems = null;
-			if (inputItemstemp.length == 2) {
-				inputItems = inputItemstemp[1].split("@");
-			} else {
-				inputItems = inputString.split("@");
-			}
-			if (inputItemstemp.length > 1) {
-				for (int i = 0; i < inputItems.length; i++) {
-					int attributePos = inputItems[i].indexOf('=');
-					if (attributePos == -1
-							|| attributePos + 1 >= inputItems[i].length()) {
-						continue;
-					}
-					String attributeName = inputItems[i].substring(0,
-							attributePos);
-					String attributeValue = inputItems[i]
-							.substring(attributePos + 1);
-					//attribute is input name
-					if(attributeName.equals(key)){
-						continue;
-					}
-					try {
-						attributeValue = URLDecoder.decode(attributeValue, "UTF-8");
-					} catch (UnsupportedEncodingException e) {
-						throw new ExceptionReport("Something went wrong while trying to decode value of " + attributeName, ExceptionReport.NO_APPLICABLE_CODE, e);						
-					}
-					if (attributeName.equalsIgnoreCase("encoding")) {
-						encodingAttribute = attributeValue;
-					} else if (attributeName.equalsIgnoreCase("mimeType")) {
-						mimeTypeAttribute = attributeValue;
-					} else if (attributeName.equalsIgnoreCase("schema")) {
-						schemaAttribute = attributeValue;
-					} else if (attributeName.equalsIgnoreCase("href") | attributeName.equalsIgnoreCase("xlink:href")) {
-						hrefAttribute = attributeValue;
-					} else if (attributeName.equalsIgnoreCase("uom")) {
-						uom = attributeValue;
-					} else if (attributeName.equalsIgnoreCase("datatype")) {
-						dataType = attributeValue;
-					} else {
-						throw new ExceptionReport(
-								"Attribute is not supported: " + attributeName,
-								ExceptionReport.INVALID_PARAMETER_VALUE);
-					}
-
-				}
-			}
-				if (inputDesc.isSetComplexData()) {
-					// TODO: check for different attributes
-					// handling ComplexReference
-					if (!(hrefAttribute == null) && !hrefAttribute.isEmpty()) {
-						InputReferenceType reference = input.addNewReference();
-						reference.setHref(hrefAttribute);
-						if (schemaAttribute != null) {
-							reference.setSchema(schemaAttribute);
-						}
-						if (mimeTypeAttribute != null) {
-							reference.setMimeType(mimeTypeAttribute);
-						}
-						if (encodingAttribute != null) {
-							reference.setEncoding(encodingAttribute);
-						}
-
-					}
-					// Handling ComplexData
-					else {
-						ComplexDataType data = input.addNewData().addNewComplexData();
-						
-						InputStream stream = new ByteArrayInputStream(value.getBytes());
-						
-						try {
-							data.set(XmlObject.Factory.parse(stream));
-						} catch (Exception e) {
-							LOGGER.warn("Could not parse value: " + value + " as XMLObject. Trying to create text node.");
-							try {
-								Node textNode = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument().createTextNode(value);
-								data.set(XmlObject.Factory.parse(textNode));
-							} catch (Exception e1) {
-								throw new ExceptionReport("Exception while trying to parse value: " + value,
-										ExceptionReport.NO_APPLICABLE_CODE, e1);
-							}
-						}
-						
-						if (schemaAttribute != null) {
-							data.setSchema(schemaAttribute);
-						}
-						if (mimeTypeAttribute != null) {
-							data.setMimeType(mimeTypeAttribute);
-						}
-						if (encodingAttribute != null) {
-							data.setEncoding(encodingAttribute);
-						}
-					}
-				
-			} else if (inputDesc.isSetLiteralData()) {
-				LiteralDataType data = input.addNewData().addNewLiteralData();
-				if (value == null) {
-					throw new ExceptionReport("No value provided for literal: "
-							+ inputDesc.getIdentifier().getStringValue(),
-							ExceptionReport.MISSING_PARAMETER_VALUE);
-				}
-				data.setStringValue(value);
-				if(uom != null){
-					data.setUom(uom);
-				}
-				if(dataType != null){
-					data.setDataType(dataType);
-				}
-			} else if (inputDesc.isSetBoundingBoxData()) {
-				BoundingBoxType data = input.addNewData().addNewBoundingBoxData();
-				String[] values = value.split(",");
-				
-				if(values.length<4){
-					throw new ExceptionReport("Invalid Number of BBOX Values: "
-							+ inputDesc.getIdentifier().getStringValue(),
-							ExceptionReport.MISSING_PARAMETER_VALUE);
-				}
-				List<String> lowerCorner = new ArrayList<String>(2);
-				lowerCorner.add(values[0]);
-				lowerCorner.add(values[1]);
-				data.setLowerCorner(lowerCorner);
-				
-				List<String> upperCorner = new ArrayList<String>(2);
-				upperCorner.add(values[2]);
-				upperCorner.add(values[3]);
-				data.setUpperCorner(upperCorner);
-				
-				if(values.length>4){
-					data.setCrs(values[4]);
-				}
-				
-				if(values.length>5){
-					data.setDimensions(BigInteger.valueOf(Long.valueOf(values[5])));
-				}
-			}
-
-		}
-		// retrieve status
-		boolean status = false;
-		String statusString = getMapValue("status", false);
-		if (statusString != null) {
-			status = Boolean.parseBoolean(statusString);
-		}
-		boolean store = false;
-		String storeString = getMapValue("storeExecuteResponse", false);
-		if (storeString != null) {
-			store = Boolean.parseBoolean(storeString);
-		}
-		// Handle ResponseDocument option
-		String responseDocument = getMapValue("ResponseDocument", false);
-		if (responseDocument != null) {
-			String[] outputs = responseDocument.split(";");
-			ResponseDocumentType responseDoc = execute.addNewResponseForm()
-					.addNewResponseDocument();
-			responseDoc.setStatus(status);
-			responseDoc.setStoreExecuteResponse(store);
-			for (String outputID : outputs) {
-				String[] outputDataparameters = outputID.split("@");
-				String outputDataInput = "";
-				if (outputDataparameters.length > 0) {
-					outputDataInput = outputDataparameters[0];
-				} else {
-					outputDataInput = outputID;
-				}
-				outputDataInput = outputDataInput.replace("=", "");
-				ProcessDescriptionType description = RepositoryManager.getInstance().getProcessDescription(processID);
-				OutputDescriptionType outputDesc = XMLBeansHelper
-						.findOutputByID(outputDataInput, description.getProcessOutputs()
-								.getOutputArray());
-				if (outputDesc == null) {
-					throw new ExceptionReport(
-							"Data output Identifier not supported: "
-									+ outputDataInput,
-							ExceptionReport.MISSING_PARAMETER_VALUE);
-				}
-				DocumentOutputDefinitionType output = responseDoc
-						.addNewOutput();
-				output.addNewIdentifier().setStringValue(outputDataInput);
-
-				for (int i = 1; i < outputDataparameters.length; i++) {
-					int attributePos = outputDataparameters[i].indexOf('=');
-					if (attributePos == -1
-							|| attributePos + 1 >= outputDataparameters[i]
-									.length()) {
-						continue;
-					}
-					String attributeName = outputDataparameters[i].substring(0,
-							attributePos);
-					String attributeValue = outputDataparameters[i]
-							.substring(attributePos + 1);
-					try{
-						attributeValue = URLDecoder.decode(attributeValue, "UTF-8");
-					} catch (UnsupportedEncodingException e) {
-						throw new ExceptionReport("Something went wrong while trying to decode value of " + attributeName, ExceptionReport.NO_APPLICABLE_CODE, e);						
-					}
-					if (attributeName.equalsIgnoreCase("mimeType")) {
-						output.setMimeType(attributeValue);
-					} else if (attributeName.equalsIgnoreCase("schema")) {
-						output.setSchema(attributeValue);
-					} else if (attributeName.equalsIgnoreCase("encoding")) {
-						output.setEncoding(attributeValue);
-
-					}
-				}
-			}
-		}
-		String rawData = getMapValue("RawDataOutput", false);
-		if (rawData != null) {
-			String[] rawDataparameters = rawData.split("@");
-			String rawDataInput = "";
-			if (rawDataparameters.length > 0) {
-				rawDataInput = rawDataparameters[0];
-			} else {
-				rawDataInput = rawData;
-			}
-			ProcessDescriptionType description = RepositoryManager.getInstance().getProcessDescription(processID);
-			OutputDescriptionType outputDesc = XMLBeansHelper.findOutputByID(
-					rawDataInput, 
-							description.getProcessOutputs().getOutputArray());
-			if (outputDesc == null) {
-				throw new ExceptionReport(
-						"Data output Identifier not supported: " + rawData,
-						ExceptionReport.MISSING_PARAMETER_VALUE);
-			}
-			ResponseFormType responseForm = execute.addNewResponseForm();
-			OutputDefinitionType output = responseForm.addNewRawDataOutput();
-			output.addNewIdentifier().setStringValue(
-					outputDesc.getIdentifier().getStringValue());
-
-			if (rawDataparameters.length > 0) {
-				for (int i = 0; i < rawDataparameters.length; i++) {
-					int attributePos = rawDataparameters[i].indexOf('=');
-					if (attributePos == -1
-							|| attributePos + 1 >= rawDataparameters[i]
-									.length()) {
-						continue;
-					}
-					String attributeName = rawDataparameters[i].substring(0,
-							attributePos);
-					String attributeValue = rawDataparameters[i]
-							.substring(attributePos + 1);
-					try{
-						attributeValue = URLDecoder.decode(attributeValue, "UTF-8");
-					} catch (UnsupportedEncodingException e) {
-						throw new ExceptionReport("Something went wrong while trying to decode value of " + attributeName, ExceptionReport.NO_APPLICABLE_CODE, e);						
-					}
-					if (attributeName.equalsIgnoreCase("mimeType")) {
-						output.setMimeType(attributeValue);
-					} else if (attributeName.equalsIgnoreCase("schema")) {
-						output.setSchema(attributeValue);
-					} else if (attributeName.equalsIgnoreCase("encoding")) {
-						output.setEncoding(attributeValue);
-
-					} else {
-						throw new ExceptionReport(
-								"Attribute is not supported: " + attributeName,
-								ExceptionReport.INVALID_PARAMETER_VALUE);
-					}
-
-				}
-			}
-
-		}
-
-	}
-
-	/**
+    /**
 	 * Validates the client request
 	 * 
 	 * @return True if the input is valid, False otherwise
 	 */
+    @Override
 	public boolean validate() throws ExceptionReport {
 		// Identifier must be specified.
 		/*
@@ -505,27 +157,22 @@ public class ExecuteRequest extends Request implements IObserver {
 		 * 
 		 */
 		if (!execDom.getExecute().getVersion().equals(WPSConstants.WPS_SERVICE_VERSION)) {
-			throw new ExceptionReport("Specified version is not supported.",
-					ExceptionReport.INVALID_PARAMETER_VALUE, "version="
-							+ getExecute().getVersion());
+			throw new InvalidParameterValueException("Specified version is not supported.")
+                    .locatedAt("version=" + getExecute().getVersion());
 		}
 
-		//Fix for bug https://bugzilla.52north.org/show_bug.cgi?id=906
 		String identifier = getAlgorithmIdentifier();
 		
-		if(identifier == null){
-			throw new ExceptionReport(
-					"No process identifier supplied.",
-					ExceptionReport.MISSING_PARAMETER_VALUE, WPSConstants.PARAMETER_IDENTIFIER);
+		if(execDom.getExecute().getIdentifier() == null ||
+           execDom.getExecute().getIdentifier().getStringValue() == null) {
+			throw new MissingParameterValueException("No process identifier supplied.")
+                    .locatedAt(WPSConstants.PARAMETER_IDENTIFIER);
 		}
 		
 		// check if the algorithm is in our repository
 		if (!RepositoryManager.getInstance().containsAlgorithm(
 				identifier)) {
-			throw new ExceptionReport(
-					"Specified process identifier does not exist",
-					ExceptionReport.INVALID_PARAMETER_VALUE,
-					"identifier=" + identifier);
+			throw new InvalidParameterValueException("Specified process identifier does not exist").locatedAt("identifier=" + identifier);
 		}
 
 		// validate if the process can be executed
@@ -571,17 +218,8 @@ public class ExecuteRequest extends Request implements IObserver {
 							if (input.getData().getLiteralData().getDataType() != null) {
 								if (inputDesc.getLiteralData() != null)
 									if (inputDesc.getLiteralData().getDataType() != null)
-										if (inputDesc.getLiteralData()
-												.getDataType().getReference() != null)
-											if (!input
-													.getData()
-													.getLiteralData()
-													.getDataType()
-													.equals(
-															inputDesc
-																	.getLiteralData()
-																	.getDataType()
-																	.getReference())) {
+										if (inputDesc.getLiteralData().getDataType().getReference() != null)
+											if (!input.getData().getLiteralData().getDataType().equals(inputDesc.getLiteralData().getDataType().getReference())) {
 												throw new ExceptionReport(
 														"Specified dataType is not supported "
 																+ input
@@ -679,13 +317,13 @@ public class ExecuteRequest extends Request implements IObserver {
 				subject.addObserver(this);
 				
 			}
-			
-			if(algorithm instanceof AbstractTransactionalAlgorithm){
-				returnResults = ((AbstractTransactionalAlgorithm)algorithm).run(execDom);
-			} else {
-				inputMap = parser.getParsedInputData();
-				returnResults = algorithm.run(inputMap);
-			} 
+		
+            if (algorithm instanceof AbstractTransactionalAlgorithm) {
+                returnResults = ((AbstractTransactionalAlgorithm) algorithm).run(execDom);
+            } else {
+                inputMap = parser.getParsedInputData();
+                returnResults = algorithm.run(inputMap);
+            }
 
             List<String> errorList = algorithm.getErrors();
             if (errorList != null && !errorList.isEmpty()) {
@@ -715,7 +353,7 @@ public class ExecuteRequest extends Request implements IObserver {
             if (e instanceof ExceptionReport) {
                 throw (ExceptionReport)e;
             } else {
-                throw new ExceptionReport("Error while executing the embedded process for: " + getAlgorithmIdentifier(), ExceptionReport.NO_APPLICABLE_CODE, e);
+                throw new NoApplicableCodeException("Error while executing the embedded process for: %s", getAlgorithmIdentifier()).causedBy(e);
             }
         } finally {
 			//  you ***MUST*** call this or else you will have a PermGen ClassLoader memory leak due to ThreadLocal use

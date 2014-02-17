@@ -28,24 +28,20 @@
  */
 package org.n52.wps.server.response;
 
+import org.n52.wps.server.response.execute.RawData;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-import net.opengis.wps.x100.ProcessDescriptionType;
 
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.n52.wps.commons.WPSConfig;
-import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.bbox.GTReferenceEnvelope;
 import org.n52.wps.server.ExceptionReport;
-import org.n52.wps.server.IAlgorithm;
-import org.n52.wps.server.algorithm.test.DummyTestClass;
 
 /**
  * This class is for testing RawData output.
@@ -55,10 +51,6 @@ import org.n52.wps.server.algorithm.test.DummyTestClass;
  */
 public class RawDataTest {
 
-	private IAlgorithm algorithm;
-	private ProcessDescriptionType processDescription;
-	private String identifier;
-	
     @BeforeClass
     public static void setUpClass() {
         try {
@@ -69,18 +61,11 @@ public class RawDataTest {
         	 System.out.println(ex.getMessage());
         }
     }
-	
-    @Before
-    public void setUp(){    	
-    	algorithm = new DummyTestClass();
-    	processDescription = algorithm.getDescription();
-    	identifier = algorithm.getWellKnownName();
-    }
     
     @Test
     public void testBBoxRawDataOutputCRS() throws ExceptionReport, XmlException, IOException {
-        IData envelope = new GTReferenceEnvelope(46, 102, 47, 103, "EPSG:4326");
-        RawData bboxRawData = new RawData(envelope, "BBOXOutputData", null, processDescription);
+        GTReferenceEnvelope envelope = new GTReferenceEnvelope(46, 102, 47, 103, "EPSG:4326");
+        RawData bboxRawData = RawData.of(envelope);
         InputStream is = bboxRawData.getAsStream();
         XmlObject bboxXMLObject = XmlObject.Factory.parse(is);
         assertTrue(bboxXMLObject != null);
@@ -89,8 +74,8 @@ public class RawDataTest {
     
     @Test
     public void testBBoxRawDataOutput() throws ExceptionReport, XmlException, IOException{
-    	IData envelope = new GTReferenceEnvelope(46, 102, 47, 103, null);
-        RawData bboxRawData = new RawData(envelope, "BBOXOutputData", null, processDescription);
+    	GTReferenceEnvelope envelope = new GTReferenceEnvelope(46, 102, 47, 103, null);
+        RawData bboxRawData = RawData.of(envelope);
         InputStream is = bboxRawData.getAsStream();
         XmlObject bboxXMLObject = XmlObject.Factory.parse(is);
         assertTrue(bboxXMLObject != null);
