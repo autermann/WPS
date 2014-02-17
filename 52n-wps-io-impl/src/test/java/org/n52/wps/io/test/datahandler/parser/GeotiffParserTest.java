@@ -40,7 +40,7 @@ import org.junit.Test;
 import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.io.datahandler.parser.GeotiffParser;
-import org.n52.wps.io.geotools.data.GTRasterDataBinding;
+import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
 
 public class GeotiffParserTest {
     @ClassRule

@@ -33,64 +33,44 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
 import org.geotools.feature.FeatureCollection;
 import org.geotools.kml.KML;
 import org.geotools.kml.KMLConfiguration;
-import org.geotools.xml.Configuration;
 import org.geotools.xml.Encoder;
+
 import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.n52.wps.server.ExceptionReport;
+import org.n52.wps.server.NoApplicableCodeException;
 
 /**
  * @author Bastian Schaeffer, IfGI; Matthias Mueller, TU Dresden
  *
  */
 public class KMLGenerator extends AbstractGenerator {
-	
-	private static final Logger LOGGER = LoggerFactory.getLogger(KMLGenerator.class);
-	
+
 	public KMLGenerator(){
 		super(GTVectorDataBinding.class);
 	}
-	
-	@Override
-	public InputStream generateStream(IData data, Format format) throws IOException {
-		
-		File tempFile = null;
-		InputStream stream = null;
-		try {
-            tempFile = registerTempFile(File.createTempFile("kml", "xml"));
-            try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
-                this.writeToStream(data, outputStream);
-                outputStream.flush();
+
+    @Override
+    public InputStream generateStream(IData data, Format format)
+            throws IOException, ExceptionReport {
+        try {
+            File tempFile = registerTempFile();
+            try (FileOutputStream os = new FileOutputStream(tempFile)) {
+                FeatureCollection<?, ?> fc = (FeatureCollection) data
+                        .getPayload();
+                Encoder encoder = new Encoder(new KMLConfiguration());
+                encoder.encode(fc, KML.kml, os);
+                os.flush();
             }
-			
-			stream = new FileInputStream(tempFile);
-		} catch (IOException e){
-			LOGGER.error(e.getMessage());
-			throw new IOException("Unable to generate KML");
-		}
-		
-		return stream;
-	}
-
-	private void writeToStream(IData coll, OutputStream os) {
-		FeatureCollection<?, ?> fc = ((GTVectorDataBinding)coll).getPayload();
-		
-        Configuration configuration = new KMLConfiguration();
-        Encoder encoder = new org.geotools.xml.Encoder(configuration);
-       
-        try{
-            encoder.encode(fc, KML.kml, os);
-           
-        }catch(IOException e){
-        	throw new RuntimeException(e);
+            return new FileInputStream(tempFile);
+        } catch (IOException e) {
+            throw new NoApplicableCodeException("Unable to generate KML")
+                    .causedBy(e);
         }
-	}
-
+    }
 }

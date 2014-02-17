@@ -35,7 +35,7 @@ import javax.xml.namespace.QName;
  * @author Christian Autermann
  */
 public interface WPSConstants {
-    public static final String NS_XS = "http://www.w3.org/TR/xmlschema-2#";
+    String NS_XS = "http://www.w3.org/TR/xmlschema-2#";
     String NS_WPS = "http://www.opengis.net/wps/1.0.0";
     String NS_XSI = "http://www.w3.org/2001/XMLSchema-instance";
     String NS_XLINK = "http://www.w3.org/1999/xlink";

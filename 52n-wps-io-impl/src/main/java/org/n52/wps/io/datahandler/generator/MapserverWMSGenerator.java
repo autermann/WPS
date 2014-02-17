@@ -38,37 +38,38 @@ import javax.xml.transform.TransformerException;
 
 import org.apache.commons.httpclient.HttpException;
 import org.geotools.data.simple.SimpleFeatureCollection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
 import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfig;
 import org.n52.wps.commons.XMLUtil;
 import org.n52.wps.io.data.IData;
-import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.io.datahandler.generator.mapserver.MSMapfileBinding;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 
 /**
  * Generator for saving results of a WPS Process in an UMNMapserver. Right now
  * this generator only supports publishing results over an Mapserver-WMS. As
  * input this generator right now only supports GTVectorDataBinding. As template
  * for this class served the GeoserverWMSGenerator.
- * 
+ *
  * @author Jacob Mendt
- * 
+ *
  * @TODO Support more inputs (shapefile, raster)
  * @TODO Generator for WCS and WFS
  */
 public class MapserverWMSGenerator extends AbstractGenerator {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(MapserverWMSGenerator.class);
+
 	private String mapfile;
 	private String workspace;
 	private String shapefileRepository;
 	private String wmsUrl;
-	
-	private static final Logger LOGGER = LoggerFactory.getLogger(MapserverWMSGenerator.class);
 
 	/**
 	 * Initialize a new MapserverWMSGenerator object. Parse the parameter

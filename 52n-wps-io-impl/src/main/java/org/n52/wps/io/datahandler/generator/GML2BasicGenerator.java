@@ -34,7 +34,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -43,12 +42,6 @@ import javax.xml.transform.TransformerException;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.gml.producer.FeatureTransformer;
 import org.geotools.gml.producer.FeatureTransformer.FeatureTypeNamespaces;
-import org.n52.wps.PropertyDocument.Property;
-import org.n52.wps.commons.Format;
-import org.n52.wps.commons.WPSConfig;
-import org.n52.wps.io.SchemaRepository;
-import org.n52.wps.io.data.IData;
-import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.opengis.feature.Feature;
 import org.opengis.feature.type.FeatureType;
 import org.opengis.referencing.ReferenceIdentifier;
@@ -56,51 +49,59 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.n52.wps.PropertyDocument.Property;
+import org.n52.wps.commons.Format;
+import org.n52.wps.commons.WPSConfig;
+import org.n52.wps.io.SchemaRepository;
+import org.n52.wps.io.data.IData;
+import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
+
 /**
  * @author Theodor Foerster, ITC; Matthias Mueller, TU Dresden
  *
  */
 public class GML2BasicGenerator extends AbstractGenerator {
-	
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(GML2BasicGenerator.class);
+    public static final String SCHEMA_LOCATION_NS_WFS_100
+            = "http://schemas.opengis.net/wfs/1.0.0/WFS-basic.xsd";
+    public static final String NS_WFS = "http://www.opengis.net/wfs";
 
 	private boolean featureTransformerIncludeBounding;
 	private int featureTransformerDecimalPlaces;
-		
-	
+
+
 	public GML2BasicGenerator(){
 		super(GTVectorDataBinding.class);
-		
+
 		featureTransformerIncludeBounding = false;
 		featureTransformerDecimalPlaces = 4;
 		for(Property property : WPSConfig.getInstance().getPropertiesForGeneratorClass(getClass().getName())){
 			if(property.getName().equalsIgnoreCase("featureTransformerIncludeBounding")){
 				featureTransformerIncludeBounding = Boolean.valueOf(property.getStringValue());
-				
+
 			}
 			if(property.getName().equalsIgnoreCase("featureTransformerDecimalPlaces")){
 				featureTransformerDecimalPlaces = new Integer(property.getStringValue());
-				
+
 			}
 		}
 	}
-	
+
 	private void write(IData data, Writer writer) throws IOException {
 		FeatureCollection<?,?> fc = ((GTVectorDataBinding)data).getPayload();
-		// this might be a workaround... 
+		// this might be a workaround...
 		if(fc == null || fc.isEmpty()) {
-			writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
-			writer.write("<wfs:FeatureCollection xmlns:wfs=\"http://www.opengis.net/wfs\" xmlns:gml=\"http://www.opengis.net/gml\"/>");
-			writer.flush();
+			writeEmptyCollection(writer);
+            return;
 		}
 		Feature f = fc.features().next();
 		FeatureType ft = f.getType();
-		//String srsName = (String)f.getDefaultGeometry().getUserData();
-	
+
 		Map<Object, Object> userData = f.getUserData();
 		Object srs = userData.get("srs");
 		String srsName = null;
-		
+
 		if (srs instanceof String) {
 			srsName = (String) srs;
 		}
@@ -110,36 +111,26 @@ public class GML2BasicGenerator extends AbstractGenerator {
 	        	srsName= iter.next().toString();
 	        }
 		}
-		
-		
+
 		FeatureTransformer tx = new FeatureTransformer();
 		tx.setFeatureBounding(featureTransformerIncludeBounding);
 		tx.setNumDecimals(featureTransformerDecimalPlaces);
 	    FeatureTypeNamespaces ftNames = tx.getFeatureTypeNamespaces();
-        // StringBuffer typeNames = new StringBuffer();
-        
-		Map<String, String> ftNamespaces = new HashMap<String, String>();
+
 
 		String uri = ft.getName().getNamespaceURI();
 		ftNames.declareNamespace(fc.getSchema(), fc.getSchema().getName().getLocalPart(), uri);
 
-        if (ftNamespaces.containsKey(uri)) {
-            String location = (String) ftNamespaces.get(uri);
-			ftNamespaces.put(uri, location + "," + fc.getSchema().getName().getLocalPart());
-        } else {
-            ftNamespaces.put(uri, uri);
-        }
-
         if(srsName != null) {
         	tx.setSrsName(srsName);
         }
-        
+
         String namespace = f.getType().getName().getNamespaceURI();
         String schemaLocation = SchemaRepository.getSchemaLocation(namespace);
-        
+
         tx.addSchemaLocation(uri,schemaLocation);
-		tx.addSchemaLocation("http://www.opengis.net/wfs", "http://schemas.opengis.net/wfs/1.0.0/WFS-basic.xsd");
-		
+		tx.addSchemaLocation(NS_WFS, SCHEMA_LOCATION_NS_WFS_100);
+
 		try{
 			tx.transform( fc, writer);
 			writer.close();
@@ -149,15 +140,22 @@ public class GML2BasicGenerator extends AbstractGenerator {
 			throw new IOException("Unable to generate GML");
 		}
 	}
-	
+
+    private void writeEmptyCollection(Writer writer)
+            throws IOException {
+        writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        writer.write("<wfs:FeatureCollection xmlns:wfs=\"http://www.opengis.net/wfs\" />");
+        writer.flush();
+    }
+
 	@Override
 	public InputStream generateStream(IData data, Format format) throws IOException {
-		File tempFile = registerTempFile(File.createTempFile("gml2", "xml"));
+		File tempFile = registerTempFile();
         try (FileWriter fw = new FileWriter(tempFile)) {
             write(data, fw);
         }
 		return new FileInputStream(tempFile);
-		
+
 	}
 
 }

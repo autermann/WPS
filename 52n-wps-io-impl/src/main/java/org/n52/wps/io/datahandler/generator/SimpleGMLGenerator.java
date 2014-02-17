@@ -54,11 +54,12 @@ import net.opengis.gml.PointPropertyType;
 import net.opengis.gml.PolygonType;
 
 import org.geotools.feature.FeatureIterator;
+import org.opengis.feature.simple.SimpleFeature;
+import org.w3c.dom.Node;
+
 import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
-import org.opengis.feature.simple.SimpleFeature;
-import org.w3c.dom.Node;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;

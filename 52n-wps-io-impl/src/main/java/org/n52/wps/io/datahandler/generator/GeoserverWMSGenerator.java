@@ -52,9 +52,9 @@ import org.n52.wps.io.IOUtils;
 import org.n52.wps.io.data.GenericFileData;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.GeotiffBinding;
-import org.n52.wps.io.geotools.data.GTRasterDataBinding;
-import org.n52.wps.io.geotools.data.GTVectorDataBinding;
-import org.n52.wps.io.geotools.data.ShapefileBinding;
+import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
+import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
+import org.n52.wps.io.data.binding.complex.ShapefileBinding;
 import org.n52.wps.server.ExceptionReport;
 import org.n52.wps.server.NoApplicableCodeException;
 

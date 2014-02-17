@@ -57,7 +57,7 @@ import org.n52.wps.commons.Format;
 import org.n52.wps.io.GTHelper;
 import org.n52.wps.io.SchemaRepository;
 import org.n52.wps.io.data.IData;
-import org.n52.wps.io.geotools.data.GTVectorDataBinding;
+import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 
 import com.vividsolutions.jts.geom.Geometry;
 

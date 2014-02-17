@@ -34,14 +34,15 @@ import java.io.InputStream;
 
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
-import org.n52.wps.commons.Format;
-import org.n52.wps.io.data.GenericFileData;
-import org.n52.wps.io.data.IData;
-import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
-import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
 import org.opengis.feature.simple.SimpleFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.n52.wps.commons.Format;
+import org.n52.wps.io.data.GenericFileData;
+import org.n52.wps.io.data.IData;
+import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
+import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;

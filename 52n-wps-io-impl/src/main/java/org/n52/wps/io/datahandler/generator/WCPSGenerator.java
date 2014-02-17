@@ -40,32 +40,26 @@ import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.ArrayDataBinding;
 
 /**
- * 
+ *
  * @author Bastian Schaeffer; Matthias Mueller, TU Dresden
  *
  */
 public class WCPSGenerator extends AbstractGenerator {
-	
+
 	public WCPSGenerator(){
 		super(ArrayDataBinding.class);
 	}
-	
-	@Override
-	public InputStream generateStream(IData data, Format format) throws IOException {
 
-//		// check for correct request before returning the stream
-//		if (!(this.isSupportedGenerate(data.getSupportedClass(), mimeType, schema))){
-//			throw new IOException("I don't support the incoming datatype");
-//		}
-		
-		List<byte[]> wcpsoutput = ((ArrayDataBinding)data).getPayload();
-		File tempFile = registerTempFile(File.createTempFile("wcps", ".bin"));
+    @Override
+    public InputStream generateStream(IData data, Format format) throws IOException {
+        List<byte[]> wcpsoutput = ((ArrayDataBinding) data).getPayload();
+        File tempFile = registerTempFile();
         try (FileOutputStream fos = new FileOutputStream(tempFile)) {
-            for (byte[] currentArray : wcpsoutput){
+            for (byte[] currentArray : wcpsoutput) {
                 fos.write(currentArray);
             }
             fos.flush();
         }
-		return new FileInputStream(tempFile);
-	}
+        return new FileInputStream(tempFile);
+    }
 }

@@ -38,30 +38,50 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
+import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
+import org.apache.commons.httpclient.methods.StringRequestEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.net.HttpHeaders;
 
 public class GeoServerUploader {
-
-	private final String username;
-	private final String password;
-	private final String host;
-	private final String port;
+    private static final Logger LOGGER = LoggerFactory.getLogger(GeoServerUploader.class);
+    public static final AuthScope ANY_AUTH_SCOPE
+            = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT, AuthScope.ANY_REALM, AuthScope.ANY_SCHEME);
+    private final UsernamePasswordCredentials creds;
+    private final String baseUrl;
+    private final AuthScope authScope;
 
 	public GeoServerUploader(String username, String password, String host,
 			String port) {
-		this.username = username;
-		this.password = password;
-		this.host = host;
-		this.port = port;
+		this(username, password, host, Integer.valueOf(port));
 	}
+
+    public GeoServerUploader(String username, String password, String host, int port) {
+        this(username, password,
+             String.format("http://%s:%d/geoserver", host, port),
+             new AuthScope(host, port));
+    }
+
+    public GeoServerUploader(String username, String password, String url) {
+        this(username, password, url, ANY_AUTH_SCOPE);
+    }
+
+    private GeoServerUploader(String username, String password, String url, AuthScope authScope) {
+        this.baseUrl = url;
+        this.authScope = authScope;
+        this.creds = new UsernamePasswordCredentials(username, password);
+    }
 
 	public String uploadGeotiff(File file, String storeName)
 			throws HttpException, IOException {
-		String target = "http://" + host + ":" + port
-				+ "/geoserver/rest/workspaces/N52/coveragestores/" + storeName
-				+ "/external.geotiff?configure=first&coverageName=" + storeName;
+		String target = baseUrl + "/rest/workspaces/N52/coveragestores/" + storeName
+                        + "/external.geotiff?configure=first&coverageName=" + storeName;
 		String request;
 		if (file.getAbsolutePath().startsWith("/")) { // tried with
 														// request.replaceAll("//","/");
@@ -71,95 +91,70 @@ public class GeoServerUploader {
 		} else {
 			request = "file:/" + file.getAbsolutePath();
 		}
-		String result = sendRasterRequest(target, request, "PUT", username,
-				password);
-		return result;
+		return sendRasterRequest(target, request, "PUT");
 	}
 
 	public String uploadShp(File file, String storeName) throws HttpException,
 			IOException {
-		String target = "http://" + host + ":" + port
-				+ "/geoserver/rest/workspaces/N52/datastores/" + storeName
-				+ "/file.shp";
+		String target = baseUrl + "/rest/workspaces/N52/datastores/" + storeName + "/file.shp";
 		InputStream request = new BufferedInputStream(new FileInputStream(file));
-		String result = sendShpRequest(target, request, "PUT", username,
-				password);
-		return result;
+		return sendShpRequest(target, request, "PUT");
 
 	}
 
 	public String createWorkspace() throws HttpException, IOException {
-		String target = "http://" + host + ":" + port
-				+ "/geoserver/rest/workspaces";
+		String target = baseUrl + "/rest/workspaces";
 		String request = "<workspace><name>N52</name></workspace>";
-		String result = sendRasterRequest(target, request, "POST", username,
-				password);
-		return result;
+		return sendRasterRequest(target, request, "POST");
 	}
 
-	private String sendRasterRequest(String target, String request,
-			String method, String username, String password)
+	private String sendRasterRequest(String target, String request, String method)
 			throws HttpException, IOException {
-		HttpClient client = new HttpClient();
 		EntityEnclosingMethod requestMethod = null;
 		if (method.equalsIgnoreCase("POST")) {
 			requestMethod = new PostMethod(target);
-			requestMethod.setRequestHeader("Content-type", "application/xml");
+            requestMethod.setRequestEntity(new StringRequestEntity(request, "application/xml", null));
+			requestMethod.setRequestHeader(HttpHeaders.CONTENT_TYPE, "application/xml");
 		}
 		if (method.equalsIgnoreCase("PUT")) {
 			requestMethod = new PutMethod(target);
-			requestMethod.setRequestHeader("Content-type", "text/plain");
+            requestMethod.setRequestEntity(new StringRequestEntity(request, "text/plain", null));
+			requestMethod.setRequestHeader(HttpHeaders.CONTENT_TYPE, "text/plain");
 
 		}
-
-		requestMethod.setRequestBody(request);
-
-		UsernamePasswordCredentials creds = new UsernamePasswordCredentials(
-				username, password);
-		client.getState().setCredentials(null, null, creds);
-
-		int statusCode = client.executeMethod(requestMethod);
-
-		if (!((statusCode == HttpStatus.SC_OK) || (statusCode == HttpStatus.SC_CREATED))) {
-			System.err.println("Method failed: "
-					+ requestMethod.getStatusLine());
-		}
-
-		// Read the response body.
-		byte[] responseBody = requestMethod.getResponseBody();
-		return new String(responseBody);
+        return execute(requestMethod);
 	}
 
-	private String sendShpRequest(String target, InputStream request,
-			String method, String username, String password)
+	private String sendShpRequest(String target, InputStream request, String method)
 			throws HttpException, IOException {
-		HttpClient client = new HttpClient();
+
 		EntityEnclosingMethod requestMethod = null;
 		if (method.equalsIgnoreCase("POST")) {
 			requestMethod = new PostMethod(target);
-			requestMethod.setRequestHeader("Content-type", "text/xml");
+            requestMethod.setRequestEntity(new InputStreamRequestEntity(request, "text/xml"));
+			requestMethod.setRequestHeader(HttpHeaders.CONTENT_TYPE, "text/xml");
 		}
 		if (method.equalsIgnoreCase("PUT")) {
 			requestMethod = new PutMethod(target);
-			requestMethod.setRequestHeader("Content-type", "application/zip");
-
+            requestMethod.setRequestEntity(new InputStreamRequestEntity(request, "application/zip"));
+			requestMethod.setRequestHeader(HttpHeaders.CONTENT_TYPE, "application/zip");
 		}
-
-		requestMethod.setRequestBody(request);
-
-		UsernamePasswordCredentials creds = new UsernamePasswordCredentials(
-				username, password);
-		client.getState().setCredentials(null, null, creds);
-
-		int statusCode = client.executeMethod(requestMethod);
-
-		if (!((statusCode == HttpStatus.SC_OK) || (statusCode == HttpStatus.SC_CREATED))) {
-			System.err.println("Method failed: "
-					+ requestMethod.getStatusLine());
-		}
-
-		// Read the response body.
-		byte[] responseBody = requestMethod.getResponseBody();
-		return new String(responseBody);
+		return execute(requestMethod);
 	}
+
+    private String execute(EntityEnclosingMethod requestMethod)
+            throws IOException {
+        HttpClient client = new HttpClient();
+        client.getState().setCredentials(authScope, creds);
+
+        int statusCode = client.executeMethod(requestMethod);
+
+        if (!((statusCode == HttpStatus.SC_OK) || (statusCode == HttpStatus.SC_CREATED))) {
+            LOGGER.error("Method failed: {}", requestMethod.getStatusLine());
+        }
+
+        // Read the response body.
+        byte[] responseBody = requestMethod.getResponseBody();
+        return new String(responseBody);
+    }
 }

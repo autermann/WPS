@@ -49,7 +49,7 @@ import org.n52.wps.io.data.IData;
 import org.n52.wps.io.data.binding.complex.JTSGeometryBinding;
 import org.n52.wps.io.datahandler.generator.GeoJSONGenerator;
 import org.n52.wps.io.datahandler.parser.GeoJSONParser;
-import org.n52.wps.io.geotools.data.GTVectorDataBinding;
+import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 
 import com.google.common.io.CharStreams;
 

@@ -42,7 +42,7 @@ import org.opengis.parameter.ParameterValueGroup;
 
 import org.n52.wps.commons.Format;
 import org.n52.wps.io.data.IData;
-import org.n52.wps.io.geotools.data.GTRasterDataBinding;
+import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
 import org.n52.wps.server.ExceptionReport;
 import org.n52.wps.server.NoApplicableCodeException;
 

@@ -45,8 +45,8 @@ import org.n52.wps.io.IOHandler;
 import org.n52.wps.io.datahandler.generator.AsciiGrassGenerator;
 import org.n52.wps.io.datahandler.parser.AsciiGrassParser;
 import org.n52.wps.io.datahandler.parser.GeotiffParser;
-import org.n52.wps.io.geotools.data.AsciiGrassDataBinding;
-import org.n52.wps.io.geotools.data.GTRasterDataBinding;
+import org.n52.wps.io.data.binding.complex.AsciiGrassDataBinding;
+import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
 import org.n52.wps.server.ExceptionReport;
 
 public class AsciiGrassGeneratorTest {

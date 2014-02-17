@@ -45,6 +45,9 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.n52.wps.server.ExceptionReport;
+import org.n52.wps.server.NoApplicableCodeException;
+
 import edu.umn.gis.mapscript.MS_LAYER_TYPE;
 import edu.umn.gis.mapscript.rectObj;
 
@@ -52,18 +55,20 @@ import edu.umn.gis.mapscript.rectObj;
  * This Class managed the communication between the input shapefile and the
  * mapscript layer objects. It extracts out from the shapefile different
  * information and creates the corresponding mapscript object.
- * 
+ *
  * @author Jacob Mendt
- * 
+ *
  * @TODO Layer management
  * @TODO Timestamp
  */
 public class MSLayerBinding {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(MSLayerBinding.class);
+
 	// metadata parameter
 	private String mdSrs;
-	private String mdTitle;
-	private String mdTimestamp;
+	private final String mdTitle;
+	private final String mdTimestamp;
 
 	// filesystem paths
 	private String dataSourcePath;
@@ -73,23 +78,21 @@ public class MSLayerBinding {
 
 	// mapscript objects
 	private MS_LAYER_TYPE geometryType;
-	private rectObj bbox;
+	private final rectObj bbox;
 
 	private CoordinateReferenceSystem crs;
 
-	private static Logger LOGGER = LoggerFactory.getLogger(MSLayerBinding.class);
-
 	/**
 	 * Initializes a new MSLayerBinding Object.
-	 * 
+	 *
 	 * @param shapePath
 	 *            Path to the shapefile object which should be encapsulated.
 	 * @param workspace
 	 *            Path to the workspace of the mapfile object.
-	 * 
-	 * @throws Exception
+	 *
+	 * @throws ExceptionReport
 	 */
-	public MSLayerBinding(String shapePath, String workspace) throws Exception {
+	public MSLayerBinding(String shapePath, String workspace) throws ExceptionReport {
 
 		/*
 		 * Checks if the shapefile path lies within the folder hierarchy of the
@@ -100,11 +103,12 @@ public class MSLayerBinding {
 			LOGGER.debug("Parsing of the relativ data source path successful.");
 			if (this.openShapefile(shapePath)) {
 				LOGGER.debug("Opening and parsing of the shapefile successful.");
-			} else
-				LOGGER.error("Error while opening and parsing the shapefile.");
+			} else {
+                LOGGER.error("Error while opening and parsing the shapefile.");
+            }
 		} else {
 			LOGGER.error("Shapefile doesn't lie in the folder hierarchy of the mapfile workspace.");
-			throw new Exception("Error while opening shapefile: " + shapePath);
+			throw new NoApplicableCodeException("Error while opening shapefile: %s", shapePath);
 		}
 
 		// parse featureType (POINT,POLYLINE, ...)
@@ -112,7 +116,7 @@ public class MSLayerBinding {
 			LOGGER.debug("Parsing Geometry sucessful.");
 		} else {
 			LOGGER.error("Error while parsing Geometry type.");
-			throw new Exception("Error while parsing Geometry type.");
+			throw new NoApplicableCodeException("Error while parsing Geometry type.");
 		}
 
 		/*
@@ -124,8 +128,7 @@ public class MSLayerBinding {
 			envelope = ftSource.getBounds();
 			crs = envelope.getCoordinateReferenceSystem();
 		} catch (IOException e) {
-			LOGGER.error("Error while parsing the CoordinateReferenceSystem from the shapefile.");
-			e.printStackTrace();
+            throw new NoApplicableCodeException("Error while parsing the CoordinateReferenceSystem from the shapefile.").causedBy(e);
 		}
 		try {
 			String code = CRS.lookupIdentifier(crs, true);
@@ -137,8 +140,7 @@ public class MSLayerBinding {
 				LOGGER.debug("Parsing CoordinateReferenceSystem successful.");
 			}
 		} catch (FactoryException e) {
-			LOGGER.error("Could not parse the CoorinateReferenceSystem");
-			e.printStackTrace();
+			LOGGER.error("Could not parse the CoorinateReferenceSystem", e);
 		}
 
 		// create out of the envelope object an rectObj (mapscript)
@@ -159,19 +161,18 @@ public class MSLayerBinding {
 	 * Parse the relativ data source path for referencing the data source folder
 	 * in the mapfile. Data source folder have to be in the folder hierarchy of
 	 * the workspace.
-	 * 
+	 *
 	 * @param shapePath
 	 *            Path to the shapefile.
 	 * @param workspace
 	 *            Path to the folder/workspace of the mapfile.
-	 * 
+	 *
 	 * @return <tt>true</tt> if relativ data source path is set and lies in the
 	 *         folder hierarchy of the workspace
 	 */
 	private boolean parseDataSourcePath(String shapePath, String workspace) {
 		if (shapePath.contains(workspace)) {
-			int tmp = shapePath.length()
-					- (shapePath.length() - workspace.length() - 1);
+			int tmp = shapePath.length() - (shapePath.length() - workspace.length() - 1);
 			dataSourcePath = shapePath.substring(tmp, shapePath.length());
 			LOGGER.debug("Shapefile lies in the folder hierarchy of the mapfile workspace.");
 			return true;

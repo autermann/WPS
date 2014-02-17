@@ -43,7 +43,7 @@ import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.io.datahandler.generator.GeoserverWFSGenerator;
 import org.n52.wps.io.datahandler.parser.GML3BasicParser;
-import org.n52.wps.io.geotools.data.GTVectorDataBinding;
+import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.server.ExceptionReport;
 
 import com.google.common.io.CharStreams;

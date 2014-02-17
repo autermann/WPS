@@ -28,6 +28,8 @@
  */
 package org.n52.wps.io.data;
 
+import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
+import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -57,13 +59,6 @@ import org.geotools.feature.type.GeometryDescriptorImpl;
 import org.geotools.feature.type.GeometryTypeImpl;
 import org.geotools.filter.identity.GmlObjectIdImpl;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
-import org.n52.wps.commons.Format;
-import org.n52.wps.io.IOHandler;
-import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
-import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
-import org.n52.wps.io.datahandler.generator.GeotiffGenerator;
-import org.n52.wps.io.datahandler.parser.GML2BasicParser;
-import org.n52.wps.io.datahandler.parser.GML3BasicParser;
 import org.opengis.feature.GeometryAttribute;
 import org.opengis.feature.IllegalAttributeException;
 import org.opengis.feature.Property;
@@ -77,11 +72,19 @@ import org.opengis.filter.identity.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.n52.wps.commons.Format;
+import org.n52.wps.io.IGenerator;
+import org.n52.wps.io.IOHandler;
+import org.n52.wps.io.datahandler.generator.GeotiffGenerator;
+import org.n52.wps.io.datahandler.parser.GML2BasicParser;
+import org.n52.wps.io.datahandler.parser.GML3BasicParser;
+import org.n52.wps.server.ExceptionReport;
+
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.MultiPolygon;
 
 /**
- * 
+ *
  * @author Matthias Mueller, TU Dresden; Bastian Schaeffer, IFGI
  *
  */
@@ -163,18 +166,19 @@ public class GenericFileData {
 		this.dataStream = is;
 
 	}
-	
-	
-	public GenericFileData(GridCoverage2D payload, String mimeType) {
+
+
+	public GenericFileData(GridCoverage2D payload, String mimeType) throws ExceptionReport {
 		this.dataStream = null;
 		this.fileExtension = "tiff";
 		this.mimeType = mimeType;
-
         try {
-            GeotiffGenerator generator = new GeotiffGenerator();
+            IGenerator generator = new GeotiffGenerator();
             this.primaryFile = File.createTempFile("primary", ".tif");//changed to .tif
-            try (InputStream is = generator.generateStream(new GTRasterDataBinding(payload), new Format(mimeType));
-                    OutputStream os = new FileOutputStream(primaryFile)) {
+            Format format = new Format(mimeType);
+            GTRasterDataBinding binding = new GTRasterDataBinding(payload);
+            try (InputStream is = generator.generate(binding, format);
+                 OutputStream os = new FileOutputStream(primaryFile)) {
                 IOUtils.copy(is, os);
             }
         } catch (IOException e){

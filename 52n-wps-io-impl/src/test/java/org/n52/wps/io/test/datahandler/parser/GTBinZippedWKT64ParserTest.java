@@ -44,7 +44,7 @@ import org.opengis.feature.Feature;
 import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.io.datahandler.parser.GTBinZippedWKT64Parser;
-import org.n52.wps.io.geotools.data.GTVectorDataBinding;
+import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 
 /**
  * This class is for testing the GTBinZippedWKT64Parser. A base64 encoded zip

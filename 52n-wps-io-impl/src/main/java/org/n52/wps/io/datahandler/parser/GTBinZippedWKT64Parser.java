@@ -45,10 +45,6 @@ import org.geotools.feature.NameImpl;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.geometry.jts.WKTReader2;
 import org.geotools.referencing.CRS;
-import org.n52.wps.commons.Format;
-import org.n52.wps.io.GTHelper;
-import org.n52.wps.io.IOUtils;
-import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -58,6 +54,11 @@ import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.n52.wps.commons.Format;
+import org.n52.wps.io.GTHelper;
+import org.n52.wps.io.IOUtils;
+import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.io.ParseException;

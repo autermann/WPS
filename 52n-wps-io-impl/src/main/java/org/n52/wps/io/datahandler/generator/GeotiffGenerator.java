@@ -42,90 +42,80 @@ import org.geotools.coverage.grid.io.imageio.GeoToolsWriteParams;
 import org.geotools.gce.geotiff.GeoTiffFormat;
 import org.geotools.gce.geotiff.GeoTiffWriteParams;
 import org.geotools.gce.geotiff.GeoTiffWriter;
-import org.n52.wps.commons.Format;
-import org.n52.wps.io.data.IData;
-import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
-import org.n52.wps.io.data.binding.complex.GeotiffBinding;
 import org.opengis.coverage.grid.GridCoverage;
 import org.opengis.parameter.GeneralParameterValue;
 import org.opengis.parameter.ParameterValueGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.n52.wps.commons.Format;
+import org.n52.wps.io.data.IData;
+import org.n52.wps.io.data.binding.complex.GeotiffBinding;
+import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
+import org.n52.wps.server.ExceptionReport;
+import org.n52.wps.server.NoApplicableCodeException;
+
 public class GeotiffGenerator  extends AbstractGenerator {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GeotiffGenerator.class);
-	
+
 	public GeotiffGenerator() {
 		super(GTRasterDataBinding.class, GeotiffBinding.class);
 	}
-	
-	public InputStream generateStream(IData data, Format format) throws IOException {
-		
+
+    @Override
+	public InputStream generateStream(IData data, Format format) throws IOException, ExceptionReport {
+
 //		// check for correct request before returning the stream
 //		if (!(this.isSupportedGenerate(data.getSupportedClass(), mimeType, schema))){
 //			throw new IOException("I don't support the incoming datatype");
 //		}
-		
+
 		InputStream stream = null;
-		
-		if((data instanceof GTRasterDataBinding)){
-			
-			GridCoverage coverage = ((GTRasterDataBinding)data).getPayload();
-			GeoTiffWriter geoTiffWriter = null;
-			String tmpDirPath = System.getProperty("java.io.tmpdir");			
-			String fileName = tmpDirPath + File.separatorChar + "temp" + UUID.randomUUID() + ".tmp";
-			File outputFile = registerTempFile(new File(fileName));
-			
-			try {
-				geoTiffWriter = new GeoTiffWriter(outputFile);
-				writeGeotiff(geoTiffWriter, coverage);
-				geoTiffWriter.dispose();
-				stream = new FileInputStream(outputFile);
-				
-			} catch (IOException e) {
-				LOGGER.error(e.getMessage());
-				throw new IOException("Could not create output due to an IO error");
-			}
-		}
-		if(data instanceof GeotiffBinding){
-			File geotiff = ((GeotiffBinding)data).getPayload();
-			try {
-				stream = new FileInputStream(geotiff);
-			} catch (FileNotFoundException e) {
-				throw new IOException("Error while generating geotiff. Source file not found.");
-			}
-		}
-		
+
+	       if (data instanceof GTRasterDataBinding) {
+
+            GridCoverage coverage = ((GTRasterDataBinding) data).getPayload();
+            try {
+                File outputFile = registerTempFile();
+                GeoTiffWriter geoTiffWriter = new GeoTiffWriter(outputFile);
+                writeGeotiff(geoTiffWriter, coverage);
+                geoTiffWriter.dispose();
+                stream = new FileInputStream(outputFile);
+
+            } catch (IOException e) {
+                throw new NoApplicableCodeException("Could not create output due to an IO error").causedBy(e);
+            }
+        }
+        if (data instanceof GeotiffBinding) {
+            File geotiff = ((GeotiffBinding) data).getPayload();
+            try {
+                stream = new FileInputStream(geotiff);
+            } catch (FileNotFoundException e) {
+                throw new NoApplicableCodeException("Error while generating geotiff. Source file not found.").causedBy(e);
+            }
+        }
+
 		return stream;
 	}
-	
+
 	private void writeGeotiff(GeoTiffWriter geoTiffWriter, GridCoverage coverage){
 		GeoTiffFormat format = new GeoTiffFormat();
-		
 		GeoTiffWriteParams wp = new GeoTiffWriteParams();
-
-	
 		wp.setCompressionMode(GeoTiffWriteParams.MODE_EXPLICIT);
-		wp.setCompressionType("LZW"); 
+		wp.setCompressionType("LZW");
 		wp.setTilingMode(GeoToolsWriteParams.MODE_EXPLICIT);
 		int width = ((GridCoverage2D) coverage).getRenderedImage().getWidth();
-		int tileWidth = 1024;
-		if(width<2048){
-			tileWidth = new Double(Math.sqrt(width)).intValue();
-		}
+        int tileWidth = width < 2048 ? Double.valueOf(Math.sqrt(width)).intValue() : 1024;
 		wp.setTiling(tileWidth, tileWidth);
 		ParameterValueGroup paramWrite = format.getWriteParameters();
 		paramWrite.parameter(AbstractGridFormat.GEOTOOLS_WRITE_PARAMS.getName().toString()).setValue(wp);
 		JAI.getDefaultInstance().getTileCache().setMemoryCapacity(256*1024*1024);
-		
-		
 		try {
-			geoTiffWriter.write(coverage, paramWrite.values().toArray(new
-                    GeneralParameterValue[1]));
+			geoTiffWriter.write(coverage, paramWrite.values().toArray(new GeneralParameterValue[1]));
 		} catch (IllegalArgumentException | IndexOutOfBoundsException | IOException e1) {
 			LOGGER.error(e1.getMessage(), e1);
 			throw new RuntimeException(e1);
 		}
 	}
-	
+
 }

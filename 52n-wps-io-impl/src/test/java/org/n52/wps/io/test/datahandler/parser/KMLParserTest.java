@@ -41,7 +41,7 @@ import org.junit.Test;
 import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.io.datahandler.parser.KMLParser;
-import org.n52.wps.io.geotools.data.GTVectorDataBinding;
+import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 
 public class KMLParserTest {
     @ClassRule

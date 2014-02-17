@@ -50,12 +50,15 @@ import org.geotools.data.collection.ListFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
-import org.n52.wps.commons.Format;
-import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.n52.wps.commons.Format;
+import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
+import org.n52.wps.server.ExceptionReport;
+import org.n52.wps.server.NoApplicableCodeException;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;

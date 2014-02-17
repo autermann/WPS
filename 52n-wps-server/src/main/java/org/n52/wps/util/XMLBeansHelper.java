@@ -36,6 +36,8 @@ import net.opengis.wps.x100.ProcessDescriptionType.DataInputs;
 
 import org.apache.xmlbeans.XmlOptions;
 
+import org.n52.wps.commons.OwsCodeType;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
@@ -47,18 +49,30 @@ import com.google.common.collect.Maps;
  *
  */
 public class XMLBeansHelper {
-	public static OutputDescriptionType findOutputByID(String outputID, OutputDescriptionType[] outputDescs) {
-		for(OutputDescriptionType desc : outputDescs) {
-			if(desc.getIdentifier().getStringValue().equals(outputID)) {
+    public static OutputDescriptionType findOutputByID(String outputID,
+                                                       OutputDescriptionType[] outputDescs) {
+        return findOutputByID(new OwsCodeType(outputID), outputDescs);
+    }
+
+    public static OutputDescriptionType findOutputByID(OwsCodeType outputID,
+                                                       OutputDescriptionType[] outputDescs) {
+        for (OutputDescriptionType desc : outputDescs) {
+            if (OwsCodeType.of(desc.getIdentifier()).equals(outputID)) {
                 return desc;
             }
         }
         return null;
     }
 
-	public static InputDescriptionType findInputByID(String outputID, DataInputs inputs) {
-		for(InputDescriptionType desc : inputs.getInputArray()) {
-			if(desc.getIdentifier().getStringValue().equals(outputID)) {
+    public static InputDescriptionType findInputByID(String outputID,
+                                                     DataInputs inputs) {
+        return findInputByID(new OwsCodeType(outputID), inputs);
+    }
+
+    public static InputDescriptionType findInputByID(OwsCodeType outputID,
+                                                     DataInputs inputs) {
+        for (InputDescriptionType desc : inputs.getInputArray()) {
+            if (OwsCodeType.of(desc.getIdentifier()).equals(outputID)) {
                 return desc;
             }
         }

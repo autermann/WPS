@@ -35,8 +35,8 @@ import org.n52.wps.commons.Format;
 import org.n52.wps.io.GeneratorFactory;
 import org.n52.wps.io.IGenerator;
 import org.n52.wps.io.data.IData;
-import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
+import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.server.ExceptionReport;
 
 /**

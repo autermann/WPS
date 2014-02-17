@@ -42,7 +42,7 @@ import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.io.datahandler.generator.GML3BasicGenerator;
 import org.n52.wps.io.datahandler.parser.GML3BasicParser;
-import org.n52.wps.io.geotools.data.GTVectorDataBinding;
+import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.server.ExceptionReport;
 
 public class GML3BasicGeneratorTest {
