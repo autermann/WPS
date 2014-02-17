@@ -279,8 +279,10 @@ public class FlatFileDatabase extends WipingDatabase {
         private final Path data;
         private final Path properities;
         private boolean exists;
+        private final String id;
 
         protected Entry(Path parent, String id) {
+            this.id = id;
             Path plainData = parent.resolve(id + PLAIN_DATA_EXTENSION);
             Path zippedData = parent.resolve(id + ZIPPED_DATA_EXTENSION);
             this.properities = parent.resolve(id + PROPERTIES_EXTENSION);
@@ -305,7 +307,23 @@ public class FlatFileDatabase extends WipingDatabase {
         }
 
         public File getDataFile() {
-            return getDataPath().toFile();
+            if (this.zipped) {
+                try {
+                    Path file =  Files.createTempFile("id", ".tmp");
+                    try (InputStream in = Files.newInputStream(getDataPath());
+                         GZIPInputStream gzip = new GZIPInputStream(in);
+                         OutputStream out = Files.newOutputStream(file)) {
+                        ByteStreams.copy(gzip, out);
+                    }
+                    return file.toFile();
+                } catch (IOException ex) {
+                    LOGGER.error("Error copying gzipped data file " +
+                                 getDataPath(), ex);
+                    return null;
+                }
+            } else {
+                return getDataPath().toFile();
+            }
         }
 
         public InputStream getDataStream() {
