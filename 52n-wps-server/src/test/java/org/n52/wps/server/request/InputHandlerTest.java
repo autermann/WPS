@@ -46,11 +46,11 @@ import net.opengis.wps.x100.InputDescriptionType;
 import net.opengis.wps.x100.InputType;
 
 import org.apache.xmlbeans.XmlException;
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+
+import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.server.ExceptionReport;
 import org.n52.wps.server.handler.DataInputInterceptors.InterceptorInstance;
 
@@ -66,15 +66,8 @@ public class InputHandlerTest {
     private static ExecuteDocument dummyTestClassAlgorithmExecDoc = null;
     private static InputType[] simpleBufferAlgorithmInputArray = null;
     private static InputType[] dummyTestClassAlgorithmInputArray = null;
-
-    @BeforeClass
-    public static void setupClass() throws XmlException, IOException {
-        WPSConfigTestUtil.generateMockConfig(InputHandlerTest.class, "/org/n52/wps/io/test/inputhandler/generator/wps_config.xml");
-    }
-
-    @AfterClass
-    public static void tearDownClass() {
-    }
+    @ClassRule
+    public static final WPSConfigRule wpsConfig = new WPSConfigRule("/wps_config.xml");
 
     @Before
     public void setUp() throws XmlException, IOException {
@@ -85,10 +78,6 @@ public class InputHandlerTest {
         dummyTestClassAlgorithmFile = new File("src/test/resources/DummyTestClass.xml");
         dummyTestClassAlgorithmExecDoc = ExecuteDocument.Factory.parse(dummyTestClassAlgorithmFile);
         dummyTestClassAlgorithmInputArray = dummyTestClassAlgorithmExecDoc.getExecute().getDataInputs().getInputArray();
-    }
-
-    @After
-    public void tearDown() {
     }
 
     @Test

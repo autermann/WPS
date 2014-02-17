@@ -28,24 +28,30 @@
  */
 package org.n52.wps.io;
 
+import static org.n52.wps.io.AbstractIOHandlerFactory.supports;
+
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.n52.wps.GeneratorDocument.Generator;
 import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class GeneratorFactory {
-	
+import com.google.common.collect.Iterables;
+
+public class GeneratorFactory extends AbstractIOHandlerFactory {
+
 	public static final String PROPERTY_NAME_REGISTERED_GENERATORS = "registeredGenerators";
 	private static GeneratorFactory factory;
 	private static final Logger LOGGER = LoggerFactory.getLogger(GeneratorFactory.class);
-	
+
 	private List<IGenerator> registeredGenerators;
 
 	/**
@@ -55,12 +61,11 @@ public class GeneratorFactory {
 	public static void initialize(Generator[] generators) {
 		if (factory == null) {
 			factory = new GeneratorFactory(generators);
-		}
-		else {
+		} else {
 			LOGGER.warn("Factory already initialized");
 		}
 	}
-	
+
 	private GeneratorFactory(Generator[] generators) {
 		loadAllGenerators(generators);
 
@@ -70,7 +75,7 @@ public class GeneratorFactory {
             public void propertyChange(
                     final PropertyChangeEvent propertyChangeEvent) {
                 LOGGER.info(this.getClass().getName() + ": Received Property Change Event: " + propertyChangeEvent.getPropertyName());
-                loadAllGenerators(org.n52.wps.commons.WPSConfig.getInstance().getActiveRegisteredGenerator());
+                loadAllGenerators(WPSConfig.getInstance().getActiveRegisteredGenerator());
             }
         });
 	}
@@ -88,7 +93,7 @@ public class GeneratorFactory {
                 }
             }
 			currentGenerator.setPropertyArray(activeProps.toArray(activeProperties));
-			
+
 			IGenerator generator = null;
 			String generatorClass = currentGenerator.getClassName();
 			try {
@@ -111,9 +116,9 @@ public class GeneratorFactory {
 		}
 		return factory;
 	}
-	
+
 	public IGenerator getGenerator(Format format, Class<?> outputInternalClass) {
-		
+
 		for(IGenerator generator : registeredGenerators) {
             if (generator.isSupportedFormat(format) &&
                 generator.isSupportedDataBinding(outputInternalClass)) {
@@ -124,10 +129,17 @@ public class GeneratorFactory {
 		return null;
 	}
 
-	public List<IGenerator> getAllGenerators() {
-		return registeredGenerators;
-	}
+    public List<IGenerator> getAllGenerators() {
+        return Collections.unmodifiableList(registeredGenerators);
+    }
 
-	
-	
+    public Iterable<IGenerator> findGenerators(Format format) {
+        return Iterables.filter(registeredGenerators, supports(format));
+    }
+
+    public Iterable<IGenerator> findGenerators(Class<?> dataBinding) {
+        return Iterables.filter(registeredGenerators, supports(dataBinding));
+    }
+
+
 }

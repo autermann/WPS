@@ -38,6 +38,7 @@ import net.opengis.wps.x100.ProcessDescriptionType;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.algorithm.annotation.Algorithm;
 import org.n52.wps.commons.WPSConfig;
@@ -50,15 +51,12 @@ import org.n52.wps.commons.WPSConfig;
  *
  */
 public class LocalAlgorithmRepository implements ITransactionalAlgorithmRepository{
-	
-	private static Logger LOGGER = LoggerFactory.getLogger(LocalAlgorithmRepository.class);
-	private Map<String, String> algorithmMap;
-	private Map<String, ProcessDescriptionType> processDescriptionMap;
-	
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(LocalAlgorithmRepository.class);
+	private final Map<String, String> algorithmMap = new HashMap<>();
+	private final Map<String, ProcessDescriptionType> processDescriptionMap = new HashMap<>();
+
 	public LocalAlgorithmRepository() {
-		algorithmMap = new HashMap<String, String>();
-		processDescriptionMap = new HashMap<String, ProcessDescriptionType>(); 
-		
 		// check if the repository is active
 		if(WPSConfig.getInstance().isRepositoryActive(this.getClass().getCanonicalName())){
 			Property[] propertyArray = WPSConfig.getInstance().getPropertiesForRepositoryClass(this.getClass().getCanonicalName());
@@ -72,33 +70,36 @@ public class LocalAlgorithmRepository implements ITransactionalAlgorithmReposito
 			LOGGER.debug("Local Algorithm Repository is inactive.");
 		}
 	}
-	
-	public boolean addAlgorithms(String[] algorithms)  {
+
+	public boolean addAlgorithms(String... algorithms)  {
 		for(String algorithmClassName : algorithms) {
 			addAlgorithm(algorithmClassName);
 		}
 		LOGGER.info("Algorithms registered!");
 		return true;
-		
+
 	}
-	
+
+    @Override
 	public IAlgorithm getAlgorithm(String className) {
 		try {
 			return loadAlgorithm(algorithmMap.get(className));
 		} catch (Exception e) {
-			e.printStackTrace();
+            LOGGER.warn("Algortihm not found", e);
 			return null;
 		}
 	}
-	
+
+    @Override
 	public Collection<String> getAlgorithmNames() {
-		return new ArrayList<String>(algorithmMap.keySet());
+		return new ArrayList<>(algorithmMap.keySet());
 	}
-	
+
+    @Override
 	public boolean containsAlgorithm(String className) {
 		return algorithmMap.containsKey(className);
 	}
-	
+
 	private IAlgorithm loadAlgorithm(String algorithmClassName) throws Exception {
         Class<?> algorithmClass = LocalAlgorithmRepository.class.getClassLoader().loadClass(algorithmClassName);
         IAlgorithm algorithm = null;
@@ -112,7 +113,7 @@ public class LocalAlgorithmRepository implements ITransactionalAlgorithmReposito
         else {
             throw new Exception("Could not load algorithm " + algorithmClassName + " does not implement IAlgorithm or have a Algorithm annotation.");
         }
-		
+
 		if(!algorithm.processDescriptionIsValid()) {
 			LOGGER.warn("Algorithm description is not valid: " + algorithmClassName);
 			throw new Exception("Could not load algorithm " +algorithmClassName +". ProcessDescription Not Valid.");
@@ -120,21 +121,19 @@ public class LocalAlgorithmRepository implements ITransactionalAlgorithmReposito
 		return algorithm;
 	}
 
+    @Override
 	public boolean addAlgorithm(Object processID) {
 		if(!(processID instanceof String)){
 			return false;
 		}
 		String algorithmClassName = (String) processID;
-				
+
 		algorithmMap.put(algorithmClassName, algorithmClassName);
 		LOGGER.info("Algorithm class registered: " + algorithmClassName);
-					
-			
-		
 		return true;
-
 	}
 
+    @Override
 	public boolean removeAlgorithm(Object processID) {
 		if(!(processID instanceof String)){
 			return false;
@@ -150,7 +149,11 @@ public class LocalAlgorithmRepository implements ITransactionalAlgorithmReposito
 	@Override
 	public ProcessDescriptionType getProcessDescription(String processID) {
 		if(!processDescriptionMap.containsKey(processID)){
-			processDescriptionMap.put(processID, getAlgorithm(processID).getDescription());
+            IAlgorithm a = getAlgorithm(processID);
+            if (a == null) {
+                return null;
+            }
+			processDescriptionMap.put(processID, a.getDescription());
 		}
 		return processDescriptionMap.get(processID);
 	}
@@ -158,17 +161,16 @@ public class LocalAlgorithmRepository implements ITransactionalAlgorithmReposito
 	@Override
 	public void shutdown() {
 		// TODO Auto-generated method stub
-		
     }
-		
-	
-	
-
-	
-
-	
 
 
-	
+
+
+
+
+
+
+
+
 
 }

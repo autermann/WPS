@@ -28,8 +28,10 @@
  */
 package org.n52.wps.server.response;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,15 +46,16 @@ import net.opengis.wps.x100.OutputDefinitionType;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.n52.wps.server.ExceptionReport;
-import org.n52.wps.server.request.ExecuteRequest;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+
+import org.n52.wps.server.ExceptionReport;
+import org.n52.wps.server.request.ExecuteRequest;
 
 /**
  * This class tests the getMimeType method of the ExecuteResponseBuilder class.
  * TODO: Enhance with multiple in-/output tests
- * 
+ *
  * @author Benjamin Pross(bpross-52n)
  *
  */
@@ -71,39 +74,30 @@ public class ExecuteResponseBuilderTest {
 	}
 
 	@Test
-	public void testGetMimeTypeLiteralOutputResponseDoc() {
+	public void testGetMimeTypeLiteralOutputResponseDoc() throws Exception {
 
-		try {
-			String sampleFileName = "src/test/resources/DTCExecuteLiteralOutputResponseDoc.xml";
-			File sampleFile = new File(sampleFileName);
+        String sampleFileName = "src/test/resources/DTCExecuteLiteralOutputResponseDoc.xml";
+        File sampleFile = new File(sampleFileName);
+        Document doc;
+        try (FileInputStream is = new FileInputStream(sampleFile)) {
+            doc = fac.newDocumentBuilder().parse(is);
+        }
 
-			FileInputStream is = new FileInputStream(sampleFile);
+        executeRequest = new ExecuteRequest(doc);
 
-			// parse the InputStream to create a Document
-			Document doc = fac.newDocumentBuilder().parse(is);
+        /*
+         * only one output here
+         */
+        OutputDefinitionType definition = executeRequest.getExecute().getResponseForm().getResponseDocument().getOutputArray(0);
 
-			is.close();
+        String mimeType = executeRequest.getExecuteResponseBuilder().getMimeType(definition);
 
-			executeRequest = new ExecuteRequest(doc);
-
-			/*
-			 * only one output here
-			 */
-			OutputDefinitionType definition = executeRequest.getExecute().getResponseForm().getResponseDocument().getOutputArray(0);
-			
-			String mimeType = executeRequest.getExecuteResponseBuilder()
-					.getMimeType(definition);
-
-			/*
-			 * this should be text/plain as LiteralData was requested
-			 */
-			assertTrue(mimeType.equals("text/plain"));
-
-		} catch (Exception e) {
-			fail(e.getMessage());
-		}
+        /*
+         * this should be text/plain as LiteralData was requested
+         */
+        assertTrue(mimeType.equals("text/plain"));
 	}
-	
+
 	@Test
 	public void testGetMimeTypeLiteralOutputRawData() throws
             FileNotFoundException, ParserConfigurationException, ExceptionReport,
@@ -111,13 +105,10 @@ public class ExecuteResponseBuilderTest {
 
         String sampleFileName = "src/test/resources/DTCExecuteLiteralOutputRawData.xml";
         File sampleFile = new File(sampleFileName);
-
-        FileInputStream is = new FileInputStream(sampleFile);
-
-        // parse the InputStream to create a Document
-        Document doc = fac.newDocumentBuilder().parse(is);
-
-        is.close();
+        Document doc;
+        try (FileInputStream is = new FileInputStream(sampleFile)) {
+            doc = fac.newDocumentBuilder().parse(is);
+        }
 
         executeRequest = new ExecuteRequest(doc);
 
@@ -136,214 +127,154 @@ public class ExecuteResponseBuilderTest {
 	}
 
 	@Test
-	public void testGetMimeTypeComplexOutputRawData() {
+	public void testGetMimeTypeComplexOutputRawData() throws Exception {
 
-		try {
-			String sampleFileName = "src/test/resources/DTCExecuteComplexOutputRawDataMimeTiff.xml";
-			File sampleFile = new File(sampleFileName);
+        String sampleFileName = "src/test/resources/DTCExecuteComplexOutputRawDataMimeTiff.xml";
+        File sampleFile = new File(sampleFileName);
+        Document doc;
+        try (FileInputStream is = new FileInputStream(sampleFile)) {
+            doc = fac.newDocumentBuilder().parse(is);
+        }
 
-			FileInputStream is;
-			is = new FileInputStream(sampleFile);
+        executeRequest = new ExecuteRequest(doc);
 
-			// parse the InputStream to create a Document
-			Document doc;
-			doc = fac.newDocumentBuilder().parse(is);
+        /*
+         * only one output here
+         */
+        OutputDefinitionType definition = executeRequest.getExecute().getResponseForm().getRawDataOutput();
+        String originalMimeType = definition.getMimeType();
 
-			is.close();
 
-			executeRequest = new ExecuteRequest(doc);
-			
-			/*
-			 * only one output here
-			 */
-			OutputDefinitionType definition = executeRequest.getExecute().getResponseForm().getRawDataOutput();
-			String originalMimeType = definition.getMimeType();
+        String mimeType = executeRequest.getExecuteResponseBuilder()
+                .getMimeType(definition);
 
-			
-			String mimeType = executeRequest.getExecuteResponseBuilder()
-					.getMimeType(definition);
+        /*
+         * this should be the same mime type as requested
+         */
+        assertTrue(mimeType.equals(originalMimeType));
+    }
 
-			/*
-			 * this should be the same mime type as requested
-			 */
-			assertTrue(mimeType.equals(originalMimeType));
-
-		} catch (Exception e) {
-			fail(e.getMessage());
-		}
-	}
-	
 	@Test
-	public void testGetMimeTypeComplexOutputResponseDoc() {
-		
-		try {
-			String sampleFileName = "src/test/resources/DTCExecuteComplexOutputResponseDocMimeTiff.xml";
-			File sampleFile = new File(sampleFileName);
-			
-			FileInputStream is;
-			is = new FileInputStream(sampleFile);
-			
-			// parse the InputStream to create a Document
-			Document doc;
-			doc = fac.newDocumentBuilder().parse(is);
-			
-			is.close();
-			
-			executeRequest = new ExecuteRequest(doc);
-			
-			/*
-			 * only one output here
-			 */
-			OutputDefinitionType definition = executeRequest.getExecute().getResponseForm().getResponseDocument().getOutputArray(0);
-			String originalMimeType = definition.getMimeType();
-			
-			
-			String mimeType = executeRequest.getExecuteResponseBuilder()
-					.getMimeType(definition);
-			
-			/*
-			 * this should be the same mime type as requested
-			 */
-			assertTrue(mimeType.equals(originalMimeType));
-			
-		} catch (Exception e) {
-			fail(e.getMessage());
-		}
+	public void testGetMimeTypeComplexOutputResponseDoc() throws Exception {
+        String sampleFileName = "src/test/resources/DTCExecuteComplexOutputResponseDocMimeTiff.xml";
+        File sampleFile = new File(sampleFileName);
+        Document doc;
+        try (FileInputStream is = new FileInputStream(sampleFile)) {
+            doc = fac.newDocumentBuilder().parse(is);
+        }
+
+        executeRequest = new ExecuteRequest(doc);
+
+        /*
+         * only one output here
+         */
+        OutputDefinitionType definition = executeRequest.getExecute().getResponseForm().getResponseDocument().getOutputArray(0);
+        String originalMimeType = definition.getMimeType();
+
+
+        String mimeType = executeRequest.getExecuteResponseBuilder()
+                .getMimeType(definition);
+
+        /*
+         * this should be the same mime type as requested
+         */
+        assertTrue(mimeType.equals(originalMimeType));
 	}
-	
+
 	@Test
-	public void testGetMimeTypeMultipleComplexOutputsResponseDocPerm1() {
-		
-		try {
-			String sampleFileName = "src/test/resources/MCIODTCExecuteComplexOutputResponseDocPerm1.xml";
-			File sampleFile = new File(sampleFileName);
-			
-			FileInputStream is;
-			is = new FileInputStream(sampleFile);
-			
-			// parse the InputStream to create a Document
-			Document doc;
-			doc = fac.newDocumentBuilder().parse(is);
-			
-			is.close();
-			
-			executeRequest = new ExecuteRequest(doc);
-			
-			DocumentOutputDefinitionType[] outputs = executeRequest.getExecute().getResponseForm().getResponseDocument().getOutputArray();
-			
-			for (DocumentOutputDefinitionType documentOutputDefinitionType : outputs) {
-				
-				String identifier = documentOutputDefinitionType.getIdentifier().getStringValue(); 
-				
-				String originalMimeType = documentOutputDefinitionType.getMimeType();
-							
-				String mimeType = executeRequest.getExecuteResponseBuilder()
-						.getMimeType(documentOutputDefinitionType);				
-				
-				if(identifier.contains("Complex")){				
-					assertTrue(mimeType.equals(originalMimeType));
-				}else{
-					assertTrue(mimeType.equals("text/plain") || mimeType.equals("text/xml"));
-				}
-				
-			}
-			
-		} catch (Exception e) {
-			fail(e.getMessage());
-		}
+	public void testGetMimeTypeMultipleComplexOutputsResponseDocPerm1() throws Exception {
+        String sampleFileName = "src/test/resources/MCIODTCExecuteComplexOutputResponseDocPerm1.xml";
+        File sampleFile = new File(sampleFileName);
+        Document doc;
+        try (FileInputStream is = new FileInputStream(sampleFile)) {
+            doc = fac.newDocumentBuilder().parse(is);
+        }
+
+        executeRequest = new ExecuteRequest(doc);
+
+        DocumentOutputDefinitionType[] outputs = executeRequest.getExecute().getResponseForm().getResponseDocument().getOutputArray();
+
+        for (DocumentOutputDefinitionType documentOutputDefinitionType : outputs) {
+
+            String identifier = documentOutputDefinitionType.getIdentifier().getStringValue();
+
+            String originalMimeType = documentOutputDefinitionType.getMimeType();
+
+            String mimeType = executeRequest.getExecuteResponseBuilder()
+                    .getMimeType(documentOutputDefinitionType);
+
+            if(identifier.contains("Complex")){
+                assertTrue(mimeType.equals(originalMimeType));
+            }else{
+                assertTrue(mimeType.equals("text/plain") || mimeType.equals("text/xml"));
+            }
+
+        }
 	}
-	
+
 	@Test
-	public void testGetMimeTypeMultipleComplexOutputsResponseDocPerm2() {
-		
-		try {
-			String sampleFileName = "src/test/resources/MCIODTCExecuteComplexOutputResponseDocPerm2.xml";
-			File sampleFile = new File(sampleFileName);
-			
-			FileInputStream is;
-			is = new FileInputStream(sampleFile);
-			
-			// parse the InputStream to create a Document
-			Document doc;
-			doc = fac.newDocumentBuilder().parse(is);
-			
-			is.close();
-			
-			executeRequest = new ExecuteRequest(doc);
-			
-			DocumentOutputDefinitionType[] outputs = executeRequest.getExecute().getResponseForm().getResponseDocument().getOutputArray();
-			
-			for (DocumentOutputDefinitionType documentOutputDefinitionType : outputs) {
-				
-				String identifier = documentOutputDefinitionType.getIdentifier().getStringValue(); 
-				
-				String originalMimeType = documentOutputDefinitionType.getMimeType();
-				
-				String mimeType = executeRequest.getExecuteResponseBuilder()
-						.getMimeType(documentOutputDefinitionType);				
-				
-				if(identifier.contains("Complex")){				
-					assertTrue(mimeType.equals(originalMimeType));
-				}else{
-					assertTrue(mimeType.equals("text/plain") || mimeType.equals("text/xml"));
-				}
-				
-			}
-			
-		} catch (Exception e) {
-			fail(e.getMessage());
-		}
+	public void testGetMimeTypeMultipleComplexOutputsResponseDocPerm2() throws Exception {
+        String sampleFileName = "src/test/resources/MCIODTCExecuteComplexOutputResponseDocPerm2.xml";
+        File sampleFile = new File(sampleFileName);
+        Document doc;
+        try (FileInputStream is = new FileInputStream(sampleFile)) {
+            doc = fac.newDocumentBuilder().parse(is);
+        }
+
+        executeRequest = new ExecuteRequest(doc);
+
+        DocumentOutputDefinitionType[] outputs = executeRequest.getExecute().getResponseForm().getResponseDocument().getOutputArray();
+
+        for (DocumentOutputDefinitionType documentOutputDefinitionType : outputs) {
+
+            String identifier = documentOutputDefinitionType.getIdentifier().getStringValue();
+
+            String originalMimeType = documentOutputDefinitionType.getMimeType();
+
+            String mimeType = executeRequest.getExecuteResponseBuilder()
+                    .getMimeType(documentOutputDefinitionType);
+
+            if(identifier.contains("Complex")){
+                assertTrue(mimeType.equals(originalMimeType));
+            }else{
+                assertTrue(mimeType.equals("text/plain") || mimeType.equals("text/xml"));
+            }
+
+        }
 	}
-	
+
 	@Test
-	public void testGetMimeTypeBBOXOutputResponseDoc() {
+	public void testGetMimeTypeBBOXOutputResponseDoc() throws Exception {
+        String sampleFileName = "src/test/resources/DTCExecuteBBOXOutputResponseDoc.xml";
+        File sampleFile = new File(sampleFileName);
+        Document doc;
+        try (FileInputStream is = new FileInputStream(sampleFile)) {
+            doc = fac.newDocumentBuilder().parse(is);
+        }
 
-		try {
-			String sampleFileName = "src/test/resources/DTCExecuteBBOXOutputResponseDoc.xml";
-			File sampleFile = new File(sampleFileName);
+        executeRequest = new ExecuteRequest(doc);
 
-			FileInputStream is;
-			is = new FileInputStream(sampleFile);
+        /*
+         * only one output here
+         */
+        OutputDefinitionType definition = executeRequest.getExecute().getResponseForm().getResponseDocument().getOutputArray(0);
 
-			// parse the InputStream to create a Document
-			Document doc;
-			doc = fac.newDocumentBuilder().parse(is);
+        String mimeType = executeRequest.getExecuteResponseBuilder().getMimeType(definition);
 
-			is.close();
-
-			executeRequest = new ExecuteRequest(doc);
-
-			/*
-			 * only one output here
-			 */
-			OutputDefinitionType definition = executeRequest.getExecute().getResponseForm().getResponseDocument().getOutputArray(0);
-			
-			String mimeType = executeRequest.getExecuteResponseBuilder()
-					.getMimeType(definition);
-
-			/*
-			 * this should be text/xml as BBOXData was requested
-			 */
-			assertTrue(mimeType.equals("text/xml"));
-
-		} catch (Exception e) {
-			fail(e.getMessage());
-		}
+        /*
+         * this should be text/xml as BBOXData was requested
+         */
+        assertThat(mimeType, is(equalTo("text/xml")));
 	}
-	
+
 	@Test
 	public void testGetMimeTypeBBOXOutputRawData() throws Exception {
         String sampleFileName = "src/test/resources/DTCExecuteBBOXOutputRawData.xml";
         File sampleFile = new File(sampleFileName);
-
-        FileInputStream is;
-        is = new FileInputStream(sampleFile);
-
-        // parse the InputStream to create a Document
         Document doc;
-        doc = fac.newDocumentBuilder().parse(is);
-
-        is.close();
+        try (FileInputStream is = new FileInputStream(sampleFile)) {
+            doc = fac.newDocumentBuilder().parse(is);
+        }
 
         executeRequest = new ExecuteRequest(doc);
 

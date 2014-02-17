@@ -40,11 +40,12 @@ import java.util.concurrent.TimeUnit;
 
 import net.opengis.wps.x100.ProcessDescriptionType;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.RepositoryDocument.Repository;
 import org.n52.wps.commons.WPSConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Bastian Schaeffer, University of Muenster
@@ -56,12 +57,12 @@ public class RepositoryManager {
     private final ProcessIDRegistry globalProcessIDs = ProcessIDRegistry.getInstance();
 	private List<IAlgorithmRepository> repositories;
     private ScheduledExecutorService updateThread;
-	
+
 	private RepositoryManager(){
-		
+
 		// clear registry
 		globalProcessIDs.clear();
-		
+
         // initialize all Repositories
         loadAllRepositories();
 
@@ -74,9 +75,9 @@ public class RepositoryManager {
                 loadAllRepositories();
             }
         });
-        
+
         Double updateHours = WPSConfig.getInstance().getWPSConfig().getServer().getRepoReloadInterval();
-        
+
         if (updateHours > 0){
         	LOGGER.info("Setting repository update period to " + updateHours + " hours.");
         	long millis = (long) (updateHours * 3600 * 1000); // make milliseconds
@@ -84,8 +85,8 @@ public class RepositoryManager {
             this.updateThread.scheduleAtFixedRate(new UpdateTask(), millis, millis, TimeUnit.MILLISECONDS);
 
         }
-        
-    	
+
+
 	}
 
     private void loadAllRepositories(){
@@ -102,7 +103,7 @@ public class RepositoryManager {
 				Class<?> repositoryClass = RepositoryManager.class.getClassLoader().loadClass(repositoryClassName);
 				Constructor[] constructors = repositoryClass.getConstructors();
 				for(Constructor<?> constructor : constructors){
-				
+
 					if(constructor.getParameterTypes().length==1 && constructor.getParameterTypes()[0].equals(String.class)){
 						Property[] properties = repository.getPropertyArray();
 						Property formatProperty = WPSConfig.getInstance().getPropertyForKey(properties, "supportedFormat");
@@ -134,7 +135,7 @@ public class RepositoryManager {
         }
         return instance;
     }
-	
+
 	/**
 	 * Allows to reInitialize the RepositoryManager... This should not be called to often.
 	 *
@@ -142,7 +143,7 @@ public class RepositoryManager {
 	public static void reInitialize() {
 		instance = new RepositoryManager();
 	}
-	
+
 	/**
 	 * Allows to reInitialize the Repositories
 	 *
@@ -150,7 +151,7 @@ public class RepositoryManager {
 	protected void reloadRepositories() {
 		loadAllRepositories();
 	}
-	
+
 	/**
 	 * Methods looks for Algorithm in all Repositories.
 	 * The first match is returned.
@@ -167,9 +168,9 @@ public class RepositoryManager {
 		}
 		return null;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @return allAlgorithms
 	 */
 	public List<String> getAlgorithms(){
@@ -178,7 +179,7 @@ public class RepositoryManager {
 			allAlgorithmNamesCollection.addAll(repository.getAlgorithmNames());
 		}
 		return allAlgorithmNamesCollection;
-		
+
 	}
 
 	public boolean containsAlgorithm(String algorithmName) {
@@ -189,7 +190,7 @@ public class RepositoryManager {
 		}
 		return false;
 	}
-	
+
 	public IAlgorithmRepository getRepositoryForAlgorithm(String algorithmName){
 		for(IAlgorithmRepository repository : repositories){
 			if(repository.containsAlgorithm(algorithmName)){
@@ -198,25 +199,25 @@ public class RepositoryManager {
 		}
 		return null;
 	}
-	
+
 	public Class<?> getInputDataTypeForAlgorithm(String algorithmIdentifier, String inputIdentifier){
 		return getAlgorithm(algorithmIdentifier).getInputDataType(inputIdentifier);
-		
+
 	}
-	
+
 	public Class<?> getOutputDataTypeForAlgorithm(String algorithmIdentifier, String inputIdentifier){
 		return getAlgorithm(algorithmIdentifier).getOutputDataType(inputIdentifier);
-		
+
 	}
-	
+
 	public boolean registerAlgorithm(String id, IAlgorithmRepository repository){
 		return globalProcessIDs.add(id);
 	}
-	
+
 	public boolean unregisterAlgorithm(String id){
 		return globalProcessIDs.remove(id);
 	}
-	
+
 	public IAlgorithmRepository getAlgorithmRepository(String name){
 	  for (IAlgorithmRepository repo : repositories ){
 		   if(repo.getClass().getName().equals(name)){
@@ -234,19 +235,19 @@ public class RepositoryManager {
 			}
 		}
 		return null;
-	}
-	
-	public ProcessDescriptionType getProcessDescription(String processClassName){
-		for(IAlgorithmRepository repository : repositories){
-			if(repository.containsAlgorithm(processClassName)){
-				return repository.getProcessDescription(processClassName);
-			}
-		}
+    }
+
+    public ProcessDescriptionType getProcessDescription(String processClassName) {
+        for (IAlgorithmRepository repository : repositories) {
+            if (repository.containsAlgorithm(processClassName)) {
+                return repository.getProcessDescription(processClassName);
+            }
+        }
 		return null;
 	}
-	
+
     private class UpdateTask implements Runnable {
-        
+
         @Override
         public void run() {
             LOGGER.info("UpdateThread started -- Reloading repositories - this might take a while ...");

@@ -51,13 +51,15 @@ public class DummyTestClass extends AbstractSelfDescribingAlgorithm {
 	private final String outputID1 = "ComplexOutputData";
 	private final String outputID2 = "LiteralOutputData";
 	private final String outputID3 = "BBOXOutputData";
-	
-	private List<String> errors = new ArrayList<String>();	
 
+	private final List<String> errors = new ArrayList<>();
+
+    @Override
 	public List<String> getErrors() {
 		return errors;
 	}
 
+    @Override
 	public Class<?> getInputDataType(String id) {
 		if (id.equalsIgnoreCase(inputID1)) {
 			return GenericFileDataBinding.class;
@@ -69,14 +71,14 @@ public class DummyTestClass extends AbstractSelfDescribingAlgorithm {
 			return GTReferenceEnvelope.class;
 		}
 		return null;
-		
+
 	}
-	
+
 	@Override
 	public BigInteger getMinOccurs(String identifier){
 		return new BigInteger("0");
 	}
-	
+
 
 	public Class<?> getOutputDataType(String id) {
 		if (id.equalsIgnoreCase(outputID1)) {
@@ -90,7 +92,7 @@ public class DummyTestClass extends AbstractSelfDescribingAlgorithm {
 		}
 		return null;
 	}
-	
+
 	@Override
 	public List<String> getInputIdentifiers() {
 		List<String> identifierList =  new ArrayList<String>();
@@ -108,15 +110,15 @@ public class DummyTestClass extends AbstractSelfDescribingAlgorithm {
 		identifierList.add(outputID3);
 		return identifierList;
 	}
-	
+
 
 	@Override
 	public Map<String, IData> run(Map<String, List<IData>> inputData) {
 		HashMap<String,IData> result = new HashMap<String,IData>();
 		if(inputData.containsKey(inputID1)){
-			
+
 			IData data = inputData.get(inputID1).get(0);
-			
+
 			if(data instanceof GenericFileDataBinding){
 				GenericFileDataBinding genericFileDataBinding = (GenericFileDataBinding)data;
 				GenericFileData genericFileData = genericFileDataBinding.getPayload();
@@ -135,28 +137,27 @@ public class DummyTestClass extends AbstractSelfDescribingAlgorithm {
 		if(inputData.containsKey(inputID3)){
 			result.put(outputID3, inputData.get(inputID3).get(0));
 		}
-			
+
 		return result;
 	}
-	
+
 	@Override
 	public String[] getSupportedCRSForBBOXInput(String identifier){
 		String[] supportedCRS = new String[2];
 		supportedCRS[0] = "EPSG:4328";
 		supportedCRS[1] = "EPSG:5628";
-		
 		return supportedCRS;
 	}
-	
+
 	@Override
 	public String[] getSupportedCRSForBBOXOutput(String identifier){
 		String[] supportedCRS = new String[2];
 		supportedCRS[0] = "EPSG:4328";
 		supportedCRS[1] = "EPSG:5628";
-		
+
 		return supportedCRS;
 	}
-	
-	
+
+
 
 }

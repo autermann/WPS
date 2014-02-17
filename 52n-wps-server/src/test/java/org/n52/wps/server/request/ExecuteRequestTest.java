@@ -44,8 +44,9 @@ import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlValidationError;
 import org.junit.Before;
 import org.junit.Test;
-import org.n52.wps.server.database.DatabaseFactory;
 import org.w3c.dom.Document;
+
+import org.n52.wps.server.database.DatabaseFactory;
 
 /**
  *
@@ -61,11 +62,11 @@ public class ExecuteRequestTest {
 		fac = DocumentBuilderFactory.newInstance();
 		fac.setNamespaceAware(true);
     }
-	
+
 	@Test
     public void testUpdateStatusError() throws Exception {
-
 		FileInputStream fis = new FileInputStream(new File("src/test/resources/LRDTCCorruptInputResponseDocStatusTrue.xml"));
+        DatabaseFactory.getInstance().init(null);
 		// parse the InputStream to create a Document
 		Document doc = fac.newDocumentBuilder().parse(fis);
     	ExecuteRequest request = new ExecuteRequest(doc);
@@ -74,12 +75,12 @@ public class ExecuteRequestTest {
     	File response = DatabaseFactory.getDatabase().getResponseAsFile(request.getUniqueId().toString());
     	ExecuteResponseDocument responseDoc = ExecuteResponseDocument.Factory.parse(response);
     	StatusType statusType = responseDoc.getExecuteResponse().getStatus();
-    	assertTrue(validateExecuteResponse(responseDoc));    	
+    	assertTrue(validateExecuteResponse(responseDoc));
     	assertTrue(statusType.isSetProcessFailed());
     	assertTrue(statusType.getProcessFailed().getExceptionReport().getExceptionArray(0).getExceptionTextArray(0).equals(exceptionText));
-    		    	
+
     }
-    
+
     private boolean validateExecuteResponse(ExecuteResponseDocument responseDoc) {
         XmlOptions xmlOptions = new XmlOptions();
         List<XmlValidationError> xmlValidationErrorList = new ArrayList<XmlValidationError>();

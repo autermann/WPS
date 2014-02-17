@@ -28,12 +28,6 @@
  */
 package org.n52.wps.server.response;
 
-import org.n52.wps.server.response.execute.RawData;
-import org.n52.wps.server.response.execute.ReferenceProcessOutput;
-import org.n52.wps.server.response.execute.ComplexProcessOutput;
-import org.n52.wps.server.response.execute.BoundingBoxProcessOutput;
-import org.n52.wps.server.response.execute.ProcessOutput;
-import org.n52.wps.server.response.execute.LiteralProcessOutput;
 import java.io.InputStream;
 import java.util.Calendar;
 
@@ -70,6 +64,12 @@ import org.n52.wps.server.RepositoryManager;
 import org.n52.wps.server.RetrieveResultServlet;
 import org.n52.wps.server.WPSConstants;
 import org.n52.wps.server.request.ExecuteRequest;
+import org.n52.wps.server.response.execute.BoundingBoxProcessOutput;
+import org.n52.wps.server.response.execute.ComplexProcessOutput;
+import org.n52.wps.server.response.execute.LiteralProcessOutput;
+import org.n52.wps.server.response.execute.ProcessOutput;
+import org.n52.wps.server.response.execute.RawData;
+import org.n52.wps.server.response.execute.ReferenceProcessOutput;
 import org.n52.wps.util.XMLBeansHelper;
 
 import com.google.common.base.Strings;
@@ -108,14 +108,14 @@ public class ExecuteResponseBuilder {
     private final ExecuteResponseDocument.ExecuteResponse xbExecuteResponse;
     private String statusLocation;
     private RawData rawData = null;
-	
+
 	public ExecuteResponseBuilder(ExecuteRequest request) throws ExceptionReport{
 		this.request = request;
         this.identifier = this.request.getExecute().getIdentifier().getStringValue().trim();
         this.xbResponseForm = this.request.getExecute().getResponseForm();
 
         this.description = RepositoryManager.getInstance().getProcessDescription(this.identifier);
-        
+
         if (this.description == null) {
             throw new RuntimeException("Error while accessing the process description for " +
                                        identifier);
@@ -128,7 +128,7 @@ public class ExecuteResponseBuilder {
         this.xbExecuteResponse.setLang(WPSConstants.DEFAULT_LANGUAGE);
 		this.xbExecuteResponse.setService(WPSConstants.WPS_SERVICE_TYPE);
 		this.xbExecuteResponse.setVersion(WPSConstants.WPS_SERVICE_VERSION);
-        
+
         if (this.request.isLineage()) {
             this.xbExecuteResponse.setDataInputs(request.getExecute().getDataInputs());
         }
@@ -170,7 +170,7 @@ public class ExecuteResponseBuilder {
     private String getServiceInstanceURL() {
         return CapabilitiesConfiguration.ENDPOINT_URL + "?service=WPS&request=GetCapabilities";
     }
-	
+
 	public void update() throws ExceptionReport {
 		if (this.xbExecuteResponse.getStatus().isSetProcessSucceeded()) {
             updateStatusSucceeded();
@@ -303,13 +303,10 @@ public class ExecuteResponseBuilder {
             return WPSConstants.MIME_TYPE_TEXT_XML;
         }
     }
-    
+
 	public String getMimeType(OutputDefinitionType definition) throws ExceptionReport {
         if (definition == null) {
             return getMimeType();
-        }
-        if (Strings.emptyToNull(definition.getMimeType()) != null) {
-            return definition.getMimeType();
         }
         final String id = definition.getIdentifier().getStringValue();
         final OutputDescriptionType desc = getOutputDescription(id);
@@ -319,6 +316,9 @@ public class ExecuteResponseBuilder {
             case LITERAL:
                 return WPSConstants.MIME_TYPE_TEXT_PLAIN;
             case COMPLEX:
+                if (Strings.emptyToNull(definition.getMimeType()) != null) {
+                    return definition.getMimeType();
+                }
                 String mimeType = desc.getComplexOutput().getDefault().getFormat().getMimeType();
                 LOGGER.warn("Using default mime type: {} for input: {}", mimeType, id);
                 return mimeType;
@@ -340,7 +340,7 @@ public class ExecuteResponseBuilder {
             throw new NoApplicableCodeException("Error generating XML stream").causedBy(e);
         }
     }
-	
+
 	public void setStatus(StatusType status) {
         //workaround, should be generated either at the creation of the document or when the process has been finished.
         status.setCreationTime(this.creationTime);

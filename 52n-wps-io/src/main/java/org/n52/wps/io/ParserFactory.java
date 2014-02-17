@@ -44,7 +44,6 @@ import org.n52.wps.PropertyDocument.Property;
 import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfig;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 
 /**
@@ -53,7 +52,7 @@ import com.google.common.collect.Iterables;
  * @author foerster
  *
  */
-public class ParserFactory {
+public class ParserFactory extends AbstractIOHandlerFactory {
 
     @Deprecated
     public static final String PROPERTY_NAME_REGISTERED_PARSERS = "registeredParsers";
@@ -153,29 +152,5 @@ public class ParserFactory {
 
     public Iterable<IParser> findParsers(Class<?> dataBinding) {
         return Iterables.filter(registeredParsers, supports(dataBinding));
-    }
-
-    private static Predicate<IOHandler> supports(Class<?> dataBinding) {
-        return new SupportsDataBinding(dataBinding);
-    }
-
-    private static Predicate<IOHandler> supports(Format format) {
-        return new SupportsFormat(format);
-    }
-
-    private static class SupportsDataBinding implements Predicate<IOHandler> {
-        private final Class<?> dataBinding;
-        SupportsDataBinding(Class<?> dataBinding) { this.dataBinding = dataBinding; }
-        @Override public boolean apply(IOHandler input) {
-            return input.isSupportedDataBinding(dataBinding);
-        }
-    }
-
-    private static class SupportsFormat implements Predicate<IOHandler> {
-        private final Format format;
-        SupportsFormat(Format format) { this.format = format; }
-        @Override public boolean apply(IOHandler input) {
-            return input.isSupportedFormat(format);
-        }
     }
 }

@@ -28,19 +28,29 @@
  */
 package org.n52.wps.server.request;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
+
 import java.io.File;
 import java.io.IOException;
+
 import net.opengis.wps.x100.ExecuteDocument;
 import net.opengis.wps.x100.InputType;
+
 import org.apache.xmlbeans.XmlException;
 import org.geotools.geometry.jts.ReferencedEnvelope;
-import static org.hamcrest.Matchers.*;
 import org.junit.After;
 import org.junit.AfterClass;
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+
+import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.server.ExceptionReport;
 
 /**
@@ -48,27 +58,27 @@ import org.n52.wps.server.ExceptionReport;
  * @author isuftin
  */
 public class DummyTestClassAlgorithmInputHandlerTest {
-        
+
     private static String sampleFileName = null;
     private static File sampleFile = null;
     private static ExecuteDocument execDoc = null;
     private static InputType[] inputArray = null;
     private static File projectRoot = null;
+    @ClassRule
+    public static final WPSConfigRule wpsConfig = new WPSConfigRule("/wps_config.xml");
 
-    @BeforeClass 
+    @BeforeClass
     public static void setupClass() {
         sampleFileName = "src/test/resources/DummyTestClass.xml";
         sampleFile = new File(sampleFileName);
     }
-    
+
     @AfterClass
     public static void tearDownClass() {
     }
 
     @Before
     public void setUp() throws XmlException, IOException {
-        WPSConfigTestUtil.generateMockConfig(getClass(), "/org/n52/wps/io/test/inputhandler/generator/wps_config.xml");
-
         execDoc = ExecuteDocument.Factory.parse(sampleFile);
         inputArray = execDoc.getExecute().getDataInputs().getInputArray();
 
@@ -127,7 +137,7 @@ public class DummyTestClassAlgorithmInputHandlerTest {
         assertThat(instance.getParsedInputData().get("BBOXInputData").size(), equalTo(1));
         assertThat(instance.getParsedInputData().get("BBOXInputData").get(0), is(notNullValue()));
         assertThat((ReferencedEnvelope)instance.getParsedInputData().get("BBOXInputData").get(0).getPayload(), is(notNullValue()));
-        
+
         ReferencedEnvelope test = (ReferencedEnvelope)instance.getParsedInputData().get("BBOXInputData").get(0).getPayload();
         assertThat(test.getArea(), equalTo(0.020000000000000212d));
         assertThat(test.getLowerCorner().getDirectPosition().toString(), equalTo("DirectPosition2D[46.75, 13.05]"));

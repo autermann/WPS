@@ -10,8 +10,8 @@ import net.opengis.wps.x100.LiteralInputType;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
+
 import org.n52.wps.io.data.binding.literal.LiteralStringBinding;
-import org.n52.wps.util.XMLBeansHelper;
 
 import com.google.common.collect.Lists;
 
@@ -26,7 +26,6 @@ public class LiteralDataCheckerTest {
     @Test
     public void testAlphabet() {
         LiteralDataChecker checker = new LiteralDataChecker(createInputDescription());
-        System.out.println(checker);
         errors.checkThat(checker.apply(new LiteralStringBinding("a")), is(true));
         errors.checkThat(checker.apply(new LiteralStringBinding("b")), is(true));
         errors.checkThat(checker.apply(new LiteralStringBinding("c")), is(true));
@@ -71,7 +70,6 @@ public class LiteralDataCheckerTest {
         r2.addNewMaximumValue().setStringValue("m");
         RangeType r3 = allowedValues.addNewRange();
         r3.addNewMinimumValue().setStringValue("o");
-        System.out.println(idt.xmlText(XMLBeansHelper.getXmlOptions()));
         return idt;
     }
 }

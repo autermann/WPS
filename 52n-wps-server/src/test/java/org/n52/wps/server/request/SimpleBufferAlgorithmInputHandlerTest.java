@@ -28,19 +28,30 @@
  */
 package org.n52.wps.server.request;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.equalToIgnoringCase;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
+
 import java.io.File;
 import java.io.IOException;
+
 import net.opengis.wps.x100.ExecuteDocument;
 import net.opengis.wps.x100.InputType;
+
 import org.apache.xmlbeans.XmlException;
 import org.geotools.feature.DefaultFeatureCollection;
-import static org.hamcrest.Matchers.*;
 import org.junit.After;
 import org.junit.AfterClass;
-import static org.junit.Assert.*;
-import org.junit.Before; 
+import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+
+import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.io.data.IData;
 import org.n52.wps.server.ExceptionReport;
 
@@ -49,23 +60,22 @@ import org.n52.wps.server.ExceptionReport;
  * @author isuftin
  */
 public class SimpleBufferAlgorithmInputHandlerTest {
-        
+    @ClassRule
+    public static final WPSConfigRule wpsConfig = new WPSConfigRule("/wps_config.xml");
     private static String sampleFileName = null;
     private static File sampleFile = null;
     private static ExecuteDocument execDoc = null;
     private static InputType[] inputArray = null;
     private static File projectRoot = null;
-    
+
     @BeforeClass
     public static void setupClass() throws XmlException, IOException {
         sampleFileName = "src/test/resources/SimpleBufferAlgorithm.xml";
         sampleFile = new File(sampleFileName);
-        WPSConfigTestUtil.generateMockConfig(SimpleBufferAlgorithmInputHandlerTest.class, "/org/n52/wps/io/test/inputhandler/generator/wps_config.xml");
-
         execDoc = ExecuteDocument.Factory.parse(sampleFile);
         inputArray = execDoc.getExecute().getDataInputs().getInputArray();
     }
-    
+
     @AfterClass
     public static void tearDownClass() {
     }
@@ -127,10 +137,10 @@ public class SimpleBufferAlgorithmInputHandlerTest {
         assertThat(instance.getParsedInputData().keySet().toArray()[1].toString(), is(equalToIgnoringCase("data")));
         assertThat(instance.getParsedInputData().get("data").size(), equalTo(1));
         assertThat(instance.getParsedInputData().get("width").size(), equalTo(1));
-        
+
         IData width = instance.getParsedInputData().get("width").get(0);
         IData data = instance.getParsedInputData().get("data").get(0);
-        
+
         assertThat(data, is(notNullValue()));
         assertThat(data.getSupportedClass().getName(), is(equalToIgnoringCase("org.geotools.feature.FeatureCollection")));
         assertThat(data.getPayload(), is(notNullValue()));
@@ -143,9 +153,9 @@ public class SimpleBufferAlgorithmInputHandlerTest {
         assertThat(((DefaultFeatureCollection) data.getPayload()).getBounds().toString(), is(equalToIgnoringCase("ReferencedEnvelope[145.19754 : 148.27298000000002, -43.423512 : -40.852802]")));
         assertThat(((DefaultFeatureCollection) data.getPayload()).getBounds().getArea(), equalTo(7.906064362400054d));
         assertThat(((DefaultFeatureCollection) data.getPayload()).getBounds().getDimension(), equalTo(2));
-        
+
         assertThat(width, is(notNullValue()));
         assertThat(((Double)width.getPayload()), equalTo(20.0d));
-        
+
     }
 }
