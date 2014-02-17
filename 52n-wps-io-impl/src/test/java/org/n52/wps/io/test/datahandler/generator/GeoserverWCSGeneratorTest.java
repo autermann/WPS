@@ -37,13 +37,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfigRule;
+import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
 import org.n52.wps.io.datahandler.generator.GeoserverWCSGenerator;
 import org.n52.wps.io.datahandler.parser.GeotiffParser;
-import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
 import org.n52.wps.server.ExceptionReport;
 
 import com.google.common.io.CharStreams;
@@ -56,6 +57,7 @@ public class GeoserverWCSGeneratorTest {
             = new WPSConfigRule("/wps_config.xml");
 
     @Test
+    @Ignore("Needs a running Geoserver")
 	public void testGenerator() throws IOException, ExceptionReport {
 
         GeoserverWCSGenerator wcsGenerator = new GeoserverWCSGenerator();

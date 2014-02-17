@@ -40,9 +40,9 @@ import org.junit.Test;
 
 import org.n52.wps.commons.Format;
 import org.n52.wps.commons.WPSConfigRule;
+import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 import org.n52.wps.io.datahandler.generator.GML2BasicGenerator;
 import org.n52.wps.io.datahandler.parser.GML2BasicParser;
-import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
 
 /**
  * This class is for testing the GML2BasicParser and -Generator.
@@ -78,7 +78,7 @@ public class GML2BasicParserGeneratorTest {
 
         assertThat(binding.getPayload(), is(notNullValue()));
         assertThat(binding.getPayloadAsShpFile().exists(), is(true));
-        assertThat(!binding.getPayload().isEmpty(), is(false));
+        assertThat(binding.getPayload().isEmpty(), is(false));
 
     }
 }
