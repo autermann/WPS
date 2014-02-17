@@ -65,9 +65,9 @@ import com.google.common.net.HttpHeaders;
 
 /**
  * This WPS supports HTTP GET for describeProcess and getCapabilities and XML-POST for execute.
- * 
+ *
  * @author foerster
- * 
+ *
  */
 public class WebProcessingService extends HttpServlet {
 
@@ -81,9 +81,9 @@ public class WebProcessingService extends HttpServlet {
     protected static Logger LOGGER = LoggerFactory.getLogger(WebProcessingService.class);
 
     /**
-     * 
+     *
      * Returns a preconfigured OutputStream It takes care of: - caching - content-Encoding
-     * 
+     *
      * @param hsRequest
      *        the HttpServletRequest
      * @param hsResponse
@@ -172,7 +172,6 @@ public class WebProcessingService extends HttpServlet {
         }
 
         // Get an instance of the database for initialization of the database
-        DatabaseFactory.getDatabase();
         try {
             //FIXME get the configuration from somewhere ...
             DatabaseFactory.getInstance().init(null);
@@ -353,7 +352,7 @@ public class WebProcessingService extends HttpServlet {
         try {
             LOGGER.debug(exception.toString());
             // DO NOT MIX getWriter and getOuputStream!
-            exception.getExceptionDocument().save(res.getOutputStream(), 
+            exception.getExceptionDocument().save(res.getOutputStream(),
                                                   XMLBeansHelper.getXmlOptions());
 
             res.setStatus(HttpServletResponse.SC_OK);
