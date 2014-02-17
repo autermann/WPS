@@ -387,6 +387,43 @@
 		<maven.build.timestamp.format>yyyy</maven.build.timestamp.format>
 		<currentYearDynamic>${maven.build.timestamp}</currentYearDynamic>
 	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.hamcrest</groupId>
+			<artifactId>hamcrest-all</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jul-to-slf4j</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jcl-over-slf4j</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>log4j-over-slf4j</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+	</dependencies>
 	<dependencyManagement>
 		<dependencies>
 			<!-- testing -->
@@ -394,13 +431,22 @@
 				<groupId>junit</groupId>
 				<artifactId>junit</artifactId>
 				<version>4.11</version>
-				<scope>test</scope>
+				<exclusions>
+					<exclusion>
+						<groupId>org.hamcrest</groupId>
+						<artifactId>hamcrest-core</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.hamcrest</groupId>
 				<artifactId>hamcrest-all</artifactId>
 				<version>1.3</version>
-				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<artifactId>jmock</artifactId>
+				<groupId>org.jmock</groupId>
+				<version>2.6.0</version>
 			</dependency>
 			<!-- logging -->
 			<dependency>
@@ -578,6 +624,12 @@
 				<groupId>commons-httpclient</groupId>
 				<artifactId>commons-httpclient</artifactId>
 				<version>3.1</version>
+				<exclusions>
+					<exclusion>
+						<artifactId>commons-logging</artifactId>
+						<groupId>commons-logging</groupId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>commons-io</groupId>
@@ -594,7 +646,12 @@
 				<groupId>org.apache.httpcomponents</groupId>
 				<artifactId>httpclient</artifactId>
 				<version>4.2.1</version>
-				<scope>compile</scope>
+				<exclusions>
+					<exclusion>
+						<artifactId>commons-logging</artifactId>
+						<groupId>commons-logging</groupId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.httpcomponents</groupId>
@@ -611,6 +668,12 @@
 				<groupId>axis</groupId>
 				<artifactId>axis</artifactId>
 				<version>1.4</version>
+				<exclusions>
+					<exclusion>
+						<artifactId>commons-logging</artifactId>
+						<groupId>commons-logging</groupId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>axis</groupId>
@@ -635,6 +698,10 @@
 						<artifactId>geronimo-activation_1.0.2_spec</artifactId>
 						<groupId>org.apache.geronimo.specs</groupId>
 					</exclusion>
+					<exclusion>
+						<artifactId>commons-logging</artifactId>
+						<groupId>commons-logging</groupId>
+					</exclusion>
 				</exclusions>
 			</dependency>
 			<dependency>
@@ -656,6 +723,12 @@
 				<groupId>org.apache.axis2</groupId>
 				<artifactId>axis2-saaj</artifactId>
 				<version>${apache.axis2.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.commons</groupId>
@@ -676,6 +749,12 @@
 				<groupId>org.apache.ws.commons.axiom</groupId>
 				<artifactId>axiom-impl</artifactId>
 				<version>1.2.10</version>
+				<exclusions>
+					<exclusion>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.ws.commons.axiom</groupId>
@@ -686,6 +765,12 @@
 				<groupId>org.apache.ws.commons.axiom</groupId>
 				<artifactId>axiom-api</artifactId>
 				<version>1.2.10</version>
+				<exclusions>
+					<exclusion>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.ws.security</groupId>
@@ -695,6 +780,10 @@
 					<exclusion>
 						<artifactId>bcprov-jdk14</artifactId>
 						<groupId>bouncycastle</groupId>
+					</exclusion>
+					<exclusion>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
 					</exclusion>
 				</exclusions>
 			</dependency>
@@ -789,6 +878,10 @@
 						<artifactId>log4j</artifactId>
 						<groupId>log4j</groupId>
 					</exclusion>
+					<exclusion>
+						<artifactId>commons-logging</artifactId>
+						<groupId>commons-logging</groupId>
+					</exclusion>
 				</exclusions>
 			</dependency>
 			<dependency>
@@ -799,8 +892,13 @@
 			<dependency>
 				<groupId>net.sourceforge.pjl-comp-filter</groupId>
 				<artifactId>pjl-comp-filter</artifactId>
-				<scope>runtime</scope>
 				<version>1.6.4</version>
+				<exclusions>
+					<exclusion>
+						<artifactId>commons-logging</artifactId>
+						<groupId>commons-logging</groupId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>joda-time</groupId>
@@ -917,6 +1015,12 @@
 				<groupId>${project.groupId}</groupId>
 				<artifactId>52n-wps-config</artifactId>
 				<version>1.1.0</version>
+				<exclusions>
+					<exclusion>
+						<groupId>junit</groupId>
+						<artifactId>junit</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.n52.wps</groupId>
@@ -934,22 +1038,42 @@
 				<version>1.1.0</version>
 			</dependency>
 			<dependency>
+				<groupId>org.n52.sensorweb</groupId>
+				<artifactId>52n-xml-ows-v110</artifactId>
+				<version>1.1.0</version>
+			</dependency>
+			<dependency>
 				<groupId>org.n52.security</groupId>
 				<artifactId>52n-security-config</artifactId>
 				<version>2.2-M2</version>
-				<scope>compile</scope>
+				<exclusions>
+					<exclusion>
+						<artifactId>commons-logging</artifactId>
+						<groupId>commons-logging</groupId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.n52.security</groupId>
 				<artifactId>52n-security-authentication</artifactId>
 				<version>2.2-M2</version>
-				<scope>compile</scope>
+				<exclusions>
+					<exclusion>
+						<artifactId>commons-logging</artifactId>
+						<groupId>commons-logging</groupId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.n52.security</groupId>
 				<artifactId>52n-security-authn-web</artifactId>
 				<version>2.2-M2</version>
-				<scope>compile</scope>
+				<exclusions>
+					<exclusion>
+						<artifactId>commons-logging</artifactId>
+						<groupId>commons-logging</groupId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<!-- START Sextante dependencies -->
 			<dependency>

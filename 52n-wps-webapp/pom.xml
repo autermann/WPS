@@ -22,19 +22,17 @@
 		<wps.logfile.name>${catalina.base:-.}/logs/52n-wps</wps.logfile.name>
 	</properties>
 
-	<!-- here are the dependencies of the project -->
 	<dependencies>
-		<!-- Dependencies for Scope 'test' -->
 		<dependency>
-			<groupId>${project.groupId}</groupId>
+			<groupId>org.n52.wps</groupId>
 			<artifactId>52n-wps-commons</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>${project.groupId}</groupId>
+			<groupId>org.n52.wps</groupId>
 			<artifactId>52n-wps-io</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>${project.groupId}</groupId>
+			<groupId>org.n52.wps</groupId>
 			<artifactId>52n-wps-server</artifactId>
 			<exclusions>
 				<exclusion>
@@ -48,11 +46,11 @@
 			</exclusions>
 		</dependency>
 		<dependency>
-			<groupId>${project.groupId}</groupId>
+			<groupId>org.n52.wps</groupId>
 			<artifactId>52n-wps-server-soap</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>${project.groupId}</groupId>
+			<groupId>org.n52.wps</groupId>
 			<artifactId>52n-wps-algorithm</artifactId>
 			<exclusions>
 				<exclusion>
@@ -62,35 +60,35 @@
 			</exclusions>
 		</dependency>
 		<dependency>
-			<groupId>${project.groupId}</groupId>
+			<groupId>org.n52.wps</groupId>
 			<artifactId>52n-wps-algorithm-impl</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>${project.groupId}</groupId>
+			<groupId>org.n52.wps</groupId>
 			<artifactId>52n-wps-database</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>${project.groupId}</groupId>
+			<groupId>org.n52.wps</groupId>
 			<artifactId>52n-wps-sextante</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>${project.groupId}</groupId>
+			<groupId>org.n52.wps</groupId>
 			<artifactId>52n-wps-grass</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>${project.groupId}</groupId>
+			<groupId>org.n52.wps</groupId>
 			<artifactId>52n-wps-ags</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>${project.groupId}</groupId>
+			<groupId>org.n52.wps</groupId>
 			<artifactId>52n-wps-python</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>${project.groupId}</groupId>
+			<groupId>org.n52.wps</groupId>
 			<artifactId>52n-wps-webadmin</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>${project.groupId}</groupId>
+			<groupId>org.n52.wps</groupId>
 			<artifactId>52n-wps-transactional</artifactId>
 			<exclusions>
 				<exclusion>
@@ -104,11 +102,11 @@
 			</exclusions>
 		</dependency>
 		<dependency>
-			<groupId>${project.groupId}</groupId>
+			<groupId>org.n52.wps</groupId>
 			<artifactId>52n-wps-r</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>${project.groupId}</groupId>
+			<groupId>org.n52.wps</groupId>
 			<artifactId>52n-wps-mc</artifactId>
 			<exclusions>
 				<exclusion>
@@ -120,6 +118,7 @@
 		<dependency>
 			<groupId>net.sourceforge.pjl-comp-filter</groupId>
 			<artifactId>pjl-comp-filter</artifactId>
+			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>javax.servlet.jsp</groupId>
@@ -138,37 +137,6 @@
 			<artifactId>52n-security-authn-web</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.hamcrest</groupId>
-			<artifactId>hamcrest-all</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>commons-logging</groupId>
-			<artifactId>commons-logging</artifactId>
-			<!-- provided since we want to use jcl-over-slf4j to shim jcl loggin into
-			slf4j -->
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>log4j-over-slf4j</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jcl-over-slf4j</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jul-to-slf4j</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 		</dependency>
@@ -177,6 +145,12 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-core</artifactId>
 			<version>${org.springframework.version}</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>commons-logging</artifactId>
+					<groupId>commons-logging</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
@@ -373,144 +347,144 @@
 	<profiles>
 		<profile>
 			<id>with-deploy</id>
-				<build>
-					<finalName>WPS</finalName>
-					<plugins>
-						<plugin>
-							<inherited>true</inherited>
-							<groupId>org.codehaus.cargo</groupId>
-							<artifactId>cargo-maven2-plugin</artifactId>
-							<version>1.2.4</version>
-							<executions>
-								<execution>
-									<id>verify-deploy</id>
-									<phase>install</phase>
-									<goals>
-										<goal>deployer-deploy</goal>
-									</goals>
-								</execution>
-								<execution>
-									<id>clean-undeploy</id>
-									<phase>pre-clean</phase>
-									<goals>
-										<goal>deployer-undeploy</goal>
-									</goals>
-								</execution>
-							</executions>
+			<build>
+				<finalName>WPS</finalName>
+				<plugins>
+					<plugin>
+						<inherited>true</inherited>
+						<groupId>org.codehaus.cargo</groupId>
+						<artifactId>cargo-maven2-plugin</artifactId>
+						<version>1.2.4</version>
+						<executions>
+							<execution>
+								<id>verify-deploy</id>
+								<phase>install</phase>
+								<goals>
+									<goal>deployer-deploy</goal>
+								</goals>
+							</execution>
+							<execution>
+								<id>clean-undeploy</id>
+								<phase>pre-clean</phase>
+								<goals>
+									<goal>deployer-undeploy</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<!-- Container Configuration -->
+							<container>
+								<containerId>${conf.wps.deploy.containerId}</containerId>
+								<type>remote</type>
+							</container>
+
 							<configuration>
-								<!-- Container Configuration -->
-								<container>
-									<containerId>${conf.wps.deploy.containerId}</containerId>
-									<type>remote</type>
-								</container>
+								<type>runtime</type>
+								<properties>
+									<cargo.server.settings>${conf.wps.server.settings}</cargo.server.settings>
+									<cargo.hostname>${conf.wps.remote.server}</cargo.hostname>
+									<cargo.servlet.port>${conf.wps.remote.port}</cargo.servlet.port>
+								</properties>
 
+							</configuration>
+
+							<!-- Deployer and Deployables configuration -->
+							<!-- <deployer> -->
+							<!-- <type>remote</type> -->
+
+							<!-- </deployer> -->
+							<deployables>
+								<deployable>
+									<groupId>org.n52.wps</groupId>
+									<artifactId>${project.artifactId}</artifactId>
+									<type>war</type>
+								</deployable>
+							</deployables>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<id>integration-test</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>build-helper-maven-plugin</artifactId>
+						<version>1.7</version>
+						<executions>
+							<execution>
+								<id>reserve-network-port</id>
+								<goals>
+									<goal>reserve-network-port</goal>
+								</goals>
+								<phase>pre-integration-test</phase>
 								<configuration>
-									<type>runtime</type>
-									<properties>
-										<cargo.server.settings>${conf.wps.server.settings}</cargo.server.settings>
-										<cargo.hostname>${conf.wps.remote.server}</cargo.hostname>
-										<cargo.servlet.port>${conf.wps.remote.port}</cargo.servlet.port>
-									</properties>
-
+									<portNames>
+										<portName>jetty.http.port</portName>
+										<portName>jetty.http.stop.port</portName>
+									</portNames>
 								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-failsafe-plugin</artifactId>
+						<version>2.12.4</version>
+						<executions>
+							<execution>
+								<id>integration-test</id>
+								<goals>
+									<goal>integration-test</goal>
+									<goal>verify</goal>
+								</goals>
+								<configuration>
+									<excludes>
+										<exclude>**/Wps4rIT*</exclude>
+										<exclude>**/GrassIT*</exclude>
+									</excludes>
 
-								<!-- Deployer and Deployables configuration -->
-								<!-- <deployer> -->
-								<!-- <type>remote</type> -->
-
-								<!-- </deployer> -->
-								<deployables>
-									<deployable>
-										<groupId>${project.groupId}</groupId>
-										<artifactId>${project.artifactId}</artifactId>
-										<type>war</type>
-									</deployable>
-								</deployables>
-							</configuration>
-						</plugin>
-					</plugins>
-				</build>
-			</profile>
-			<profile>
-				<id>integration-test</id>
-				<build>
-					<plugins>
-						<plugin>
-							<groupId>org.codehaus.mojo</groupId>
-							<artifactId>build-helper-maven-plugin</artifactId>
-							<version>1.7</version>
-							<executions>
-								<execution>
-									<id>reserve-network-port</id>
-									<goals>
-										<goal>reserve-network-port</goal>
-									</goals>
-									<phase>pre-integration-test</phase>
-									<configuration>
-										<portNames>
-											<portName>jetty.http.port</portName>
-											<portName>jetty.http.stop.port</portName>
-										</portNames>
-									</configuration>
-								</execution>
-							</executions>
-						</plugin>
-						<plugin>
-							<groupId>org.apache.maven.plugins</groupId>
-							<artifactId>maven-failsafe-plugin</artifactId>
-							<version>2.12.4</version>
-							<executions>
-								<execution>
-									<id>integration-test</id>
-									<goals>
-										<goal>integration-test</goal>
-										<goal>verify</goal>
-									</goals>
-									<configuration>
-										<excludes>
-											<exclude>**/Wps4rIT*</exclude>
-											<exclude>**/GrassIT*</exclude>
-										</excludes>
-
-										<argLine>-Xmx1024m</argLine>
-										<summaryFile>target/failsafe-reports/failsafe-summary.xml</summaryFile>
-										<systemPropertyVariables>
-											<com.sun.media.jai.disableMediaLib>true</com.sun.media.jai.disableMediaLib>
-											<test.host>127.0.0.1</test.host>
-											<!--
-											<test.rserve.host>127.0.0.1</test.rserve.host>
-											<test.rserve.port>6311</test.rserve.port>
-											<test.rserve.user></test.rserve.user>
-											<test.rserve.pwd></test.rserve.pwd>
-											-->
-									<test.port>${jetty.http.port}</test.port>
-									<test.context>/wps/WebProcessingService</test.context>
-									<!-- next 2 lines are for logging configuration -->
-									<catalina.home>${project.build.directory}</catalina.home>
-									<catalina.base>${project.build.directory}</catalina.base>
-								</systemPropertyVariables>
-							</configuration>
-						</execution>
-					</executions>
-				</plugin>
-				<plugin>
-					<groupId>org.mortbay.jetty</groupId>
-					<artifactId>jetty-maven-plugin</artifactId>
-					<version>8.1.11.v20130520</version>
-					<configuration>
-						<connectors>
-							<connector implementation="org.eclipse.jetty.server.nio.SelectChannelConnector">
-								<port>${jetty.http.port}</port>
-								<maxIdleTime>60000</maxIdleTime>
-							</connector>
-						</connectors>
-						<scanIntervalSeconds>0</scanIntervalSeconds>
-						<stopPort>${jetty.http.stop.port}</stopPort>
-						<stopKey>STOP</stopKey>
-						<webAppConfig>
-							<contextPath>/wps</contextPath>
-						</webAppConfig>
-						<systemProperties>
+									<argLine>-Xmx1024m</argLine>
+									<summaryFile>target/failsafe-reports/failsafe-summary.xml</summaryFile>
+									<systemPropertyVariables>
+										<com.sun.media.jai.disableMediaLib>true</com.sun.media.jai.disableMediaLib>
+										<test.host>127.0.0.1</test.host>
+										<!--
+										<test.rserve.host>127.0.0.1</test.rserve.host>
+										<test.rserve.port>6311</test.rserve.port>
+										<test.rserve.user></test.rserve.user>
+										<test.rserve.pwd></test.rserve.pwd>
+										-->
+										<test.port>${jetty.http.port}</test.port>
+										<test.context>/wps/WebProcessingService</test.context>
+										<!-- next 2 lines are for logging configuration -->
+										<catalina.home>${project.build.directory}</catalina.home>
+										<catalina.base>${project.build.directory}</catalina.base>
+									</systemPropertyVariables>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.mortbay.jetty</groupId>
+						<artifactId>jetty-maven-plugin</artifactId>
+						<version>8.1.11.v20130520</version>
+						<configuration>
+							<connectors>
+								<connector implementation="org.eclipse.jetty.server.nio.SelectChannelConnector">
+									<port>${jetty.http.port}</port>
+									<maxIdleTime>60000</maxIdleTime>
+								</connector>
+							</connectors>
+							<scanIntervalSeconds>0</scanIntervalSeconds>
+							<stopPort>${jetty.http.stop.port}</stopPort>
+							<stopKey>STOP</stopKey>
+							<webAppConfig>
+								<contextPath>/wps</contextPath>
+							</webAppConfig>
+							<systemProperties>
 								<!-- This hack is to set catalina.base to the current jetty base
 								directory while the plugin runs so log4j will log somewhere and not complain -->
 								<systemProperty>
