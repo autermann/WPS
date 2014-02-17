@@ -28,92 +28,59 @@
  */
 package org.n52.wps.io.test.datahandler;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import org.n52.wps.commons.Format;
+import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.io.data.binding.complex.JTSGeometryBinding;
 import org.n52.wps.io.datahandler.generator.WKTGenerator;
 import org.n52.wps.io.datahandler.parser.WKTParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.google.common.io.CharStreams;
 
 /**
  * Test class for WKT parser and generator
+ *
  * @author Benjamin Pross
  *
  */
-public class WKTParserGeneratorTest extends AbstractTestCase<WKTGenerator> {
+public class WKTParserGeneratorTest {
 
-	protected Logger LOGGER = LoggerFactory.getLogger(WKTParserGeneratorTest.class);
-	
-	public void testGenerator() {
-		
-		if(!isDataHandlerActive()){
-			return;
-		}
-		
-		String inputWKTPolygonString = "POLYGON ((30 10, 10 20, 20 40, 40 40, 30 10))";
-		
-		InputStream in = new ByteArrayInputStream(inputWKTPolygonString.getBytes());
-		
-		WKTParser theParser = new WKTParser();
+    @ClassRule
+    public static final WPSConfigRule wpsConfig
+            = new WPSConfigRule("/wps_config.xml");
 
-		Format mimetype = theParser.getSupportedFormats().iterator().next();
-		
-		LOGGER.info("Trying to parse WKT: " + inputWKTPolygonString);
-		
-		JTSGeometryBinding theBinding = theParser.parse(in, mimetype);
+    @Test
+    public void testGenerator()
+            throws IOException {
+        final WKTParser parser = new WKTParser();
+        final WKTGenerator generator = new WKTGenerator();
+        final Format mimetype = parser.getSupportedFormats().iterator().next();
+        final String inputString = "POLYGON ((30 10, 10 20, 20 40, 40 40, 30 10))";
 
-		try {
-			in.close();
-		} catch (IOException e) {
-			LOGGER.warn("Failed to close ByteArrayInputStream containing input WKT.");
-		}
-		
-		assertTrue(theBinding.getPayload() != null);
-		
-		InputStream generatedStream = null;
-		
-		try {
-			generatedStream = dataHandler.generateStream(theBinding, mimetype);
-			
-		} catch (IOException e) {
-			LOGGER.error("Failed to generate result inputstream.");
-			fail();
-		}
-		
-		String outputWKTPolygonString = "";
-		
-		int bite = -1;
-		
-		try {
-			while ((bite = generatedStream.read()) != -1) {
-				outputWKTPolygonString = outputWKTPolygonString.concat(String.valueOf((char)bite));
-			}
-		} catch (IOException e) {
-			LOGGER.error("Failed to read result inputstream.");
-			fail();
-		}
-		
-		try {
-			generatedStream.close();
-		} catch (IOException e) {
-			LOGGER.warn("Failed to close generated stream containing result WKT.");
-		}
-		
-		assertTrue(inputWKTPolygonString.equals(outputWKTPolygonString));
-		
-		LOGGER.info("Generated WKT      : " + outputWKTPolygonString);
-		
-	}
+        JTSGeometryBinding binding;
+        try (InputStream in = new ByteArrayInputStream(inputString.getBytes())) {
+            binding = parser.parse(in, mimetype);
+        }
+        assertThat(binding.getPayload(), is(notNullValue()));
 
-	@Override
-	protected void initializeDataHandler() {
-		dataHandler = new WKTGenerator();
-		
-	}
+        String outputString;
+        try (InputStream in = generator.generateStream(binding, mimetype);
+             InputStreamReader reader = new InputStreamReader(in)) {
+            outputString = CharStreams.toString(reader);
+        }
+        assertThat(outputString, is(equalTo(inputString)));
+    }
 
-	
 }

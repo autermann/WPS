@@ -28,52 +28,37 @@
  */
 package org.n52.wps.io.test.datahandler.parser;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
+
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
+
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import org.n52.wps.commons.Format;
-import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
+import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.io.datahandler.parser.GTBinZippedSHPParser;
-import org.n52.wps.io.test.datahandler.AbstractTestCase;
+import org.n52.wps.io.geotools.data.GTVectorDataBinding;
 
-public class GTBinZippedSHPParserTest extends AbstractTestCase<GTBinZippedSHPParser>{
+public class GTBinZippedSHPParserTest {
+    @ClassRule
+    public static final WPSConfigRule wpsConfig
+            = new WPSConfigRule("/wps_config.xml");
 
-	public void testParser(){	
-		
-		if(!isDataHandlerActive()){
-			return;
-		}
-		
-		String testFilePath = projectRoot + "/52n-wps-io-impl/src/test/resources/tasmania_roads.zip";
-		
-		try {
-			testFilePath = URLDecoder.decode(testFilePath, "UTF-8");
-		} catch (UnsupportedEncodingException e1) {
-			fail(e1.getMessage());
-		}
-		
-		InputStream input = null;
-		for (Format mimetype : dataHandler.getSupportedFormats()) {
-			try {
-				input = new FileInputStream(new File(testFilePath));
-			} catch (FileNotFoundException e) {
-				fail(e.getMessage());
-			}
-			GTVectorDataBinding theBinding = dataHandler.parse(input, mimetype);
-			assertNotNull(theBinding.getPayload());
-			assertTrue(theBinding.getPayloadAsShpFile().exists());			
-			assertTrue(!theBinding.getPayload().isEmpty());			
-		}
-		
-	}
+    @Test
+    public void testParser() {
+        GTBinZippedSHPParser dataHandler = new GTBinZippedSHPParser();
+        for (Format mimetype : dataHandler.getSupportedFormats()) {
+            InputStream input = getClass()
+                    .getResourceAsStream("/tasmania_roads.zip");
+            assertThat(input, is(notNullValue()));
+            GTVectorDataBinding theBinding = dataHandler.parse(input, mimetype);
+            assertThat(theBinding.getPayload(), is(notNullValue()));
+            assertThat(theBinding.getPayloadAsShpFile().exists(), is(true));
+            assertThat(theBinding.getPayload().isEmpty(), is(false));
+        }
 
-	@Override
-	protected void initializeDataHandler() {
-		dataHandler = new GTBinZippedSHPParser();
-	}
-	
+    }
 }

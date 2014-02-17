@@ -28,74 +28,50 @@
  */
 package org.n52.wps.io.test.datahandler.generator;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
+
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import org.n52.wps.commons.Format;
-import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
+import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.io.datahandler.generator.KMLGenerator;
 import org.n52.wps.io.datahandler.parser.GTBinZippedSHPParser;
 import org.n52.wps.io.datahandler.parser.KMLParser;
-import org.n52.wps.io.test.datahandler.AbstractTestCase;
+import org.n52.wps.io.geotools.data.GTVectorDataBinding;
+import org.n52.wps.server.ExceptionReport;
 
-public class KMLGeneratorTest extends AbstractTestCase<KMLGenerator> {
+public class KMLGeneratorTest {
+    @ClassRule
+    public static final WPSConfigRule wpsConfig
+            = new WPSConfigRule("/wps_config.xml");
 
-	public void testGenerator(){
-		
-		if(!isDataHandlerActive()){
-			return;
-		}
-		
-		String testFilePath = projectRoot + "/52n-wps-io-impl/src/test/resources/states.zip";
-		
-		try {
-			testFilePath = URLDecoder.decode(testFilePath, "UTF-8");
-		} catch (UnsupportedEncodingException e1) {
-			fail(e1.getMessage());
-		}
-		
-		GTBinZippedSHPParser theParser = new GTBinZippedSHPParser();
-		
-		KMLParser kmlParser = new KMLParser();
-		
-		InputStream input = null;
-		try {
-			input = new FileInputStream(new File(testFilePath));
-		} catch (FileNotFoundException e) {
-			fail(e.getMessage());
-		}
-		
-		GTVectorDataBinding theBinding = theParser.parse(input, theParser.getSupportedFormats().iterator().next());
-			
-		assertNotNull(theBinding.getPayload());		
-		assertTrue(!theBinding.getPayload().isEmpty());	
-		
-		for (Format format : dataHandler.getSupportedFormats()) {
-				try {
-					InputStream in = dataHandler.generateStream(theBinding, format);
-					
-					GTVectorDataBinding generatedParsedBinding = kmlParser.parse(in, format);
-					
-					assertNotNull(generatedParsedBinding.getPayload());	
-					assertTrue(generatedParsedBinding.getPayloadAsShpFile().exists());		
-					assertTrue(!generatedParsedBinding.getPayload().isEmpty());			
-					
-				} catch (IOException e) {
-					e.printStackTrace();
-					fail(e.getMessage());
-				}
-		}
-		
-	}
+    @Test
+    public void testGenerator()
+            throws IOException, ExceptionReport {
+        KMLGenerator generator = new KMLGenerator();
+        GTBinZippedSHPParser parser = new GTBinZippedSHPParser();
+        KMLParser kmlParser = new KMLParser();
+        GTVectorDataBinding binding1;
+        try (InputStream input = getClass().getResourceAsStream("/states.zip")) {
+            Format format = parser.getSupportedFormats().iterator().next();
+            binding1 = parser.parse(input, format);
+        }
+        assertThat(binding1.getPayload(), is(notNullValue()));
+        assertThat(binding1.getPayload().isEmpty(), is(false));
 
-	@Override
-	protected void initializeDataHandler() {
-		dataHandler = new KMLGenerator();
-	}
-	
+        for (Format format : generator.getSupportedFormats()) {
+            try (InputStream in = generator.generateStream(binding1, format)) {
+                GTVectorDataBinding binding2 = kmlParser.parse(in, format);
+                assertThat(binding2.getPayload(), is(notNullValue()));
+                assertThat(binding2.getPayloadAsShpFile().exists(), is(true));
+                assertThat(binding2.getPayload().isEmpty(), is(false));
+            }
+        }
+    }
 }

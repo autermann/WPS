@@ -28,84 +28,59 @@
  */
 package org.n52.wps.io.test.datahandler.generator;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
+
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import org.n52.wps.commons.Format;
-import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
+import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.io.datahandler.generator.GML3BasicGenerator;
 import org.n52.wps.io.datahandler.parser.GML3BasicParser;
-import org.n52.wps.io.test.datahandler.AbstractTestCase;
+import org.n52.wps.io.geotools.data.GTVectorDataBinding;
 import org.n52.wps.server.ExceptionReport;
 
-public class GML3BasicGeneratorTest extends AbstractTestCase<GML3BasicGenerator> {
+public class GML3BasicGeneratorTest {
+    @ClassRule
+    public static final WPSConfigRule wpsConfig
+            = new WPSConfigRule("/wps_config.xml");
 
-	public void testParser() {
-		
-        assertTrue(isDataHandlerActive());
+    @Test
+    public void testParser()
+            throws IOException, ExceptionReport {
+        GML3BasicGenerator dataHandler = new GML3BasicGenerator();
+        GML3BasicParser theParser = new GML3BasicParser();
 
-		String testFilePath = projectRoot
-				+ "/52n-wps-io-impl/src/test/resources/spearfish_restricted_sites_gml3.xml";
+        Format format = new Format("text/xml; subtype=gml/3.2.1", "UTF-8",
+                                   "http://schemas.opengis.net/gml/3.2.1/base/feature.xsd");
+        GTVectorDataBinding binding1, binding2, binding64;
+        try (InputStream in = getClass()
+                .getResourceAsStream("/spearfish_restricted_sites_gml3.xml")) {
+            binding1 = theParser.parse(in, format);
+        }
+        assertThat(binding1.getPayload(), is(notNullValue()));
 
-		try {
-			testFilePath = URLDecoder.decode(testFilePath, "UTF-8");
-		} catch (UnsupportedEncodingException e1) {
-			fail(e1.getMessage());
-		}
-		
-		GML3BasicParser theParser = new GML3BasicParser();
+        try (InputStream in = dataHandler .generateStream(binding1, format)) {
+            binding2 = theParser.parse(in, format);
+        }
+        assertThat(binding2.getPayload(), is(notNullValue()));
+        assertThat(binding2.getPayload().size(), is(binding1.getPayload().size()));
+        assertThat(binding2.getPayloadAsShpFile().exists(), is(true));
+        assertThat(binding2.getPayload().isEmpty(), is(false));
 
-//		String[] mimetypes = theParser.getSupportedFormats();
+        try (InputStream in = dataHandler.generate(binding1, format.withBase64Encoding())) {
+            binding64 = (GTVectorDataBinding) theParser .parseBase64(in, format);
+        }
+        assertThat(binding64.getPayload(), is(notNullValue()));
+        assertThat(binding64.getPayload().size(), is(binding1.getPayload().size()));
+        assertThat(binding64.getPayloadAsShpFile().exists(), is(true));
+        assertThat(binding64.getPayload().isEmpty(), is(false));
 
-		InputStream input = null;
-
-		try {
-			input = new FileInputStream(new File(testFilePath));
-		} catch (FileNotFoundException e) {
-			fail(e.getMessage());
-		}
-
-        Format format = new Format("text/xml; subtype=gml/3.2.1","UTF-8",
-				"http://schemas.opengis.net/gml/3.2.1/base/feature.xsd");
-
-		GTVectorDataBinding theBinding = theParser.parse(input,format);
-		
-		try {
-			InputStream resultStream = dataHandler.generateStream(theBinding, format);
-			
-			GTVectorDataBinding parsedGeneratedBinding = theParser.parse(resultStream, format);
-			
-			assertNotNull(parsedGeneratedBinding.getPayload());
-			assertTrue(theBinding.getPayload().size()==theBinding.getPayload().size());
-			assertTrue(parsedGeneratedBinding.getPayloadAsShpFile().exists());
-			assertTrue(!parsedGeneratedBinding.getPayload().isEmpty());
-
-			InputStream resultStreamBase64 = dataHandler.generate(theBinding, format.withBase64Encoding());
-			
-			GTVectorDataBinding parsedGeneratedBindingBase64 = (GTVectorDataBinding) theParser.parseBase64(resultStreamBase64, format);
-			
-			assertNotNull(parsedGeneratedBindingBase64.getPayload());
-			assertTrue(parsedGeneratedBindingBase64.getPayloadAsShpFile().exists());
-			assertTrue(!parsedGeneratedBindingBase64.getPayload().isEmpty());
-			
-		} catch (IOException | ExceptionReport e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-		
-		// }
-
-	}
-
-	@Override
-	protected void initializeDataHandler() {
-		dataHandler = new GML3BasicGenerator();
-		
-	}
+    }
 
 }

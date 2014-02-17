@@ -28,79 +28,57 @@
  */
 package org.n52.wps.io.test.datahandler;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
+
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import org.n52.wps.commons.Format;
-import org.n52.wps.io.data.binding.complex.GTVectorDataBinding;
+import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.io.datahandler.generator.GML2BasicGenerator;
 import org.n52.wps.io.datahandler.parser.GML2BasicParser;
+import org.n52.wps.io.geotools.data.GTVectorDataBinding;
 
 /**
  * This class is for testing the GML2BasicParser and -Generator.
- * 
+ *
  * @author Benjamin Pross(bpross-52n)
  *
  */
-public class GML2BasicParserGeneratorTest extends AbstractTestCase<GML2BasicGenerator> {
+public class GML2BasicParserGeneratorTest {
+    @ClassRule
+    public static final WPSConfigRule wpsConfig
+            = new WPSConfigRule("/wps_config.xml");
 
-	public void testParser() throws IOException {
-		
-		if(!isDataHandlerActive()){
-			return;
-		}
-
-		String testFilePath = projectRoot
-				+ "/52n-wps-io-impl/src/test/resources/tasmania_roads_gml2.xml";
-		
-		try {
-			testFilePath = URLDecoder.decode(testFilePath, "UTF-8");
-		} catch (UnsupportedEncodingException e1) {
-			e1.printStackTrace();
-			fail(e1.getMessage());
-		}
-
-		GML2BasicParser parser = new GML2BasicParser();
+    @Test
+    public void testParser()
+            throws IOException {
+        GML2BasicGenerator generator = new GML2BasicGenerator();
+        GML2BasicParser parser = new GML2BasicParser();
 
         Format format = parser.getSupportedFormats().iterator().next();
-		
-		InputStream input = null;
-		try {
-			input = new FileInputStream(new File(testFilePath));
-		} catch (FileNotFoundException e) {
-			fail(e.getMessage());
-		}
-		
-		GTVectorDataBinding theBinding = parser.parse(input, format);
 
-		assertNotNull(theBinding.getPayload());
-		assertTrue(theBinding.getPayloadAsShpFile().exists());
-		assertTrue(!theBinding.getPayload().isEmpty());
-		
-		try {
-			InputStream stream = dataHandler.generateStream(theBinding, format);
-			
-			theBinding = parser.parse(stream, format);
+        InputStream input = getClass()
+                .getResourceAsStream("/tasmania_roads_gml2.xml");
+        assertThat(input, is(notNullValue()));
+        GTVectorDataBinding binding = parser.parse(input, format);
 
-			assertNotNull(theBinding.getPayload());
-			assertTrue(theBinding.getPayloadAsShpFile().exists());
-			assertTrue(!theBinding.getPayload().isEmpty());
-			
-		} catch (IOException e) {
-			System.err.println(e);
-			fail(e.getMessage());
-		}
+        assertThat(binding.getPayload(), is(notNullValue()));
+        assertThat(binding.getPayloadAsShpFile().exists(), is(true));
+        assertThat(binding.getPayload().isEmpty(), is(false));
 
-	}
+        InputStream stream = generator.generateStream(binding, format);
 
-	@Override
-	protected void initializeDataHandler() {
-		dataHandler = new GML2BasicGenerator();		
-	}
+        binding = parser.parse(stream, format);
 
+        assertThat(binding.getPayload(), is(notNullValue()));
+        assertThat(binding.getPayloadAsShpFile().exists(), is(true));
+        assertThat(!binding.getPayload().isEmpty(), is(false));
+
+    }
 }

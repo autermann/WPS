@@ -37,20 +37,26 @@ import org.apache.xmlbeans.XmlException;
 /**
  *
  * @author tkunicki
+ * @deprecated use {@link WPSConfigRule}:
+ * <pre>
+ * &#064;org.junit.rules.ClassRule
+ * public final WPSConfigRule = new WPSConfigRule()
+ * </pre>
  */
+@Deprecated
 public class WPSConfigTestUtil {
 
     public static void generateMockConfig(String path) throws XmlException, IOException {
         generateMockConfig(WPSConfigTestUtil.class, path);
     }
-    
+
     public static void generateMockConfig(Class<?> clazz, String path) throws XmlException, IOException {
 
             InputStream configInputStream = null;
             try {
                 configInputStream = new BufferedInputStream(clazz.getResourceAsStream(path));
                 WPSConfig.forceInitialization(configInputStream);
-                
+
             } finally {
                 if (configInputStream != null) {
                     try { configInputStream.close(); } catch (IOException ignore) {

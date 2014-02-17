@@ -28,56 +28,34 @@
  */
 package org.n52.wps.io.test.datahandler.parser;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
+
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
+
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import org.n52.wps.commons.Format;
-import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
+import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.io.datahandler.parser.GeotiffParser;
-import org.n52.wps.io.test.datahandler.AbstractTestCase;
+import org.n52.wps.io.geotools.data.GTRasterDataBinding;
 
-public class GeotiffParserTest extends AbstractTestCase<GeotiffParser> {
+public class GeotiffParserTest {
+    @ClassRule
+    public static final WPSConfigRule wpsConfig
+            = new WPSConfigRule("/wps_config.xml");
 
-
-	public void testParser(){	
-		
-		if(!isDataHandlerActive()){
-			return;
-		}
-		
-		String testFilePath = projectRoot + "/52n-wps-io-impl/src/test/resources/6_UTM2GTIF.TIF";
-		
-		try {
-			testFilePath = URLDecoder.decode(testFilePath, "UTF-8");
-		} catch (UnsupportedEncodingException e1) {
-			fail(e1.getMessage());
-		}
-		
-		InputStream input = null;
-		
-		for (Format mimetype : dataHandler.getSupportedFormats()) {
-			
-			try {
-				input = new FileInputStream(new File(testFilePath));
-			} catch (FileNotFoundException e) {
-				fail(e.getMessage());
-			}
-			
-			GTRasterDataBinding theBinding = dataHandler.parse(input, mimetype);
-			
-			assertTrue(theBinding.getPayload() != null);			
-			
-		}
-		
-	}
-
-	@Override
-	protected void initializeDataHandler() {
-		dataHandler = new GeotiffParser();		
-	}
-	
+    @Test
+    public void testParser() {
+        GeotiffParser dataHandler = new GeotiffParser();
+        for (Format mimetype : dataHandler.getSupportedFormats()) {
+            InputStream input = getClass()
+                    .getResourceAsStream("/6_UTM2GTIF.TIF");
+            assertThat(input, is(notNullValue()));
+            GTRasterDataBinding theBinding = dataHandler.parse(input, mimetype);
+            assertThat(theBinding, is(notNullValue()));
+        }
+    }
 }

@@ -28,56 +28,34 @@
  */
 package org.n52.wps.io.test.datahandler.parser;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
+
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
+
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import org.n52.wps.commons.Format;
+import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
 import org.n52.wps.io.datahandler.parser.GenericFileParser;
-import org.n52.wps.io.test.datahandler.AbstractTestCase;
 
-public class GenericFileParserTest extends AbstractTestCase<GenericFileParser> {
+public class GenericFileParserTest {
+    @ClassRule
+    public static final WPSConfigRule wpsConfig
+            = new WPSConfigRule("/wps_config.xml");
 
-
-	public void testParser(){	
-		
-		if(!isDataHandlerActive()){
-			return;
-		}
-		
-		String testFilePath = projectRoot + "/52n-wps-io-impl/src/test/resources/testfile";
-		
-		try {
-			testFilePath = URLDecoder.decode(testFilePath, "UTF-8");
-		} catch (UnsupportedEncodingException e1) {
-			fail(e1.getMessage());
-		}
-				
-		InputStream input = null;
-		
-		for (Format mimetype : dataHandler.getSupportedFormats()) {
-			
-			try {
-				input = new FileInputStream(new File(testFilePath));
-			} catch (FileNotFoundException e) {
-				fail(e.getMessage());
-			}
-			
-			GenericFileDataBinding theBinding = dataHandler.parse(input, mimetype);
-			
-			assertTrue(theBinding.getPayload().getBaseFile(true).exists());			
-			
-		}
-		
-	}
-
-	@Override
-	protected void initializeDataHandler() {
-		dataHandler = new GenericFileParser();		
-	}
-	
+    @Test
+    public void testParser() {
+        GenericFileParser dataHandler = new GenericFileParser();
+        for (Format mimetype : dataHandler.getSupportedFormats()) {
+            InputStream input = getClass().getResourceAsStream("/testfile");
+            assertThat(input, is(notNullValue()));
+            GenericFileDataBinding theBinding = dataHandler
+                    .parse(input, mimetype);
+            assertThat(theBinding.getPayload().getBaseFile(true).exists(), is(true));
+        }
+    }
 }

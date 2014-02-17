@@ -28,61 +28,41 @@
  */
 package org.n52.wps.io.test.datahandler.parser;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
+
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
+
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import org.n52.wps.commons.Format;
+import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.io.data.binding.complex.GenericFileDataBinding;
 import org.n52.wps.io.datahandler.parser.GML3BasicParser4Files;
-import org.n52.wps.io.test.datahandler.AbstractTestCase;
 
 /**
  * This class is for testing the GML3BasicParser4Files.
- * 
+ *
  * @author Benjamin Pross(bpross-52n)
  *
  */
-public class GML3BasicParser4FilesTest extends AbstractTestCase<GML3BasicParser4Files> {
+public class GML3BasicParser4FilesTest {
+    @ClassRule
+    public static final WPSConfigRule wpsConfig
+            = new WPSConfigRule("/wps_config.xml");
 
-	public void testParser() {
-		
-		if(!isDataHandlerActive()){
-			return;
-		}
+    @Test
+    public void testParser() {
+        GML3BasicParser4Files dataHandler = new GML3BasicParser4Files();
+        InputStream input = getClass().getResourceAsStream("/spearfish_restricted_sites_gml3.xml");
+        assertThat(input, is(notNullValue()));
+        Format format = new Format("text/xml; subtype=gml/3.1.1", "UTF-8", "http://schemas.opengis.net/gml/3.1.1/base/feature.xsd");
+        GenericFileDataBinding theBinding = dataHandler.parse(input, format);
+        assertThat(theBinding.getPayload(), is(notNullValue()));
+        assertThat(theBinding.getPayload().getBaseFile(true).exists(), is(true));
 
-		String testFilePath = projectRoot
-				+ "/52n-wps-io-impl/src/test/resources/spearfish_restricted_sites_gml3.xml";
-		
-		try {
-			testFilePath = URLDecoder.decode(testFilePath, "UTF-8");
-		} catch (UnsupportedEncodingException e1) {
-			System.err.println(e1);
-			fail(e1.getMessage());
-		}
-
-		InputStream input = null;
-
-		try {
-			input = new FileInputStream(new File(testFilePath));
-		} catch (FileNotFoundException e) {
-			fail(e.getMessage());
-		}
-        Format format = new Format("text/xml; subtype=gml/3.1.1", "UTF-8",
-				"http://schemas.opengis.net/gml/3.1.1/base/feature.xsd");
-		GenericFileDataBinding theBinding = dataHandler.parse(input,format);
-
-		assertNotNull(theBinding.getPayload());
-		assertNotNull(theBinding.getPayload().getBaseFile(true).exists());
-
-	}
-
-	@Override
-	protected void initializeDataHandler() {
-		dataHandler = new GML3BasicParser4Files();		
-	}
+    }
 
 }

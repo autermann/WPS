@@ -28,81 +28,57 @@
  */
 package org.n52.wps.io.test.datahandler.generator;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
+
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import org.n52.wps.commons.Format;
-import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
+import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.io.datahandler.generator.GeoserverWMSGenerator;
 import org.n52.wps.io.datahandler.parser.GeotiffParser;
-import org.n52.wps.io.test.datahandler.AbstractTestCase;
+import org.n52.wps.io.geotools.data.GTRasterDataBinding;
+import org.n52.wps.server.ExceptionReport;
 
-public class GeoserverWMSGeneratorTest extends AbstractTestCase<GeoserverWMSGenerator> {
+import com.google.common.io.CharStreams;
 
-	public void testGenerator() {
-		
-		if(!isDataHandlerActive()){
-			return;
-		}
+public class GeoserverWMSGeneratorTest {
 
-		String testFilePath = projectRoot
-				+ "/52n-wps-io-impl/src/test/resources/6_UTM2GTIF.TIF";
-		
-		try {
-			testFilePath = URLDecoder.decode(testFilePath, "UTF-8");
-		} catch (UnsupportedEncodingException e1) {
-			fail(e1.getMessage());
-		}
+    @ClassRule
+    public static final WPSConfigRule wpsConfig
+            = new WPSConfigRule("/wps_config.xml");
 
-		GeotiffParser theParser = new GeotiffParser();
+    @Test
+    public void testGenerator()
+            throws IOException, ExceptionReport {
+        GeoserverWMSGenerator dataHandler = new GeoserverWMSGenerator();
+        GeotiffParser theParser = new GeotiffParser();
         Format format = theParser.getSupportedFormats().iterator().next();
+        GTRasterDataBinding binding;
+        try (InputStream in
+                = getClass().getResourceAsStream("/6_UTM2GTIF.TIF")) {
+            binding = theParser.parse(in, format);
+        }
 
-		InputStream input = null;
+        assertThat(binding.getPayload(), is(notNullValue()));
 
-		try {
-			input = new FileInputStream(new File(testFilePath));
-		} catch (FileNotFoundException e) {
-			fail(e.getMessage());
-		}
+        for (Format format2 : dataHandler.getSupportedFormats()) {
+            try (InputStream in = dataHandler.generateStream(binding, format2);
+                 InputStreamReader reader = new InputStreamReader(in)) {
+                String result = CharStreams.toString(reader);
+            }
+            //FIXME no tests?!
+            String request
+                    = "http://localhost:8181/geoserver/wms?service=WMS&version=1.1.0&request=GetMap&layers=N52:primary738239570087452915.tif_72e5aa87-5e2e-4c70-b913-53f4bf910245&styles=&bbox=444650.0,4631220.0,451640.0,4640510.0&width=385&height=512&srs=EPSG:26716&format=image/tiff";
 
-		GTRasterDataBinding theBinding = theParser.parse(input, format);
+        }
 
-		assertTrue(theBinding.getPayload() != null);
-
-		for (Format format2 : dataHandler.getSupportedFormats()) {
-			try {
-				InputStream resultStream = dataHandler.generateStream(theBinding, format2);
-				
-				BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(resultStream));
-				
-				String line;
-				
-				while((line = bufferedReader.readLine()) != null){
-					System.out.println(line);
-				}
-				
-				String request = "http://localhost:8181/geoserver/wms?service=WMS&version=1.1.0&request=GetMap&layers=N52:primary738239570087452915.tif_72e5aa87-5e2e-4c70-b913-53f4bf910245&styles=&bbox=444650.0,4631220.0,451640.0,4640510.0&width=385&height=512&srs=EPSG:26716&format=image/tiff";
-				
-			} catch (IOException e) {
-				e.printStackTrace();
-				fail(e.getMessage());
-			}
-
-		}
-
-	}
-
-	@Override
-	protected void initializeDataHandler() {
-		dataHandler = new GeoserverWMSGenerator();
-		
-	}
+    }
 
 }

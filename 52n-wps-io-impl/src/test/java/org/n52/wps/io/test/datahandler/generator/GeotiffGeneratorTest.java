@@ -28,76 +28,51 @@
  */
 package org.n52.wps.io.test.datahandler.generator;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
+
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import org.n52.wps.commons.Format;
-import org.n52.wps.io.data.binding.complex.GTRasterDataBinding;
+import org.n52.wps.commons.WPSConfigRule;
 import org.n52.wps.io.datahandler.generator.GeotiffGenerator;
 import org.n52.wps.io.datahandler.parser.GeotiffParser;
-import org.n52.wps.io.test.datahandler.AbstractTestCase;
+import org.n52.wps.io.geotools.data.GTRasterDataBinding;
+import org.n52.wps.server.ExceptionReport;
 
-public class GeotiffGeneratorTest extends AbstractTestCase<GeotiffGenerator> {
+public class GeotiffGeneratorTest {
 
-	public void testGenerator() {
-		
-		if(!isDataHandlerActive()){
-			return;
+    @ClassRule
+    public static final WPSConfigRule wpsConfig
+            = new WPSConfigRule("/wps_config.xml");
+
+    @Test
+	public void testGenerator() throws IOException, ExceptionReport {
+
+        GeotiffGenerator generator = new GeotiffGenerator();
+		GeotiffParser parser = new GeotiffParser();
+        Format mimeType = generator.getSupportedFormats().iterator().next();
+        GTRasterDataBinding binding;
+        try (InputStream in = getClass().getResourceAsStream("/6_UTM2GTIF.TIF")) {
+            binding = parser.parse(in, mimeType);
+        }
+
+        assertThat(binding.getPayload(), is(notNullValue()));
+
+
+		for (Format format : generator.getSupportedFormats()) {
+            try (InputStream in = generator.generateStream(binding, format)) {
+                GTRasterDataBinding rasterBinding = parser.parse(in, mimeType);
+                assertThat(rasterBinding.getPayload(), is(notNullValue()));
+                assertThat(rasterBinding.getPayload().getDimension(), is(not(0)));
+                assertThat(rasterBinding.getPayload().getEnvelope(), is(notNullValue()));
+            }
 		}
-
-		String testFilePath = projectRoot
-				+ "/52n-wps-io-impl/src/test/resources/6_UTM2GTIF.TIF";
-		
-		try {
-			testFilePath = URLDecoder.decode(testFilePath, "UTF-8");
-		} catch (UnsupportedEncodingException e1) {
-			fail(e1.getMessage());
-		}
-
-		GeotiffParser theParser = new GeotiffParser();
-
-
-		InputStream input = null;
-
-		try {
-			input = new FileInputStream(new File(testFilePath));
-		} catch (FileNotFoundException e) {
-			fail(e.getMessage());
-		}
-
-
-        Format mimeType = dataHandler.getSupportedFormats().iterator().next();
-		GTRasterDataBinding theBinding = theParser.parse(input, mimeType);
-
-		assertTrue(theBinding.getPayload() != null);
-		
-
-		for (Format format : dataHandler.getSupportedFormats()) {
-			try {
-				InputStream resultStream = dataHandler.generateStream(theBinding, format);
-				GTRasterDataBinding rasterBinding = theParser.parse(resultStream, mimeType);
-				assertTrue(rasterBinding.getPayload() != null);
-				assertTrue(rasterBinding.getPayload().getDimension() != 0);
-				assertTrue(rasterBinding.getPayload().getEnvelope() != null);
-			} catch (IOException e) {
-				e.printStackTrace();
-				fail(e.getMessage());
-			}
-
-		}
-
 	}
-
-	@Override
-	protected void initializeDataHandler() {
-		dataHandler = new GeotiffGenerator();
-		
-	}
-
-	
 }
