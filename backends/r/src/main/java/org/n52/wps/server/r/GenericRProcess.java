@@ -49,6 +49,15 @@ import java.util.UUID;
 
 import net.opengis.wps.x100.ProcessDescriptionType;
 
+import org.rosuda.REngine.REXP;
+import org.rosuda.REngine.REXPMismatchException;
+import org.rosuda.REngine.Rserve.RConnection;
+import org.rosuda.REngine.Rserve.RFileInputStream;
+import org.rosuda.REngine.Rserve.RFileOutputStream;
+import org.rosuda.REngine.Rserve.RserveException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.n52.wps.commons.Format;
 import org.n52.wps.io.IOUtils;
 import org.n52.wps.io.data.GenericFileData;
@@ -84,14 +93,6 @@ import org.n52.wps.server.r.syntax.RAttribute;
 import org.n52.wps.server.r.syntax.RegExp;
 import org.n52.wps.server.r.util.RLogger;
 import org.n52.wps.server.r.util.RSessionInfo;
-import org.rosuda.REngine.REXP;
-import org.rosuda.REngine.REXPMismatchException;
-import org.rosuda.REngine.Rserve.RConnection;
-import org.rosuda.REngine.Rserve.RFileInputStream;
-import org.rosuda.REngine.Rserve.RFileOutputStream;
-import org.rosuda.REngine.Rserve.RserveException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class GenericRProcess extends AbstractObservableAlgorithm {
 
@@ -115,7 +116,7 @@ public class GenericRProcess extends AbstractObservableAlgorithm {
     /**
      * Indicates if the R working directory should be deleted after process execution If wpsWorkDirIsRWorkDir
      * is set true, deletion of the directory shall be determined by deleteWPSWorDirectory
-     * 
+     *
      */
     private boolean deleteRWorkDirectory = true;
 
@@ -155,10 +156,10 @@ public class GenericRProcess extends AbstractObservableAlgorithm {
 
     /**
      * This method should be overwritten, in case you want to have a way of initializing.
-     * 
+     *
      * In detail it looks for a xml descfile, which is located in the same directory as the implementing class
      * and has the same name as the class, but with the extension XML.
-     * 
+     *
      * @return
      */
     protected ProcessDescriptionType initializeDescription() {
@@ -457,7 +458,7 @@ public class GenericRProcess extends AbstractObservableAlgorithm {
 
     /**
      * Retrieves warnings that occured during the last execution of a script
-     * 
+     *
      * Note that the warnings()-method is not reliable for Rserve because it does not return warnings in most
      * cases, a workaround to retrieve the warnings is applied
      */
@@ -480,11 +481,11 @@ public class GenericRProcess extends AbstractObservableAlgorithm {
     /**
      * Sets the R working directory according to the "R_Work_Dir" configuration parameter. 4 cases are
      * supported: default, preset, temporary and custom.
-     * 
+     *
      * Do not confuse the R working directory with the temporary WPS working directory (this.currentworkdir)!
      * R and WPS use the same directory under default configuration, with Rserve on localhost, but running R
      * on a remote machine requires separate working directories for WPS and R.
-     * 
+     *
      * @param rCon
      *        The (open) R connection to be used. This method inherently does not call open- or
      *        close-operations.
@@ -730,7 +731,7 @@ public class GenericRProcess extends AbstractObservableAlgorithm {
     /**
      * parses iData values to string representations which can be evaluated by Rserve, complex data will be
      * preprocessed and handled here, uses parseLiteralInput for parsing literal Data
-     * 
+     *
      * @param input
      *        input value as databinding
      * @param Rconnection
@@ -742,7 +743,8 @@ public class GenericRProcess extends AbstractObservableAlgorithm {
      */
     private String parseInput(List<IData> input, RConnection rCon) throws IOException,
             RserveException,
-            REXPMismatchException {
+            REXPMismatchException,
+            ExceptionReport {
 
         String result = null;
         // building an R - vector of input entries containing more than one
@@ -810,7 +812,7 @@ public class GenericRProcess extends AbstractObservableAlgorithm {
 
     /**
      * Streams a file from WPS to Rserve workdirectory
-     * 
+     *
      * @param rCon
      *        active RConnecion
      * @param is
@@ -1114,7 +1116,7 @@ public class GenericRProcess extends AbstractObservableAlgorithm {
     /**
      * Streams a File from R workdirectory to a temporal file in the WPS4R workdirectory
      * (R.Config.WORK_DIR/random folder)
-     * 
+     *
      * @param rCon
      *        an open R connection
      * @param filename
@@ -1146,7 +1148,7 @@ public class GenericRProcess extends AbstractObservableAlgorithm {
     }
 
     /**
-     * 
+     *
      * @param script
      *        R input script
      * @param rCon
@@ -1244,7 +1246,7 @@ public class GenericRProcess extends AbstractObservableAlgorithm {
 
     /**
      * Deletes File or Directory completely with its content
-     * 
+     *
      * @param in
      *        File or directory
      * @return true if all content could be deleted
@@ -1273,7 +1275,7 @@ public class GenericRProcess extends AbstractObservableAlgorithm {
 
     /**
      * Searches annotations (class attribute) for Inputs / Outputs with a specific referring id
-     * 
+     *
      * @param ioType
      * @param id
      * @return
